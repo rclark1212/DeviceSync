@@ -29,6 +29,8 @@ public class AppContract {
     }
 
     /* Inner class that defines the table contents of the devices table */
+    // URI format
+    // /deviceSN
     public static final class DevicesEntry implements BaseColumns {
 
         public static final Uri CONTENT_URI =
@@ -49,13 +51,25 @@ public class AppContract {
         //Device identifiers
         public static final String COLUMN_DEVICE_NAME = "nick_name";
         public static final String COLUMN_DEVICE_MODEL = "model_name";
+        public static final String COLUMN_DEVICE_OSVER = "os_ver";
 
         public static Uri buildDeviceUri(long id) {
             return ContentUris.withAppendedId(CONTENT_URI, id);
         }
+
+        public static Uri buildDeviceUri(String deviceSN) {
+            return CONTENT_URI.buildUpon().appendPath(deviceSN).build();
+        }
+
+        public static String getDeviceFromUri(Uri uri) {
+            return uri.getPathSegments().get(1);
+        }
     }
 
     /* Inner class that defines the table contents of the app table */
+    // URI Format
+    // /* - all or...
+    // /deviceSN/applabel
     public static final class AppEntry implements BaseColumns {
 
         public static final Uri CONTENT_URI =
@@ -88,9 +102,18 @@ public class AppContract {
             return CONTENT_URI.buildUpon().appendPath(DeviceSSN).build();
         }
 
-        public static Uri buildAppWithDate(String DeviceSSN, long date) {
+        public static Uri buildAppWithApp(String DeviceSSN, String appLabel) {
             return CONTENT_URI.buildUpon().appendPath(DeviceSSN)
-                    .appendPath(Long.toString(normalizeDate(date))).build();
+                    .appendPath(appLabel).build();
         }
+
+        public static String getDeviceFromUri(Uri uri) {
+            return uri.getPathSegments().get(1);
+        }
+
+        public static String getAppFromUri(Uri uri) {
+            return uri.getPathSegments().get(2);
+        }
+
     }
 }
