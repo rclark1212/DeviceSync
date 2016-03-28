@@ -69,6 +69,8 @@ public class MainFragment extends BrowseFragment {
     private URI mBackgroundURI;
     private BackgroundManager mBackgroundManager;
 
+    private ArrayList<String> mRows;
+
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         Log.i(TAG, "onCreate");
@@ -92,24 +94,55 @@ public class MainFragment extends BrowseFragment {
         }
     }
 
+    //Note that we only add/remove device rows. Which are given by serial numbers
+    //always append to end...
+    private void addRow(String row) {
+        //Is this row already present?
+        if (!mRows.contains(row)) {
+            mRows.add(row);
+            CardPresenter cardPresenter = new CardPresenter();
+            ArrayObjectAdapter listRowAdapter = new ArrayObjectAdapter(cardPresenter);
+            int index = mRowsAdapter.size();
+            HeaderItem header = new HeaderItem(index, row);
+            mRowsAdapter.add(new ListRow(header, listRowAdapter));
+            mRowsAdapter.notifyArrayItemRangeChanged(index, 1);
+        }
+    }
+
+    private void removeRow(String row) {
+        if (mRows.contains(row)) {
+            mRows.remove(row);
+            int i;
+            for (i = 0; i < mRowsAdapter.size(); i++) {
+                ListRow lr = (ListRow) mRowsAdapter.get(i);
+                if (lr.getHeaderItem().getName().equals(row)) {
+                    //found it - remove
+                    mRowsAdapter.removeItems(i, 1);
+                    break;
+                }
+            }
+            mRowsAdapter.notifyArrayItemRangeChanged(i, 1);
+        }
+    }
+
     private void loadRows() {
-        //List<Movie> list = MovieList.setupMovies();
+        mRows = new ArrayList<String>();
 
         ArrayList<ArrayList<AppDetail>> apps = AppList.loadApps(getActivity());
 
         mRowsAdapter = new ArrayObjectAdapter(new ListRowPresenter());
         CardPresenter cardPresenter = new CardPresenter();
 
+        //init the rows list...
+        AppList.loadRows(mRows);
+
         int i;
-        for (i = 0; i < AppList.APP_CATEGORY.length; i++) {
-            //if (i != 0) {
-            //    Collections.shuffle(list);
-           // }
+        for (i = 0; i < mRows.size(); i++) {
             ArrayObjectAdapter listRowAdapter = new ArrayObjectAdapter(cardPresenter);
             for (int j = 0; j < apps.get(i).size(); j++) {
                 listRowAdapter.add(apps.get(i).get(j));
             }
-            HeaderItem header = new HeaderItem(i, AppList.APP_CATEGORY[i]);
+            HeaderItem header = new HeaderItem(i, mRows.get(i));
             mRowsAdapter.add(new ListRow(header, listRowAdapter));
         }
 

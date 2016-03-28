@@ -4,7 +4,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.os.Build;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -26,6 +28,20 @@ public class AppList {
 
     private static PackageManager manager;
     public static ArrayList<ArrayList<AppDetail>> apps;
+
+
+    public static void loadRows(ArrayList<String> rows) {
+        for (int i = 0; i < APP_CATEGORY.length; i++) {
+            //add serial number for local...
+            if (APP_CATEGORY[i].equals("Local")) {
+                String combo = "Local (" + Build.SERIAL + ")";
+                rows.add(combo);
+            } else {
+                rows.add(APP_CATEGORY[i]);
+            }
+        }
+    }
+
 
     public static ArrayList<ArrayList<AppDetail>> loadApps(Context ctx) {
         manager = ctx.getPackageManager();

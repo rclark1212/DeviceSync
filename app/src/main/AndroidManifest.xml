@@ -36,7 +36,7 @@
         <activity android:name=".BrowseErrorActivity" />
 
         <service
-            android:name=".sync.dbsync"
+            android:name=".sync.GCESync"
             android:exported="false"></service>
     </application>
 
