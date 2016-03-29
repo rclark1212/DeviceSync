@@ -42,9 +42,10 @@ public class AppDbHelper extends SQLiteOpenHelper {
                 AppEntry.COLUMN_APP_LABEL + " TEXT NOT NULL, " +
                 AppEntry.COLUMN_APP_PKG + " TEXT NOT NULL, " +
                 AppEntry.COLUMN_APP_FLAGS + " INTEGER NOT NULL, " +
-                AppEntry.COLUMN_DATE + " INTEGER NOT NULL," +
+                AppEntry.COLUMN_DATE + " INTEGER NOT NULL, " +
+                AppEntry.COLUMN_APP_VER + " TEXT NOT NULL, " +
                 AppEntry.COLUMN_APP_BANNER + " BLOB NOT NULL, " +
-                AppEntry.COLUMN_DEV_SSN + " TEXT NOT NULL, " +
+                AppEntry.COLUMN_DEV_SSN + " TEXT NOT NULL " +
                 " );";
 
         sqLiteDatabase.execSQL(SQL_CREATE_DEVICES_TABLE);

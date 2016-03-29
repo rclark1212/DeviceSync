@@ -82,6 +82,11 @@ public class AppContract {
 
         public static final String TABLE_NAME = "apps";
 
+        // Flags for DB...
+        // Keep it simple for now. If a file is marked to be deleted, flag it for the other devices...
+        public static final int FLAG_FOR_DELETE = 2;
+        public static final int FLAG_APP_LOCAL = 1;
+
         // Column with the foreign key into the location table.
         public static final String COLUMN_DEVICES_KEY = "devices_id";
 
@@ -92,6 +97,7 @@ public class AppContract {
         public static final String COLUMN_APP_PKG = "app_pkg";
         public static final String COLUMN_APP_FLAGS = "app_flags";
         public static final String COLUMN_APP_BANNER = "app_banner";
+        public static final String COLUMN_APP_VER = "app_version";
         public static final String COLUMN_DEV_SSN = "devicessn";
 
         public static Uri buildAppUri(long id) {
