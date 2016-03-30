@@ -225,7 +225,7 @@ public class GCESync extends IntentService {
                 getApplicationContext().getContentResolver().update(appSearchUri, contentValues, null, null);
             } else {
                 //add
-                getApplicationContext().getContentResolver().insert(AppContract.DevicesEntry.CONTENT_URI, contentValues);
+                getApplicationContext().getContentResolver().insert(AppContract.AppEntry.CONTENT_URI, contentValues);
             }
 
             c.close();
