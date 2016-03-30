@@ -2,6 +2,7 @@ package com.example.rclark.devicesync;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.os.Build;
@@ -27,7 +28,7 @@ public class AppList {
     public final static int CAT_SUPERSET = 2;
 
     private static PackageManager manager;
-    public static ArrayList<ArrayList<AppDetail>> apps;
+    public static ArrayList<AppDetail> apps;
 
 
     public static void loadRows(ArrayList<String> rows) {
@@ -43,16 +44,17 @@ public class AppList {
     }
 
 
-    public static ArrayList<ArrayList<AppDetail>> loadApps(Context ctx) {
+    public static ArrayList<AppDetail> loadApps(Context ctx) {
         manager = ctx.getPackageManager();
-        apps = new ArrayList<ArrayList<AppDetail>>();
+        apps = new ArrayList<AppDetail>();
         ArrayList<String> pkgs = new ArrayList<String>();
 
         //first set up each row with an array list
+        /*
         for (int i = 0; i < APP_CATEGORY.length; i++) {
             //set up base array list...
             apps.add(i, new ArrayList<AppDetail>());
-        }
+        }*/
 
         //Grab the apps
         Intent intend = new Intent(Intent.ACTION_MAIN, null);
@@ -66,11 +68,19 @@ public class AppList {
             ResolveInfo ri = availableActivities.get(j);
 
             AppDetail app = new AppDetail();
-            app.label = ri.loadLabel(manager);
+            app.label = ri.loadLabel(manager).toString();
             app.pkg = ri.activityInfo.packageName;
             app.name = ri.activityInfo.name;
             app.banner = ri.activityInfo.loadBanner(manager);
             app.bIsDevice = false;
+
+            try {
+                PackageInfo info = manager.getPackageInfo(app.pkg, 0);
+                app.ver = info.versionName;
+                app.installDate = info.lastUpdateTime;
+            } catch (PackageManager.NameNotFoundException e) {
+
+            }
 
             //Have we already added this?
             if (pkgs.contains(app.pkg.toString())) {
@@ -97,7 +107,7 @@ public class AppList {
 
             }
 
-            apps.get(CAT_LOCAL).add(app);
+            apps.add(app);
             pkgs.add(app.pkg.toString());
 
         }

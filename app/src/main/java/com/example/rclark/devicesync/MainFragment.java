@@ -51,6 +51,7 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.resource.drawable.GlideDrawable;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
+import com.example.rclark.devicesync.sync.GCESync;
 
 public class MainFragment extends BrowseFragment {
     private static final String TAG = "MainFragment";
@@ -128,7 +129,7 @@ public class MainFragment extends BrowseFragment {
     private void loadRows() {
         mRows = new ArrayList<String>();
 
-        ArrayList<ArrayList<AppDetail>> apps = AppList.loadApps(getActivity());
+        ArrayList<AppDetail> apps = AppList.loadApps(getActivity());
 
         mRowsAdapter = new ArrayObjectAdapter(new ListRowPresenter());
         CardPresenter cardPresenter = new CardPresenter();
@@ -139,8 +140,11 @@ public class MainFragment extends BrowseFragment {
         int i;
         for (i = 0; i < mRows.size(); i++) {
             ArrayObjectAdapter listRowAdapter = new ArrayObjectAdapter(cardPresenter);
-            for (int j = 0; j < apps.get(i).size(); j++) {
-                listRowAdapter.add(apps.get(i).get(j));
+            //HACKKKKKK
+            if (i == 1) {
+                for (int j = 0; j < apps.size(); j++) {
+                    listRowAdapter.add(apps.get(j));
+                }
             }
             HeaderItem header = new HeaderItem(i, mRows.get(i));
             mRowsAdapter.add(new ListRow(header, listRowAdapter));
@@ -156,6 +160,9 @@ public class MainFragment extends BrowseFragment {
         mRowsAdapter.add(new ListRow(gridHeader, gridRowAdapter));
 
         setAdapter(mRowsAdapter);
+
+        //test this...
+        GCESync.startActionUpdateLocal(getContext(), null, null);
 
     }
 

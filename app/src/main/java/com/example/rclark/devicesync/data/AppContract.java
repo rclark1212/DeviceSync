@@ -11,7 +11,7 @@ import android.text.format.Time;
  */
 public class AppContract {
 
-    public static final String CONTENT_AUTHORITY = "com.example.android.devicesync";
+    public static final String CONTENT_AUTHORITY = "com.example.rclark.devicesync";
 
     public static final Uri BASE_CONTENT_URI = Uri.parse("content://" + CONTENT_AUTHORITY);
 

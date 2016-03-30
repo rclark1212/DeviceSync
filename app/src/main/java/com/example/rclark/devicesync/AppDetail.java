@@ -8,11 +8,13 @@ import android.graphics.drawable.Drawable;
  * Created by rclar on 3/27/2016.
  */
 public class AppDetail {
-    CharSequence label;
-    CharSequence name;
-    CharSequence pkg;
-    Drawable banner;
-    Boolean bIsDevice;
-    ApplicationInfo ai;
-    Resources res;
+    public String label;
+    public String name;
+    public String pkg;
+    public String ver;
+    public long installDate;
+    public Drawable banner;
+    public boolean bIsDevice;
+    public ApplicationInfo ai;
+    public Resources res;
 }

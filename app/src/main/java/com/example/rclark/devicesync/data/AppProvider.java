@@ -24,8 +24,6 @@ public class AppProvider extends ContentProvider {
     static final int DEVICES = 300;
     static final int DEVICES_WITH_DEVICE = 301;
 
-    private static final SQLiteQueryBuilder sAppQueryBuilder = new SQLiteQueryBuilder();
-
     //devices ssn_setting = ?
     private static final String sDevicesSelection =
             AppContract.DevicesEntry.TABLE_NAME+
@@ -57,7 +55,8 @@ public class AppProvider extends ContentProvider {
         selectionArgs = new String[]{device};
         selection = sDevicesSelection;
 
-        return sAppQueryBuilder.query(mOpenHelper.getReadableDatabase(),
+        return mOpenHelper.getReadableDatabase().query(
+                AppContract.DevicesEntry.TABLE_NAME,
                 projection,
                 selection,
                 selectionArgs,
@@ -77,7 +76,8 @@ public class AppProvider extends ContentProvider {
         selectionArgs = new String[]{device};
         selection = sAppWithDevicesSelection;
 
-        return sAppQueryBuilder.query(mOpenHelper.getReadableDatabase(),
+        return mOpenHelper.getReadableDatabase().query(
+                AppContract.AppEntry.TABLE_NAME,
                 projection,
                 selection,
                 selectionArgs,
@@ -98,7 +98,8 @@ public class AppProvider extends ContentProvider {
         selectionArgs = new String[]{device, label};
         selection = sAppsWithDevicesAndAppsSelection;
 
-        return sAppQueryBuilder.query(mOpenHelper.getReadableDatabase(),
+        return mOpenHelper.getReadableDatabase().query(
+                AppContract.AppEntry.TABLE_NAME,
                 projection,
                 selection,
                 selectionArgs,
@@ -295,10 +296,29 @@ public class AppProvider extends ContentProvider {
                 rowsUpdated = db.update(AppContract.AppEntry.TABLE_NAME, values, selection,
                         selectionArgs);
                 break;
+            case APPS_WITH_DEVICE_AND_APP: {
+                String device = AppContract.AppEntry.getDeviceFromUri(uri);
+                String label = AppContract.AppEntry.getAppFromUri(uri);
+                String[] parse_selectionArgs = new String[]{device, label};
+                String parse_selection = sAppsWithDevicesAndAppsSelection;
+
+                rowsUpdated = db.update(AppContract.AppEntry.TABLE_NAME, values, parse_selection,
+                        parse_selectionArgs);
+                break;
+            }
             case DEVICES:
                 rowsUpdated = db.update(AppContract.DevicesEntry.TABLE_NAME, values, selection,
                         selectionArgs);
                 break;
+            case DEVICES_WITH_DEVICE: {
+                String device = AppContract.DevicesEntry.getDeviceFromUri(uri);
+                String[] parse_selectionArgs = new String[]{device};
+                String parse_selection = sDevicesSelection;
+
+                rowsUpdated = db.update(AppContract.DevicesEntry.TABLE_NAME, values, parse_selection,
+                        parse_selectionArgs);
+                break;
+            }
             default:
                 throw new UnsupportedOperationException("Unknown uri: " + uri);
         }

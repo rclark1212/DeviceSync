@@ -39,6 +39,12 @@
         <service
             android:name=".sync.GCESync"
             android:exported="false"></service>
+
+        <provider
+            android:authorities="com.example.rclark.devicesync"
+            android:name=".data.AppProvider"
+            android:exported="false"
+            android:syncable="true" />
     </application>
 
 </manifest>
