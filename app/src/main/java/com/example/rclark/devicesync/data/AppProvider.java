@@ -95,7 +95,7 @@ public class AppProvider extends ContentProvider {
         String[] selectionArgs;
         String selection;
 
-        selectionArgs = new String[]{device, label};
+        selectionArgs = new String[]{label, device};
         selection = sAppsWithDevicesAndAppsSelection;
 
         return mOpenHelper.getReadableDatabase().query(
@@ -225,6 +225,7 @@ public class AppProvider extends ContentProvider {
         Uri returnUri;
 
         switch (match) {
+            case APPS_WITH_DEVICE:
             case APPS: {
                 normalizeDate(values);
                 long _id = db.insert(AppContract.AppEntry.TABLE_NAME, null, values);

@@ -7,10 +7,8 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.os.Build;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Created by rclar on 3/27/2016.
@@ -28,7 +26,7 @@ public class AppList {
     public final static int CAT_SUPERSET = 2;
 
     private static PackageManager manager;
-    public static ArrayList<AppDetail> apps;
+    public static ArrayList<ObjectDetail> apps;
 
 
     public static void loadRows(ArrayList<String> rows) {
@@ -44,16 +42,16 @@ public class AppList {
     }
 
 
-    public static ArrayList<AppDetail> loadApps(Context ctx) {
+    public static ArrayList<ObjectDetail> loadApps(Context ctx) {
         manager = ctx.getPackageManager();
-        apps = new ArrayList<AppDetail>();
+        apps = new ArrayList<ObjectDetail>();
         ArrayList<String> pkgs = new ArrayList<String>();
 
         //first set up each row with an array list
         /*
         for (int i = 0; i < APP_CATEGORY.length; i++) {
             //set up base array list...
-            apps.add(i, new ArrayList<AppDetail>());
+            apps.add(i, new ArrayList<ObjectDetail>());
         }*/
 
         //Grab the apps
@@ -67,7 +65,7 @@ public class AppList {
         for (int j = 0; j < availableActivities.size(); j++) {
             ResolveInfo ri = availableActivities.get(j);
 
-            AppDetail app = new AppDetail();
+            ObjectDetail app = new ObjectDetail();
             app.label = ri.loadLabel(manager).toString();
             app.pkg = ri.activityInfo.packageName;
             app.name = ri.activityInfo.name;

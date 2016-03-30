@@ -8,7 +8,6 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -16,7 +15,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.text.format.Time;
 
-import com.example.rclark.devicesync.AppDetail;
+import com.example.rclark.devicesync.ObjectDetail;
 import com.example.rclark.devicesync.AppList;
 import com.example.rclark.devicesync.data.AppContract;
 
@@ -116,10 +115,8 @@ public class GCESync extends IntentService {
         // TODO: Handle action Foo
 
         //Okay - first update the device database - serial number, nickname, date, model name, os_ver
-        String serial = Build.SERIAL;
-        String nickname = BluetoothAdapter.getDefaultAdapter().getName();
-        String model = Build.MODEL;
-        String osver = Build.VERSION.BASE_OS + " (" + Build.VERSION.RELEASE + ")";
+        //Get an object with local device info...
+        ObjectDetail device = getLocalDeviceInfo();
 
         //Get the device DB reference...
         Uri deviceDB = AppContract.DevicesEntry.CONTENT_URI;
@@ -127,8 +124,8 @@ public class GCESync extends IntentService {
         //create the buffer
         ContentValues contentValues = new ContentValues();
 
-        //Now, search for the device (is it in DB yet?)
-        Uri deviceSearchUri = deviceDB.buildUpon().appendPath(serial).build();
+        //Now, search for the device (is it in DB yet?) - search by serial
+        Uri deviceSearchUri = deviceDB.buildUpon().appendPath(device.serial).build();
 
         Cursor c = getApplicationContext().getContentResolver().query(deviceSearchUri, null, null, null, null);
 
@@ -140,14 +137,11 @@ public class GCESync extends IntentService {
         }
 
         //load up contentValues with latest info...
-        contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICES_SSN, serial);
-        contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICE_NAME, nickname);
-        contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICE_MODEL, model);
-        contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICE_OSVER, osver);
-
-        Time time = new Time();
-        time.setToNow();
-        contentValues.put(AppContract.DevicesEntry.COLUMN_DATE, time.toMillis(true));
+        contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICES_SSN, device.serial);
+        contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICE_NAME, device.label);
+        contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICE_MODEL, device.name);
+        contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICE_OSVER, device.ver);
+        contentValues.put(AppContract.DevicesEntry.COLUMN_DATE, device.installDate);
 
         if (c.getCount() > 0) {
             //replace
@@ -164,7 +158,7 @@ public class GCESync extends IntentService {
          */
 
         //Step 1 - get a copy of the apps...
-        ArrayList<AppDetail> apps = AppList.loadApps(getApplicationContext());
+        ArrayList<ObjectDetail> apps = AppList.loadApps(getApplicationContext());
 
         //Step 2 - write them to db...
         //Get the device DB reference...
@@ -172,10 +166,14 @@ public class GCESync extends IntentService {
 
         for (int i = 0; i < apps.size(); i++) {
             //Now, search for the device (is it in DB yet?)
-            AppDetail app = (AppDetail) apps.get(i);
+            ObjectDetail app = (ObjectDetail) apps.get(i);
             long flags = 0;
 
-            Uri appSearchUri = appDB.buildUpon().appendPath(serial).appendPath(app.label).build();
+            //Remember, device.pkg contains the serial number... (unique)
+            Uri appSearchUri = appDB.buildUpon().appendPath(device.serial).appendPath(app.label).build();
+
+            //Build an insert URI to trigger notifications...
+            Uri insertUri = appDB.buildUpon().appendPath(device.serial).build();
 
             //clear contentValues...
             contentValues.clear();
@@ -186,9 +184,12 @@ public class GCESync extends IntentService {
                 //device exists...
                 //preload the content values...
                 c.moveToFirst();
-                DatabaseUtils.cursorRowToContentValues(c, contentValues);
+                //ugg - cursorRowToContentValues does not work for blobs...
+                //DatabaseUtils.cursorRowToContentValues(c, contentValues);
+
+                //But we overwrite everything below so we don't really need to load anything except the flags
                 //grab the flags out of the database (preserve flags)
-                flags = contentValues.getAsLong(AppContract.AppEntry.COLUMN_APP_FLAGS);
+                flags = c.getLong(c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_FLAGS));
             }
 
             //Do a bit of error checking...
@@ -200,12 +201,12 @@ public class GCESync extends IntentService {
             contentValues.put(AppContract.AppEntry.COLUMN_APP_LABEL, app.label);
             contentValues.put(AppContract.AppEntry.COLUMN_APP_PKG, app.pkg);
             contentValues.put(AppContract.AppEntry.COLUMN_APP_VER, app.ver);
-            contentValues.put(AppContract.AppEntry.COLUMN_DEV_SSN, serial);
+            contentValues.put(AppContract.AppEntry.COLUMN_DEV_SSN, device.serial);
             contentValues.put(AppContract.AppEntry.COLUMN_DATE, app.installDate);
 
             //note that the app is local
             flags = flags | AppContract.AppEntry.FLAG_APP_LOCAL;
-            contentValues.put(AppContract.AppEntry.COLUMN_APP_FLAGS, app.installDate);
+            contentValues.put(AppContract.AppEntry.COLUMN_APP_FLAGS, flags);
 
             //now blob... - COLUMN_APP_BANNER
             //convert drawable to bytestream
@@ -216,24 +217,12 @@ public class GCESync extends IntentService {
             //And now into contentValues
             contentValues.put(AppContract.AppEntry.COLUMN_APP_BANNER, imageInByte);
 
-            //FIXME - to get out bytestream...
-            /*
-            public static Bitmap convertByteArrayToBitmap(
-            byte[] byteArrayToBeCOnvertedIntoBitMap)
-        {
-            bitMapImage = BitmapFactory.decodeByteArray(
-                byteArrayToBeCOnvertedIntoBitMap, 0,
-                byteArrayToBeCOnvertedIntoBitMap.length);
-            return bitMapImage;
-        }
-             */
-
             if (c.getCount() > 0) {
                 //replace
                 getApplicationContext().getContentResolver().update(appSearchUri, contentValues, null, null);
             } else {
                 //add
-                getApplicationContext().getContentResolver().insert(AppContract.AppEntry.CONTENT_URI, contentValues);
+                getApplicationContext().getContentResolver().insert(insertUri, contentValues);
             }
 
             c.close();
@@ -243,10 +232,30 @@ public class GCESync extends IntentService {
     }
 
     /*
+        Populates an object with local device info
+     */
+    private ObjectDetail getLocalDeviceInfo() {
+        ObjectDetail device = new ObjectDetail();
+
+        //Set up local device into object
+        device.bIsDevice = true;
+        device.serial = Build.SERIAL;
+        device.label = BluetoothAdapter.getDefaultAdapter().getName();
+        device.name = Build.MODEL;
+        device.ver = Build.FINGERPRINT + " (" + Build.VERSION.RELEASE + ")";
+
+        Time time = new Time();
+        time.setToNow();
+        device.installDate = time.toMillis(true);
+
+        return device;
+    }
+
+    /*
         Grabbed this nice little routine from
         http://stackoverflow.com/questions/3035692/how-to-convert-a-drawable-to-a-bitmap from Andre.
      */
-    public static Bitmap drawableToBitmap(Drawable drawable) {
+    private static Bitmap drawableToBitmap(Drawable drawable) {
         Bitmap bitmap = null;
 
         if (drawable instanceof BitmapDrawable) {

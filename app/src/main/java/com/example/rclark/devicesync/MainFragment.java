@@ -16,19 +16,22 @@ package com.example.rclark.devicesync;
 
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
 import android.content.Intent;
+import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v17.leanback.app.BackgroundManager;
 import android.support.v17.leanback.app.BrowseFragment;
+import android.support.v17.leanback.database.CursorMapper;
 import android.support.v17.leanback.widget.ArrayObjectAdapter;
+import android.support.v17.leanback.widget.CursorObjectAdapter;
 import android.support.v17.leanback.widget.HeaderItem;
 import android.support.v17.leanback.widget.ImageCardView;
 import android.support.v17.leanback.widget.ListRow;
@@ -51,6 +54,7 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.resource.drawable.GlideDrawable;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
+import com.example.rclark.devicesync.data.AppContract;
 import com.example.rclark.devicesync.sync.GCESync;
 
 public class MainFragment extends BrowseFragment {
@@ -129,7 +133,7 @@ public class MainFragment extends BrowseFragment {
     private void loadRows() {
         mRows = new ArrayList<String>();
 
-        ArrayList<AppDetail> apps = AppList.loadApps(getActivity());
+        ArrayList<ObjectDetail> apps = AppList.loadApps(getActivity());
 
         mRowsAdapter = new ArrayObjectAdapter(new ListRowPresenter());
         CardPresenter cardPresenter = new CardPresenter();
@@ -137,7 +141,45 @@ public class MainFragment extends BrowseFragment {
         //init the rows list...
         AppList.loadRows(mRows);
 
+        /*
+            For CursorObjectAdapter...
+            Don't think we need to sublass the object.
+            Need to construct with a presenter.
+            Then need to open a query cursor and call .changeCursor
+            Then need to construct a cursor mapper and call .setMapper.
+            Then off to races...
+         */
         int i;
+        for (i = 0; i < mRows.size(); i++) {
+            HeaderItem header = new HeaderItem(i, mRows.get(i));
+            //HACKKKKKK
+            if (i == 1) {
+                //see
+                //https://github.com/googlesamples/androidtv-Leanback/blob/master/app/src/main/java/com/example/android/tvleanback/ui/VideoDetailsFragment.java
+
+                CursorObjectAdapter listRowAdapter = new CursorObjectAdapter(cardPresenter);
+
+                //construct mapper
+                listRowAdapter.setMapper(new AppCursorMapper());
+
+                //set up the cursorobjectadapter
+                //open a query
+                Uri appDB = AppContract.AppEntry.CONTENT_URI;
+                Uri appSearchUri = appDB.buildUpon().appendPath(Build.SERIAL).build();
+                Cursor c = getActivity().getContentResolver().query(appSearchUri, null, null, null, null);
+
+                //call .changeCursor
+                listRowAdapter.changeCursor(c);
+
+                //set it
+                mRowsAdapter.add(new ListRow(header, listRowAdapter));
+            } else {
+                ArrayObjectAdapter listRowAdapter = new ArrayObjectAdapter(cardPresenter);
+                mRowsAdapter.add(new ListRow(header, listRowAdapter));
+            }
+        }
+
+        /*
         for (i = 0; i < mRows.size(); i++) {
             ArrayObjectAdapter listRowAdapter = new ArrayObjectAdapter(cardPresenter);
             //HACKKKKKK
@@ -148,7 +190,7 @@ public class MainFragment extends BrowseFragment {
             }
             HeaderItem header = new HeaderItem(i, mRows.get(i));
             mRowsAdapter.add(new ListRow(header, listRowAdapter));
-        }
+        } */
 
         HeaderItem gridHeader = new HeaderItem(i, "PREFERENCES");
 
