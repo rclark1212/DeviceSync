@@ -142,6 +142,9 @@ public class GCESync extends IntentService {
         contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICE_MODEL, device.name);
         contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICE_OSVER, device.ver);
         contentValues.put(AppContract.DevicesEntry.COLUMN_DATE, device.installDate);
+        //FIXME
+        contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICE_TYPE, "atv");
+        contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICE_LOCATION, "unknown");
 
         if (c.getCount() > 0) {
             //replace

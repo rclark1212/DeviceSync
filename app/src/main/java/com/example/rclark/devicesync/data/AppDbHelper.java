@@ -31,7 +31,9 @@ public class AppDbHelper extends SQLiteOpenHelper {
                 DevicesEntry.COLUMN_DATE + " INTEGER NOT NULL, " +
                 DevicesEntry.COLUMN_DEVICE_MODEL + " TEXT NOT NULL, " +
                 DevicesEntry.COLUMN_DEVICE_NAME + " TEXT NOT NULL, " +
-                DevicesEntry.COLUMN_DEVICE_OSVER + " TEXT NOT NULL " +
+                DevicesEntry.COLUMN_DEVICE_OSVER + " TEXT NOT NULL, " +
+                DevicesEntry.COLUMN_DEVICE_TYPE + " TEXT NOT NULL, " +
+                DevicesEntry.COLUMN_DEVICE_LOCATION + " TEXT NOT NULL " +
                 " );";
 
         // Create a table to hold apps.

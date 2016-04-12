@@ -52,6 +52,8 @@ public class AppContract {
         public static final String COLUMN_DEVICE_NAME = "nick_name";
         public static final String COLUMN_DEVICE_MODEL = "model_name";
         public static final String COLUMN_DEVICE_OSVER = "os_ver";
+        public static final String COLUMN_DEVICE_TYPE = "type";
+        public static final String COLUMN_DEVICE_LOCATION = "location";
 
         public static Uri buildDeviceUri(long id) {
             return ContentUris.withAppendedId(CONTENT_URI, id);
