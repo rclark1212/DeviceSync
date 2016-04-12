@@ -13,8 +13,10 @@ For the UI, just re-use the sample ATV app. Note that it is a bit hacky in that 
 
 # Building
 
-You must set the following environment variables.
-KEYSTORE = keystore filespec (for example ~/mykestore.jks)
-KEY_ALIAS = name of the signing key
+You must set the following variables in gradle.properties
+KEYSTORE_PATH={filespec of keystore}
+SIGNKEY_ALIAS={keyname}
+KEYSTORE_PW=password
+KEY_PW=password
 
 TBD
