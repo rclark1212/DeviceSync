@@ -32,7 +32,7 @@ public class AppDbHelper extends SQLiteOpenHelper {
                 DevicesEntry.COLUMN_DEVICE_MODEL + " TEXT NOT NULL, " +
                 DevicesEntry.COLUMN_DEVICE_NAME + " TEXT NOT NULL, " +
                 DevicesEntry.COLUMN_DEVICE_OSVER + " TEXT NOT NULL, " +
-                DevicesEntry.COLUMN_DEVICE_TYPE + " TEXT NOT NULL, " +
+                DevicesEntry.COLUMN_DEVICE_TYPE + " INTEGER NOT NULL, " +
                 DevicesEntry.COLUMN_DEVICE_LOCATION + " TEXT NOT NULL " +
                 " );";
 
@@ -47,6 +47,7 @@ public class AppDbHelper extends SQLiteOpenHelper {
                 AppEntry.COLUMN_DATE + " INTEGER NOT NULL, " +
                 AppEntry.COLUMN_APP_VER + " TEXT NOT NULL, " +
                 AppEntry.COLUMN_APP_BANNER + " BLOB NOT NULL, " +
+                AppEntry.COLUMN_APP_TYPE + " INTEGER NOT NULL, " +
                 AppEntry.COLUMN_DEV_SSN + " TEXT NOT NULL " +
                 " );";
 

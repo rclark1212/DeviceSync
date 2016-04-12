@@ -1,4 +1,6 @@
 <resources>
+    <string name="unknown">Unknown</string>
+
     <string name="app_name">DeviceSync</string>
     <string name="browse_title"><![CDATA[Videos by Your Company]]></string>
     <string name="related_movies">Related Videos</string>

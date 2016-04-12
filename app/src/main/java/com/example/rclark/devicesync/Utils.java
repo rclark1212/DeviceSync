@@ -18,9 +18,13 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Point;
+import android.location.Location;
 import android.view.Display;
 import android.view.WindowManager;
 import android.widget.Toast;
+
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationServices;
 
 /**
  * A collection of utility methods, all static.
@@ -90,4 +94,29 @@ public class Utils {
         }
         return result;
     }
+
+    /*
+        indicates if we are on an ATV or tablet
+     */
+    public static boolean bIsThisATV(Context ctx) {
+        return ctx.getPackageManager().hasSystemFeature("com.google.android.tv");
+    }
+
+    /*
+        gets location
+     */
+    public static String getLocation(Context ctx, GoogleApiClient mClient) {
+        //FIXME - not using callbacks here...
+        String ret = ctx.getResources().getString(R.string.unknown);
+
+        Location location = LocationServices.FusedLocationApi.getLastLocation(mClient);
+
+        //above may fail (no cached location or user may deny privileges)
+        if (location != null) {
+            ret = location.toString();
+        }
+
+        return ret;
+    }
+
 }

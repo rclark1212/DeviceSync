@@ -13,14 +13,21 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.text.format.Time;
 
 import com.example.rclark.devicesync.ObjectDetail;
 import com.example.rclark.devicesync.AppList;
+import com.example.rclark.devicesync.R;
+import com.example.rclark.devicesync.Utils;
 import com.example.rclark.devicesync.data.AppContract;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationServices;
 
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 
 /**
  * An {@link IntentService} subclass for handling asynchronous task requests in
@@ -36,7 +43,8 @@ import java.util.ArrayList;
  * (4) Do the local scan of apps/devices
  *
  */
-public class GCESync extends IntentService {
+public class GCESync extends IntentService  implements GoogleApiClient.ConnectionCallbacks,
+        GoogleApiClient.OnConnectionFailedListener {
     // TODO: Rename actions, choose action names that describe tasks that this
     // IntentService can perform, e.g. ACTION_FETCH_NEW_ITEMS
     private static final String ACTION_UPDATE_LOCAL_DB = "com.example.rclark.devicesync.sync.action.Update";
@@ -48,9 +56,26 @@ public class GCESync extends IntentService {
     private static final String EXTRA_PARAM2 = "com.example.rclark.devicesync.sync.extra.PARAM2";
 
     private static Context mCtx;
+    private static boolean mbUseLocation;
+    private static GoogleApiClient mGoogleApiClient;
 
     public GCESync() {
         super("GCESync");
+    }
+
+    /*
+        Callbacks for google services
+     */
+    @Override
+    public void onConnected(Bundle bundle) {
+        // Display the connection status
+    }
+
+    @Override
+    public void onConnectionFailed(ConnectionResult result) {};
+
+    @Override
+    public void onConnectionSuspended(int i) {
     }
 
     /**
@@ -91,6 +116,25 @@ public class GCESync extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
+        //first, do we have context saved off?
+        if (mCtx == null) {
+            mCtx = getApplicationContext();
+        }
+
+        //next attach to GMS if not yet attached...
+        if (mGoogleApiClient == null) {
+            mGoogleApiClient = new GoogleApiClient.Builder(this)
+                    .addConnectionCallbacks(this)
+                    .addOnConnectionFailedListener(this)
+                    .addApi(LocationServices.API)
+                    .build();
+
+            ConnectionResult connectionResult =   mGoogleApiClient.blockingConnect(30, TimeUnit.SECONDS);
+
+            //Just check if we are connected
+            mbUseLocation = mGoogleApiClient.isConnected();
+        }
+
         if (intent != null) {
             final String action = intent.getAction();
             if (ACTION_UPDATE_LOCAL_DB.equals(action)) {
@@ -142,9 +186,8 @@ public class GCESync extends IntentService {
         contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICE_MODEL, device.name);
         contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICE_OSVER, device.ver);
         contentValues.put(AppContract.DevicesEntry.COLUMN_DATE, device.installDate);
-        //FIXME
-        contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICE_TYPE, "atv");
-        contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICE_LOCATION, "unknown");
+        contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICE_TYPE, AppContract.TYPE_ATV);
+        contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICE_LOCATION, device.location);
 
         if (c.getCount() > 0) {
             //replace
@@ -206,6 +249,7 @@ public class GCESync extends IntentService {
             contentValues.put(AppContract.AppEntry.COLUMN_APP_VER, app.ver);
             contentValues.put(AppContract.AppEntry.COLUMN_DEV_SSN, device.serial);
             contentValues.put(AppContract.AppEntry.COLUMN_DATE, app.installDate);
+            contentValues.put(AppContract.AppEntry.COLUMN_APP_TYPE, AppContract.TYPE_ATV);
 
             //note that the app is local
             flags = flags | AppContract.AppEntry.FLAG_APP_LOCAL;
@@ -247,9 +291,20 @@ public class GCESync extends IntentService {
         device.name = Build.MODEL;
         device.ver = Build.FINGERPRINT + " (" + Build.VERSION.RELEASE + ")";
 
+        if (Utils.bIsThisATV(mCtx)) {
+            device.type = AppContract.TYPE_ATV;
+        } else {
+            device.type = AppContract.TYPE_TABLET;
+        }
+
         Time time = new Time();
         time.setToNow();
         device.installDate = time.toMillis(true);
+        if (mbUseLocation) {
+            device.location = Utils.getLocation(mCtx, mGoogleApiClient);
+        } else {
+            device.location = mCtx.getResources().getString(R.string.unknown);
+        }
 
         return device;
     }

@@ -16,6 +16,7 @@ android {
 
     signingConfigs {
         release {
+            //Define the 4 variables below in gradle.properties
             println("keystore:"+KEYSTORE_PATH +"\nAlias:"+SIGNKEY_ALIAS + "\nKSPW:" + KEYSTORE_PW + "\nKPM:" + KEY_PW)
             storeFile file(KEYSTORE_PATH)
             keyAlias SIGNKEY_ALIAS
@@ -43,5 +44,6 @@ dependencies {
     compile 'com.android.support:recyclerview-v7:23.2.1'
     compile 'com.android.support:leanback-v17:23.2.1'
     compile 'com.android.support:appcompat-v7:23.2.1'
-    compile 'com.github.bumptech.glide:glide:3.4.+'
+    compile 'com.github.bumptech.glide:glide:3.4.0'
+    compile 'com.google.android.gms:play-services:8.4.0'
 }

@@ -7,6 +7,7 @@ import android.graphics.drawable.Drawable;
 /**
  * Created by rclark on 3/27/2016.
  * Use as a structure (yes, inefficient)
+ * Used for both devices and apps
  */
 public class ObjectDetail {
     public String label;        //nickname or app
@@ -18,6 +19,8 @@ public class ObjectDetail {
     public long flags;
     public Drawable banner;
     public boolean bIsDevice;   //true if using object to represent device, false for app
+    public int type;            //indicates device type for both apps/devices - 0=atv, 1=tablet
+    public String location;     //location for devices
     public ApplicationInfo ai;
     public Resources res;
 }

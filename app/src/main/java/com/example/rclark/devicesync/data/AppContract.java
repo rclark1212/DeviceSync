@@ -7,7 +7,7 @@ import android.provider.BaseColumns;
 import android.text.format.Time;
 
 /**
- * Created by rclar on 3/27/2016.
+ * Created by rclark on 3/27/2016.
  */
 public class AppContract {
 
@@ -17,6 +17,9 @@ public class AppContract {
 
     public static final String PATH_APPS = "apps";
     public static final String PATH_DEVICES = "devices";
+
+    public static final int TYPE_ATV = 0;       //indicates this is an ATV app/device
+    public static final int TYPE_TABLET = 1;    //indicates this is a phone/tablet app/device
 
     // To make it easy to query for the exact date, we normalize all dates that go into
     // the database to the start of the the Julian day at UTC.
@@ -100,6 +103,7 @@ public class AppContract {
         public static final String COLUMN_APP_FLAGS = "app_flags";
         public static final String COLUMN_APP_BANNER = "app_banner";
         public static final String COLUMN_APP_VER = "app_version";
+        public static final String COLUMN_APP_TYPE = "type";
         public static final String COLUMN_DEV_SSN = "devicessn";
 
         public static Uri buildAppUri(long id) {

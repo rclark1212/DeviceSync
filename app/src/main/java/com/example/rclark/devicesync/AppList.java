@@ -7,11 +7,13 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.os.Build;
 
+import com.example.rclark.devicesync.data.AppContract;
+
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by rclar on 3/27/2016.
+ * Created by rclark on 3/27/2016.
  */
 public class AppList {
 
@@ -41,26 +43,26 @@ public class AppList {
         }
     }
 
-
     public static ArrayList<ObjectDetail> loadApps(Context ctx) {
+        return loadAppsByOS(ctx, Utils.bIsThisATV(ctx));
+    }
+
+    public static ArrayList<ObjectDetail> loadAppsByOS(Context ctx, boolean bATV) {
         manager = ctx.getPackageManager();
         apps = new ArrayList<ObjectDetail>();
         ArrayList<String> pkgs = new ArrayList<String>();
 
-        //first set up each row with an array list
-        /*
-        for (int i = 0; i < APP_CATEGORY.length; i++) {
-            //set up base array list...
-            apps.add(i, new ArrayList<ObjectDetail>());
-        }*/
-
         //Grab the apps
-        Intent intend = new Intent(Intent.ACTION_MAIN, null);
+        Intent intent = new Intent(Intent.ACTION_MAIN, null);
 
-        intend.addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER);
+        if (bATV) {
+            intent.addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER);
+        } else {
+            intent.addCategory(Intent.CATEGORY_LAUNCHER);
+        }
 
         //next, set up apps, shieldhub, games
-        List<ResolveInfo> availableActivities = manager.queryIntentActivities(intend, 0);
+        List<ResolveInfo> availableActivities = manager.queryIntentActivities(intent, 0);
         //loop through all apps...
         for (int j = 0; j < availableActivities.size(); j++) {
             ResolveInfo ri = availableActivities.get(j);
@@ -71,6 +73,12 @@ public class AppList {
             app.name = ri.activityInfo.name;
             app.banner = ri.activityInfo.loadBanner(manager);
             app.bIsDevice = false;
+            //set the right type...
+            if (bATV) {
+                app.type = AppContract.TYPE_ATV;
+            } else {
+                app.type = AppContract.TYPE_TABLET;
+            }
 
             try {
                 PackageInfo info = manager.getPackageInfo(app.pkg, 0);
@@ -94,6 +102,7 @@ public class AppList {
 
             if (app.label.equals("LeanbackLauncher")) {
                 //also punt
+                //FIXME - need to filter out a lot more apps than just leanback launcher
                 continue;
             }
 
