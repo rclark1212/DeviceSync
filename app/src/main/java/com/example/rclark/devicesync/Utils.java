@@ -24,6 +24,7 @@ import android.graphics.Point;
 import android.graphics.drawable.BitmapDrawable;
 import android.location.Location;
 import android.net.Uri;
+import android.text.format.Time;
 import android.view.Display;
 import android.view.WindowManager;
 import android.widget.Toast;
@@ -32,12 +33,15 @@ import com.example.rclark.devicesync.data.AppContract;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 
 /**
  * A collection of utility methods, all static.
  */
 public class Utils {
+
+    public static final String DATE_FORMAT = "MM-dd-yyyy HH:mm";
 
     /*
      * Making sure public utility methods remain static
@@ -109,6 +113,15 @@ public class Utils {
     public static boolean bIsThisATV(Context ctx) {
         return ctx.getPackageManager().hasSystemFeature("com.google.android.tv");
     }
+
+    public static String unNormalizeDate(long normalizedDateInMillis) {
+        Time time = new Time();
+        time.setToNow();
+        SimpleDateFormat dbDateFormat = new SimpleDateFormat(Utils.DATE_FORMAT);
+        String yearMonthDayString = dbDateFormat.format(normalizedDateInMillis);
+        return yearMonthDayString;
+    }
+
 
     /**
      * Routine that does what it says...

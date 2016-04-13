@@ -26,12 +26,13 @@ public class DetailsDescriptionPresenter extends AbstractDetailsDescriptionPrese
             if (element.bIsDevice) {
                 viewHolder.getTitle().setText(element.label);
                 viewHolder.getSubtitle().setText(element.name);
-                String body = "Serial: " + element.serial + "\nLocation: " + element.location + "\nOSVer: " + element.ver + "\nUpdated: " + element.installDate;
+                String body = "Serial: " + element.serial + "\nLocation: " + element.location +
+                        "\nOSVer: " + element.ver + "\nUpdated: " + Utils.unNormalizeDate(element.installDate);
                 viewHolder.getBody().setText(body);
             } else {
                 viewHolder.getTitle().setText(element.label);
                 viewHolder.getSubtitle().setText(element.pkg);
-                String body = "Version: " + element.ver + "\nInstallDate: " + element.installDate;
+                String body = "Version: " + element.ver + "\nInstallDate: " + Utils.unNormalizeDate(element.installDate);
                 viewHolder.getBody().setText(body);
             }
         }
