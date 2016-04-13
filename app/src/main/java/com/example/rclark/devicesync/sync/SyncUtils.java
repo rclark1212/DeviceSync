@@ -71,6 +71,7 @@ public class SyncUtils {
             app.pkg = ri.activityInfo.packageName;
             app.name = ri.activityInfo.name;
             app.banner = ri.activityInfo.loadBanner(manager);
+            //FIXME - if package available in play store, null out above
             app.bIsDevice = false;
             //set the right type...
             if (bATV) {

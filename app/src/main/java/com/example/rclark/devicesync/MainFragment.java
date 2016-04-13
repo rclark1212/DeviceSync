@@ -63,19 +63,11 @@ import com.example.rclark.devicesync.sync.GCESync;
 public class MainFragment extends BrowseFragment implements LoaderManager.LoaderCallbacks<Cursor> {
     private static final String TAG = "MainFragment";
 
-    private static final int BACKGROUND_UPDATE_DELAY = 300;
     private static final int GRID_ITEM_WIDTH = 200;
     private static final int GRID_ITEM_HEIGHT = 200;
-    private static final int NUM_ROWS = 6;
-    private static final int NUM_COLS = 15;
 
     private final Handler mHandler = new Handler();
     private ArrayObjectAdapter mRowsAdapter;
-    private Drawable mDefaultBackground;
-    private DisplayMetrics mMetrics;
-    private Timer mBackgroundTimer;
-    private URI mBackgroundURI;
-    private BackgroundManager mBackgroundManager;
 
     private ArrayList<String> mRows;        //row headers
     private ArrayList<Uri> mLoaderUris;     //uris to work with per row...
@@ -85,8 +77,6 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
     public void onActivityCreated(Bundle savedInstanceState) {
         Log.i(TAG, "onCreate");
         super.onActivityCreated(savedInstanceState);
-
-        prepareBackgroundManager();
 
         setupUIElements();
 
@@ -98,42 +88,8 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if (null != mBackgroundTimer) {
-            Log.d(TAG, "onDestroy: " + mBackgroundTimer.toString());
-            mBackgroundTimer.cancel();
-        }
     }
 
-    //Note that we only add/remove device rows. Which are given by serial numbers
-    //always append to end...
-    private void addRow(String row) {
-        //Is this row already present?
-        if (!mRows.contains(row)) {
-            mRows.add(row);
-            CardPresenter cardPresenter = new CardPresenter();
-            ArrayObjectAdapter listRowAdapter = new ArrayObjectAdapter(cardPresenter);
-            int index = mRowsAdapter.size();
-            HeaderItem header = new HeaderItem(index, row);
-            mRowsAdapter.add(new ListRow(header, listRowAdapter));
-            mRowsAdapter.notifyArrayItemRangeChanged(index, 1);
-        }
-    }
-
-    private void removeRow(String row) {
-        if (mRows.contains(row)) {
-            mRows.remove(row);
-            int i;
-            for (i = 0; i < mRowsAdapter.size(); i++) {
-                ListRow lr = (ListRow) mRowsAdapter.get(i);
-                if (lr.getHeaderItem().getName().equals(row)) {
-                    //found it - remove
-                    mRowsAdapter.removeItems(i, 1);
-                    break;
-                }
-            }
-            mRowsAdapter.notifyArrayItemRangeChanged(i, 1);
-        }
-    }
 
     private void loadRows() {
         mRows = new ArrayList<String>();
@@ -251,14 +207,6 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         }
     }
 
-    private void prepareBackgroundManager() {
-
-        mBackgroundManager = BackgroundManager.getInstance(getActivity());
-        mBackgroundManager.attach(getActivity().getWindow());
-        mDefaultBackground = getResources().getDrawable(R.drawable.default_background);
-        mMetrics = new DisplayMetrics();
-        getActivity().getWindowManager().getDefaultDisplay().getMetrics(mMetrics);
-    }
 
     private void setupUIElements() {
         // setBadgeDrawable(getActivity().getResources().getDrawable(
@@ -285,45 +233,32 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         });
 
         setOnItemViewClickedListener(new ItemViewClickedListener());
-        setOnItemViewSelectedListener(new ItemViewSelectedListener());
+        //setOnItemViewSelectedListener(new ItemViewSelectedListener());
     }
 
-    protected void updateBackground(String uri) {
-        int width = mMetrics.widthPixels;
-        int height = mMetrics.heightPixels;
-        Glide.with(getActivity())
-                .load(uri)
-                .centerCrop()
-                .error(mDefaultBackground)
-                .into(new SimpleTarget<GlideDrawable>(width, height) {
-                    @Override
-                    public void onResourceReady(GlideDrawable resource,
-                                                GlideAnimation<? super GlideDrawable>
-                                                        glideAnimation) {
-                        mBackgroundManager.setDrawable(resource);
-                    }
-                });
-        mBackgroundTimer.cancel();
-    }
-
-    private void startBackgroundTimer() {
-        if (null != mBackgroundTimer) {
-            mBackgroundTimer.cancel();
-        }
-        mBackgroundTimer = new Timer();
-        mBackgroundTimer.schedule(new UpdateBackgroundTask(), BACKGROUND_UPDATE_DELAY);
-    }
 
     private final class ItemViewClickedListener implements OnItemViewClickedListener {
         @Override
         public void onItemClicked(Presenter.ViewHolder itemViewHolder, Object item,
                                   RowPresenter.ViewHolder rowViewHolder, Row row) {
 
-            if (item instanceof Movie) {
-                Movie movie = (Movie) item;
+            if (item instanceof ObjectDetail) {
+                ObjectDetail element = (ObjectDetail) item;
                 Log.d(TAG, "Item: " + item.toString());
+                Uri elementUri;
+
+                if (element.bIsDevice) {
+                    elementUri = AppContract.DevicesEntry.CONTENT_URI.buildUpon().appendPath(element.serial).build();
+                } else {
+                    elementUri = AppContract.AppEntry.CONTENT_URI.buildUpon()
+                            .appendPath(element.serial).appendPath(element.label).build();
+                }
+
+                //NOTE - we send the object id to the detail view as a URI, not as a serializable object.
+                //Why do we do this? Well, who wants to serialize a drawable in the case of apps that are
+                //not on the market... Either is painful slow or will crash with a large bitmap.
                 Intent intent = new Intent(getActivity(), DetailsActivity.class);
-                intent.putExtra(DetailsActivity.MOVIE, movie);
+                intent.putExtra(DetailsActivity.OBJECTURI, elementUri);
 
                 Bundle bundle = ActivityOptionsCompat.makeSceneTransitionAnimation(
                         getActivity(),
@@ -342,33 +277,6 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         }
     }
 
-    private final class ItemViewSelectedListener implements OnItemViewSelectedListener {
-        @Override
-        public void onItemSelected(Presenter.ViewHolder itemViewHolder, Object item,
-                                   RowPresenter.ViewHolder rowViewHolder, Row row) {
-            if (item instanceof Movie) {
-                mBackgroundURI = ((Movie) item).getBackgroundImageURI();
-                startBackgroundTimer();
-            }
-
-        }
-    }
-
-    private class UpdateBackgroundTask extends TimerTask {
-
-        @Override
-        public void run() {
-            mHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    if (mBackgroundURI != null) {
-                        updateBackground(mBackgroundURI.toString());
-                    }
-                }
-            });
-
-        }
-    }
 
     private class GridItemPresenter extends Presenter {
         @Override

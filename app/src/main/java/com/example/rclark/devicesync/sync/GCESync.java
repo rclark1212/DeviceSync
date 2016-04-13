@@ -280,6 +280,9 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
             c.close();
         }
 
+        //FIXME - and now we need to remove any apps that exist for this serial number that are not part of
+        //the list above... (or do this before we do the update apps)...
+
         //throw new UnsupportedOperationException("Not yet implemented");
     }
 
