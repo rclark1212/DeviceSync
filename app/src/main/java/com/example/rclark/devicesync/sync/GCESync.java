@@ -15,6 +15,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.format.Time;
+import android.util.Log;
 
 import com.example.rclark.devicesync.ObjectDetail;
 import com.example.rclark.devicesync.AppList;
@@ -45,6 +46,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class GCESync extends IntentService  implements GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener {
+    private static final String TAG = "GCESync";
+
     // TODO: Rename actions, choose action names that describe tasks that this
     // IntentService can perform, e.g. ACTION_FETCH_NEW_ITEMS
     private static final String ACTION_UPDATE_LOCAL_DB = "com.example.rclark.devicesync.sync.action.Update";
@@ -171,6 +174,7 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
         //Now, search for the device (is it in DB yet?) - search by serial
         Uri deviceSearchUri = deviceDB.buildUpon().appendPath(device.serial).build();
 
+        Log.v(TAG, "device query - uri:" + deviceSearchUri.toString());
         Cursor c = getApplicationContext().getContentResolver().query(deviceSearchUri, null, null, null, null);
 
         if (c.getCount() > 0) {
@@ -224,6 +228,7 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
             //clear contentValues...
             contentValues.clear();
 
+            Log.v(TAG, "app query - uri:" + appSearchUri.toString());
             c = getApplicationContext().getContentResolver().query(appSearchUri, null, null, null, null);
 
             if (c.getCount() > 0) {

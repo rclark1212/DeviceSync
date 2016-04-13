@@ -54,8 +54,11 @@ public final class AppCursorMapper extends CursorMapper {
         byte[] blob = cursor.getBlob(bannerIndex);
         if (blob != null) {
             //FIXME - can't get a context for scaling. Should we just make everything a bitmap and not drawable?
+            //OR, leave this null if package available on play store and download...
             app.banner = new BitmapDrawable(convertByteArrayToBitmap(blob));
         }
+
+        app.bIsDevice = false;  //app, not device
 
         return app;
     }

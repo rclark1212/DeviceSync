@@ -8,11 +8,14 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
+import android.util.Log;
 
 /**
  * Created by rclar on 3/27/2016.
  */
 public class AppProvider extends ContentProvider {
+
+    private static final String TAG = "DS_ContentProvider";
 
     // The URI Matcher used by this content provider.
     private static final UriMatcher sUriMatcher = buildUriMatcher();
@@ -215,6 +218,7 @@ public class AppProvider extends ContentProvider {
                 throw new UnsupportedOperationException("Unknown uri: " + uri);
         }
         retCursor.setNotificationUri(getContext().getContentResolver(), uri);
+        Log.v(TAG, "query - uri:" + uri.toString());
         return retCursor;
     }
 
@@ -247,6 +251,7 @@ public class AppProvider extends ContentProvider {
                 throw new UnsupportedOperationException("Unknown uri: " + uri);
         }
         getContext().getContentResolver().notifyChange(uri, null);
+        Log.v(TAG, "insert - uri:" + uri.toString());
         return returnUri;
     }
 
@@ -272,6 +277,7 @@ public class AppProvider extends ContentProvider {
         // Because a null deletes all rows
         if (rowsDeleted != 0) {
             getContext().getContentResolver().notifyChange(uri, null);
+            Log.v(TAG, "delete - uri:" + uri.toString());
         }
         return rowsDeleted;
     }
@@ -325,6 +331,7 @@ public class AppProvider extends ContentProvider {
         }
         if (rowsUpdated != 0) {
             getContext().getContentResolver().notifyChange(uri, null);
+            Log.v(TAG, "update - uri:" + uri.toString());
         }
         return rowsUpdated;
     }

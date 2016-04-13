@@ -19,7 +19,10 @@ import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import android.app.LoaderManager;
+import android.content.CursorLoader;
 import android.content.Intent;
+import android.content.Loader;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
@@ -57,7 +60,7 @@ import com.bumptech.glide.request.target.SimpleTarget;
 import com.example.rclark.devicesync.data.AppContract;
 import com.example.rclark.devicesync.sync.GCESync;
 
-public class MainFragment extends BrowseFragment {
+public class MainFragment extends BrowseFragment implements LoaderManager.LoaderCallbacks<Cursor> {
     private static final String TAG = "MainFragment";
 
     private static final int BACKGROUND_UPDATE_DELAY = 300;
@@ -74,7 +77,9 @@ public class MainFragment extends BrowseFragment {
     private URI mBackgroundURI;
     private BackgroundManager mBackgroundManager;
 
-    private ArrayList<String> mRows;
+    private ArrayList<String> mRows;        //row headers
+    private ArrayList<Uri> mLoaderUris;     //uris to work with per row...
+
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
@@ -132,8 +137,10 @@ public class MainFragment extends BrowseFragment {
 
     private void loadRows() {
         mRows = new ArrayList<String>();
-
-        ArrayList<ObjectDetail> apps = AppList.loadApps(getActivity());
+        mLoaderUris = new ArrayList<Uri>();
+        Uri appDB = AppContract.AppEntry.CONTENT_URI;
+        Uri deviceDB = AppContract.DevicesEntry.CONTENT_URI;
+        Uri searchUri;
 
         mRowsAdapter = new ArrayObjectAdapter(new ListRowPresenter());
         CardPresenter cardPresenter = new CardPresenter();
@@ -143,54 +150,53 @@ public class MainFragment extends BrowseFragment {
 
         /*
             For CursorObjectAdapter...
-            Don't think we need to sublass the object.
             Need to construct with a presenter.
-            Then need to open a query cursor and call .changeCursor
-            Then need to construct a cursor mapper and call .setMapper.
+            Need to provider a mapper (two of them - one for apps, one for devices)
+            Need to construct the adapter, implement cursor callbacks
             Then off to races...
          */
         int i;
         for (i = 0; i < mRows.size(); i++) {
             HeaderItem header = new HeaderItem(i, mRows.get(i));
+
+
             //HACKKKKKK
-            if (i == 1) {
+            if (true) { //(i == 1) {
                 //see
                 //https://github.com/googlesamples/androidtv-Leanback/blob/master/app/src/main/java/com/example/android/tvleanback/ui/VideoDetailsFragment.java
 
                 CursorObjectAdapter listRowAdapter = new CursorObjectAdapter(cardPresenter);
 
                 //construct mapper
-                listRowAdapter.setMapper(new AppCursorMapper());
+                if (i == AppList.CAT_DEVICES) {
+                    DeviceCursorMapper deviceMapper = new DeviceCursorMapper();
+                    listRowAdapter.setMapper(deviceMapper);
+                } else {
+                    CursorMapper appMapper = new AppCursorMapper();
+                    listRowAdapter.setMapper(appMapper);
+                }
 
                 //set up the cursorobjectadapter
                 //open a query
-                Uri appDB = AppContract.AppEntry.CONTENT_URI;
-                Uri appSearchUri = appDB.buildUpon().appendPath(Build.SERIAL).build();
-                Cursor c = getActivity().getContentResolver().query(appSearchUri, null, null, null, null);
+                if (i == AppList.CAT_DEVICES) {
+                    searchUri = deviceDB.buildUpon().build();
+                } else if (i == AppList.CAT_LOCAL) {
+                    searchUri = appDB.buildUpon().appendPath(Build.SERIAL).build();
+                } else {
+                    searchUri = appDB.buildUpon().appendPath(Build.SERIAL).build();
+                }
 
-                //call .changeCursor
-                listRowAdapter.changeCursor(c);
+                //save off this uri
+                mLoaderUris.add(i, searchUri);
 
                 //set it
                 mRowsAdapter.add(new ListRow(header, listRowAdapter));
             } else {
                 ArrayObjectAdapter listRowAdapter = new ArrayObjectAdapter(cardPresenter);
+                mLoaderUris.add(i, null);       //null uri means no cursor loader
                 mRowsAdapter.add(new ListRow(header, listRowAdapter));
             }
         }
-
-        /*
-        for (i = 0; i < mRows.size(); i++) {
-            ArrayObjectAdapter listRowAdapter = new ArrayObjectAdapter(cardPresenter);
-            //HACKKKKKK
-            if (i == 1) {
-                for (int j = 0; j < apps.size(); j++) {
-                    listRowAdapter.add(apps.get(j));
-                }
-            }
-            HeaderItem header = new HeaderItem(i, mRows.get(i));
-            mRowsAdapter.add(new ListRow(header, listRowAdapter));
-        } */
 
         HeaderItem gridHeader = new HeaderItem(i, "PREFERENCES");
 
@@ -203,9 +209,54 @@ public class MainFragment extends BrowseFragment {
 
         setAdapter(mRowsAdapter);
 
-        //test this...
-        GCESync.startActionUpdateLocal(getContext(), null, null);
+        LoaderManager loaderManager = getLoaderManager();
 
+        //loop through the uris and set up loaders (and yes, could use a bundle to the loader and a local variable instead of global).
+        for (i = 0; i < mRows.size(); i++) {
+            if (mLoaderUris.get(i) != null) {
+                loaderManager.initLoader(i, null, this);
+            }
+        }
+
+        //And update the local content provider...
+        GCESync.startActionUpdateLocal(getActivity(), null, null);
+
+    }
+
+    /**
+     *  Cursor loader for app object provider
+     *  multiple loaders -
+     *      We store the loaders by row (row is the loader id)
+     *      The loaders search url is stored in mLoaderUri for that row
+     *      Not all rows may have cursor adapters - thus we check to make sure adapter is a cursor adapter
+     *      when doing an operation (but this should never fail).
+     */
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, final Bundle args) {
+        return new CursorLoader(getActivity(), mLoaderUris.get(id), null, null, null, null);
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
+        ListRow row = (ListRow) getAdapter().get(loader.getId());
+        if (row.getAdapter() instanceof CursorObjectAdapter) {
+            CursorObjectAdapter rowAdapter = (CursorObjectAdapter) row.getAdapter();
+            rowAdapter.swapCursor(cursor);
+        }
+
+        //TODO - note that background app changes are no problem. However, if we change the devices in background...
+        //have to regenerate all the rows. At the moment, we ignore this case. But we should fix it. The simple way
+        //is to not update devices while app is open (don't use a cursor here). The more complicated way would be to
+        //allow updates.
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+        ListRow row = (ListRow) getAdapter().get(loader.getId());
+        if (row.getAdapter() instanceof CursorObjectAdapter) {
+            CursorObjectAdapter rowAdapter = (CursorObjectAdapter) row.getAdapter();
+            rowAdapter.swapCursor(null);
+        }
     }
 
     private void prepareBackgroundManager() {

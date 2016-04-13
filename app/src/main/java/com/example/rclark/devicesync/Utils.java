@@ -26,6 +26,8 @@ import android.widget.Toast;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
 
+import java.util.ArrayList;
+
 /**
  * A collection of utility methods, all static.
  */
@@ -103,7 +105,7 @@ public class Utils {
     }
 
     /*
-        gets location
+        gets location of device
      */
     public static String getLocation(Context ctx, GoogleApiClient mClient) {
         //FIXME - not using callbacks here...

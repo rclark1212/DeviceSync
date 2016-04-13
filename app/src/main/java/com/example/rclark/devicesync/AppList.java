@@ -30,7 +30,6 @@ public class AppList {
     private static PackageManager manager;
     public static ArrayList<ObjectDetail> apps;
 
-
     public static void loadRows(ArrayList<String> rows) {
         for (int i = 0; i < APP_CATEGORY.length; i++) {
             //add serial number for local...
