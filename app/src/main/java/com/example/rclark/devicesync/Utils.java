@@ -104,21 +104,4 @@ public class Utils {
         return ctx.getPackageManager().hasSystemFeature("com.google.android.tv");
     }
 
-    /*
-        gets location of device
-     */
-    public static String getLocation(Context ctx, GoogleApiClient mClient) {
-        //FIXME - not using callbacks here...
-        String ret = ctx.getResources().getString(R.string.unknown);
-
-        Location location = LocationServices.FusedLocationApi.getLastLocation(mClient);
-
-        //above may fail (no cached location or user may deny privileges)
-        if (location != null) {
-            ret = location.toString();
-        }
-
-        return ret;
-    }
-
 }

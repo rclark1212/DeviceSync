@@ -20,6 +20,8 @@ import android.support.v17.leanback.widget.Presenter;
 import android.util.Log;
 import android.view.ViewGroup;
 
+import com.example.rclark.devicesync.data.AppContract;
+
 /*
  * A CardPresenter is used to generate Views and bind Objects to them on demand. 
  * It contains an Image CardView
@@ -65,17 +67,28 @@ public class CardPresenter extends Presenter {
 
     @Override
     public void onBindViewHolder(Presenter.ViewHolder viewHolder, Object item) {
-        ObjectDetail app = (ObjectDetail) item;
+        ObjectDetail element = (ObjectDetail) item;
         ImageCardView cardView = (ImageCardView) viewHolder.view;
 
         Log.d(TAG, "onBindViewHolder");
-        if (app.label.length() > 0) {
-            cardView.setTitleText(app.label);
-            cardView.setContentText(app.pkg);
+        if (element.label.length() > 0) {
+            cardView.setTitleText(element.label);
             cardView.setMainImageDimensions(CARD_WIDTH, CARD_HEIGHT);
 
-            if (app.banner != null) {
-                cardView.setMainImage(app.banner);
+            if (element.bIsDevice) {
+                cardView.setContentText(element.name);
+                Drawable drawable;
+                if (element.type == AppContract.TYPE_ATV) {
+                    drawable = cardView.getResources().getDrawable(R.drawable.shieldtv);
+                } else {
+                    drawable = cardView.getResources().getDrawable(R.drawable.shieldtablet);
+                }
+                cardView.setMainImage(drawable);
+            } else {
+                cardView.setContentText(element.pkg);
+                if (element.banner != null) {
+                    cardView.setMainImage(element.banner);
+                }
             }
         }
     }

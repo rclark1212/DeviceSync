@@ -59,8 +59,8 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
     private static final String EXTRA_PARAM2 = "com.example.rclark.devicesync.sync.extra.PARAM2";
 
     private static Context mCtx;
-    private static boolean mbUseLocation;
-    private static GoogleApiClient mGoogleApiClient;
+    private static boolean mbUseLocation = false;
+    private static GoogleApiClient mGoogleApiClient = null;
 
     public GCESync() {
         super("GCESync");
@@ -132,7 +132,7 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
                     .addApi(LocationServices.API)
                     .build();
 
-            ConnectionResult connectionResult =   mGoogleApiClient.blockingConnect(30, TimeUnit.SECONDS);
+            ConnectionResult connectionResult = mGoogleApiClient.blockingConnect(30, TimeUnit.SECONDS);
 
             //Just check if we are connected
             mbUseLocation = mGoogleApiClient.isConnected();
@@ -163,7 +163,7 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
 
         //Okay - first update the device database - serial number, nickname, date, model name, os_ver
         //Get an object with local device info...
-        ObjectDetail device = getLocalDeviceInfo();
+        ObjectDetail device = SyncUtils.getLocalDeviceInfo(mCtx, mbUseLocation, mGoogleApiClient);
 
         //Get the device DB reference...
         Uri deviceDB = AppContract.DevicesEntry.CONTENT_URI;
@@ -208,7 +208,7 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
          */
 
         //Step 1 - get a copy of the apps...
-        ArrayList<ObjectDetail> apps = AppList.loadApps(getApplicationContext());
+        ArrayList<ObjectDetail> apps = SyncUtils.loadApps(getApplicationContext());
 
         //Step 2 - write them to db...
         //Get the device DB reference...
@@ -262,7 +262,7 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
 
             //now blob... - COLUMN_APP_BANNER
             //convert drawable to bytestream
-            Bitmap bitmap = drawableToBitmap(app.banner);           //convert drawable to bitmap
+            Bitmap bitmap = SyncUtils.drawableToBitmap(app.banner);           //convert drawable to bitmap
             ByteArrayOutputStream stream = new ByteArrayOutputStream();
             bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream);
             byte[] imageInByte = stream.toByteArray();
@@ -283,62 +283,6 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
         //throw new UnsupportedOperationException("Not yet implemented");
     }
 
-    /*
-        Populates an object with local device info
-     */
-    private ObjectDetail getLocalDeviceInfo() {
-        ObjectDetail device = new ObjectDetail();
-
-        //Set up local device into object
-        device.bIsDevice = true;
-        device.serial = Build.SERIAL;
-        device.label = BluetoothAdapter.getDefaultAdapter().getName();
-        device.name = Build.MODEL;
-        device.ver = Build.FINGERPRINT + " (" + Build.VERSION.RELEASE + ")";
-
-        if (Utils.bIsThisATV(mCtx)) {
-            device.type = AppContract.TYPE_ATV;
-        } else {
-            device.type = AppContract.TYPE_TABLET;
-        }
-
-        Time time = new Time();
-        time.setToNow();
-        device.installDate = time.toMillis(true);
-        if (mbUseLocation) {
-            device.location = Utils.getLocation(mCtx, mGoogleApiClient);
-        } else {
-            device.location = mCtx.getResources().getString(R.string.unknown);
-        }
-
-        return device;
-    }
-
-    /*
-        Grabbed this nice little routine from
-        http://stackoverflow.com/questions/3035692/how-to-convert-a-drawable-to-a-bitmap from Andre.
-     */
-    private static Bitmap drawableToBitmap(Drawable drawable) {
-        Bitmap bitmap = null;
-
-        if (drawable instanceof BitmapDrawable) {
-            BitmapDrawable bitmapDrawable = (BitmapDrawable) drawable;
-            if(bitmapDrawable.getBitmap() != null) {
-                return bitmapDrawable.getBitmap();
-            }
-        }
-
-        if(drawable.getIntrinsicWidth() <= 0 || drawable.getIntrinsicHeight() <= 0) {
-            bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888); // Single color bitmap will be created of 1x1 pixel
-        } else {
-            bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
-        }
-
-        Canvas canvas = new Canvas(bitmap);
-        drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
-        drawable.draw(canvas);
-        return bitmap;
-    }
 
     /**
      * Handle action Baz in the provided background thread with the provided

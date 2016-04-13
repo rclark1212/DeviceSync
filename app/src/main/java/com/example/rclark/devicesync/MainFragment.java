@@ -159,43 +159,35 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         for (i = 0; i < mRows.size(); i++) {
             HeaderItem header = new HeaderItem(i, mRows.get(i));
 
+            //see
+            //https://github.com/googlesamples/androidtv-Leanback/blob/master/app/src/main/java/com/example/android/tvleanback/ui/VideoDetailsFragment.java
 
-            //HACKKKKKK
-            if (true) { //(i == 1) {
-                //see
-                //https://github.com/googlesamples/androidtv-Leanback/blob/master/app/src/main/java/com/example/android/tvleanback/ui/VideoDetailsFragment.java
+            CursorObjectAdapter listRowAdapter = new CursorObjectAdapter(cardPresenter);
 
-                CursorObjectAdapter listRowAdapter = new CursorObjectAdapter(cardPresenter);
-
-                //construct mapper
-                if (i == AppList.CAT_DEVICES) {
-                    DeviceCursorMapper deviceMapper = new DeviceCursorMapper();
-                    listRowAdapter.setMapper(deviceMapper);
-                } else {
-                    CursorMapper appMapper = new AppCursorMapper();
-                    listRowAdapter.setMapper(appMapper);
-                }
-
-                //set up the cursorobjectadapter
-                //open a query
-                if (i == AppList.CAT_DEVICES) {
-                    searchUri = deviceDB.buildUpon().build();
-                } else if (i == AppList.CAT_LOCAL) {
-                    searchUri = appDB.buildUpon().appendPath(Build.SERIAL).build();
-                } else {
-                    searchUri = appDB.buildUpon().appendPath(Build.SERIAL).build();
-                }
-
-                //save off this uri
-                mLoaderUris.add(i, searchUri);
-
-                //set it
-                mRowsAdapter.add(new ListRow(header, listRowAdapter));
+            //construct mapper
+            if (i == AppList.CAT_DEVICES) {
+                DeviceCursorMapper deviceMapper = new DeviceCursorMapper();
+                listRowAdapter.setMapper(deviceMapper);
             } else {
-                ArrayObjectAdapter listRowAdapter = new ArrayObjectAdapter(cardPresenter);
-                mLoaderUris.add(i, null);       //null uri means no cursor loader
-                mRowsAdapter.add(new ListRow(header, listRowAdapter));
+                CursorMapper appMapper = new AppCursorMapper();
+                listRowAdapter.setMapper(appMapper);
             }
+
+            //set up the cursorobjectadapter
+            //open a query
+            if (i == AppList.CAT_DEVICES) {
+                searchUri = deviceDB.buildUpon().build();
+            } else if (i == AppList.CAT_LOCAL) {
+                searchUri = appDB.buildUpon().appendPath(Build.SERIAL).build();
+            } else {
+                searchUri = appDB.buildUpon().appendPath(Build.SERIAL).build();
+            }
+
+            //save off this uri
+            mLoaderUris.add(i, searchUri);
+
+            //set it
+            mRowsAdapter.add(new ListRow(header, listRowAdapter));
         }
 
         HeaderItem gridHeader = new HeaderItem(i, "PREFERENCES");
