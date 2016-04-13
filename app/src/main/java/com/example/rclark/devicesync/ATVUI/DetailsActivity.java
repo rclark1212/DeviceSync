@@ -12,10 +12,12 @@
  * the License.
  */
 
-package com.example.rclark.devicesync;
+package com.example.rclark.devicesync.ATVUI;
 
 import android.app.Activity;
 import android.os.Bundle;
+
+import com.example.rclark.devicesync.R;
 
 /*
  * Details activity class that loads LeanbackDetailsFragment class

@@ -12,7 +12,7 @@
  * the License.
  */
 
-package com.example.rclark.devicesync;
+package com.example.rclark.devicesync.ATVUI;
 
 import android.graphics.drawable.Drawable;
 import android.support.v17.leanback.widget.ImageCardView;
@@ -20,6 +20,8 @@ import android.support.v17.leanback.widget.Presenter;
 import android.util.Log;
 import android.view.ViewGroup;
 
+import com.example.rclark.devicesync.ObjectDetail;
+import com.example.rclark.devicesync.R;
 import com.example.rclark.devicesync.data.AppContract;
 
 /*

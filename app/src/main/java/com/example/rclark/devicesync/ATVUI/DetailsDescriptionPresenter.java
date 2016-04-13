@@ -12,9 +12,12 @@
  * the License.
  */
 
-package com.example.rclark.devicesync;
+package com.example.rclark.devicesync.ATVUI;
 
 import android.support.v17.leanback.widget.AbstractDetailsDescriptionPresenter;
+
+import com.example.rclark.devicesync.ObjectDetail;
+import com.example.rclark.devicesync.Utils;
 
 public class DetailsDescriptionPresenter extends AbstractDetailsDescriptionPresenter {
 

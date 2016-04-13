@@ -1,8 +1,9 @@
-package com.example.rclark.devicesync;
+package com.example.rclark.devicesync.ATVUI;
 
 import android.database.Cursor;
 import android.support.v17.leanback.database.CursorMapper;
 
+import com.example.rclark.devicesync.ObjectDetail;
 import com.example.rclark.devicesync.data.AppContract;
 
 /**

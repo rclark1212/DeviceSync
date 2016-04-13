@@ -1,4 +1,4 @@
-package com.example.rclark.devicesync;
+package com.example.rclark.devicesync.ATVUI;
 
 import android.content.Context;
 import android.database.Cursor;
@@ -7,6 +7,8 @@ import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.support.v17.leanback.database.CursorMapper;
 
+import com.example.rclark.devicesync.ObjectDetail;
+import com.example.rclark.devicesync.Utils;
 import com.example.rclark.devicesync.data.AppContract;
 
 /**

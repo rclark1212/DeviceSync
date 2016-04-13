@@ -11,12 +11,13 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.example.rclark.devicesync;
+package com.example.rclark.devicesync.ATVUI;
 
-import android.content.res.Resources;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+
+import com.example.rclark.devicesync.R;
 
 /*
  * This class demonstrates how to extend ErrorFragment
