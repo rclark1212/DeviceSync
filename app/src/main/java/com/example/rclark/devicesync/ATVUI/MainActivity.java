@@ -12,7 +12,7 @@
  * the License.
  */
 
-package com.example.rclark.devicesync;
+package com.example.rclark.devicesync.ATVUI;
 
 /*
 Quick summary of app.
@@ -25,13 +25,16 @@ Can then kick off an intent to install each app not installed (or go through a l
 What also *could* be done is to have a service watching in background and pop up a notification when something installed to another
 device.
 
-NOTE that this is a true hackup (didn't bother renaming classes even from example which is why everything is a movie :)
+Launch entry point on ATV
+
 http://stackoverflow.com/questions/4604239/install-application-programmatically-on-android
 
  */
 
 import android.app.Activity;
 import android.os.Bundle;
+
+import com.example.rclark.devicesync.R;
 
 /*
  * MainActivity class that loads MainFragment
