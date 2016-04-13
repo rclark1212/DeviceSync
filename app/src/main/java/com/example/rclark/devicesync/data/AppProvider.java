@@ -1,12 +1,10 @@
 package com.example.rclark.devicesync.data;
 
-import android.annotation.TargetApi;
 import android.content.ContentProvider;
 import android.content.ContentValues;
 import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 import android.util.Log;
 
@@ -40,13 +38,14 @@ public class AppProvider extends ContentProvider {
     //app db - devices sn = ?
     private static final String sAppWithDevicesSelection =
             AppContract.AppEntry.TABLE_NAME+
-                    "." + AppContract.AppEntry.COLUMN_DEV_SSN + " = ? ";
+                    "." + AppContract.AppEntry.COLUMN_APP_DEVSSN + " = ? ";
 
     //app db - devices snn_setting = ? AND app label = ?
     private static final String sAppsWithDevicesAndAppsSelection =
             AppContract.AppEntry.TABLE_NAME+
                     "." + AppContract.AppEntry.COLUMN_APP_LABEL + " = ? AND " +
-                    AppContract.AppEntry.COLUMN_DEV_SSN + " = ? ";
+                    AppContract.AppEntry.TABLE_NAME+
+                    "." + AppContract.AppEntry.COLUMN_APP_DEVSSN + " = ? ";
 
     //get device by device
     private Cursor getDeviceByDevice(Uri uri, String[] projection, String sortOrder) {
@@ -232,6 +231,7 @@ public class AppProvider extends ContentProvider {
             case APPS_WITH_DEVICE:
             case APPS: {
                 normalizeDate(values);
+                updateTimeStamp(values, true);
                 long _id = db.insert(AppContract.AppEntry.TABLE_NAME, null, values);
                 if ( _id > 0 )
                     returnUri = AppContract.AppEntry.buildAppUri(_id);
@@ -240,6 +240,7 @@ public class AppProvider extends ContentProvider {
                 break;
             }
             case DEVICES: {
+                updateTimeStamp(values, false);
                 long _id = db.insert(AppContract.DevicesEntry.TABLE_NAME, null, values);
                 if ( _id > 0 )
                     returnUri = AppContract.DevicesEntry.buildDeviceUri(_id);
@@ -290,6 +291,9 @@ public class AppProvider extends ContentProvider {
         return rowsDeleted;
     }
 
+    /*
+        Normalizes date values to GMT
+     */
     private void normalizeDate(ContentValues values) {
         // normalize the date value
         if (values.containsKey(AppContract.AppEntry.COLUMN_DATE)) {
@@ -297,6 +301,19 @@ public class AppProvider extends ContentProvider {
             values.put(AppContract.AppEntry.COLUMN_DATE, AppContract.normalizeDate(dateValue));
         }
     }
+
+    /**
+     *  Updates timestamp field in the content values. We always timestamp to current system time in millis
+     */
+    private void updateTimeStamp(ContentValues values, boolean bApp) {
+        long currentTime = System.currentTimeMillis();
+        if (bApp) {
+            values.put(AppContract.AppEntry.COLUMN_APP_TIMEUPDATED, currentTime);
+        } else {
+            values.put(AppContract.DevicesEntry.COLUMN_DEVICE_TIMEUPDATED, currentTime);
+        }
+    }
+
 
     @Override
     public int update(
@@ -308,10 +325,13 @@ public class AppProvider extends ContentProvider {
         switch (match) {
             case APPS:
                 normalizeDate(values);
+                updateTimeStamp(values, true);
                 rowsUpdated = db.update(AppContract.AppEntry.TABLE_NAME, values, selection,
                         selectionArgs);
                 break;
             case APPS_WITH_DEVICE_AND_APP: {
+                normalizeDate(values);
+                updateTimeStamp(values, true);
                 String device = AppContract.AppEntry.getDeviceFromUri(uri);
                 String label = AppContract.AppEntry.getAppFromUri(uri);
                 String[] parse_selectionArgs = new String[]{device, label};
@@ -322,10 +342,12 @@ public class AppProvider extends ContentProvider {
                 break;
             }
             case DEVICES:
+                updateTimeStamp(values, false);
                 rowsUpdated = db.update(AppContract.DevicesEntry.TABLE_NAME, values, selection,
                         selectionArgs);
                 break;
             case DEVICES_WITH_DEVICE: {
+                updateTimeStamp(values, false);
                 String device = AppContract.DevicesEntry.getDeviceFromUri(uri);
                 String[] parse_selectionArgs = new String[]{device};
                 String parse_selection = sDevicesSelection;
@@ -355,6 +377,7 @@ public class AppProvider extends ContentProvider {
                 try {
                     for (ContentValues value : values) {
                         normalizeDate(value);
+                        updateTimeStamp(value, true);
                         long _id = db.insert(AppContract.AppEntry.TABLE_NAME, null, value);
                         if (_id != -1) {
                             returnCount++;

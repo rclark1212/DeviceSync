@@ -14,15 +14,12 @@
 
 package com.example.rclark.devicesync;
 
-import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Point;
 import android.graphics.drawable.BitmapDrawable;
-import android.location.Location;
 import android.net.Uri;
 import android.text.format.Time;
 import android.view.Display;
@@ -30,11 +27,8 @@ import android.view.WindowManager;
 import android.widget.Toast;
 
 import com.example.rclark.devicesync.data.AppContract;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.location.LocationServices;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 
 /**
  * A collection of utility methods, all static.
@@ -170,7 +164,7 @@ public class Utils {
             int labelIndex = c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_LABEL);
             int pkgIndex = c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_PKG);
             int verIndex = c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_VER);
-            int serialIndex = c.getColumnIndex(AppContract.AppEntry.COLUMN_DEV_SSN);
+            int serialIndex = c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_DEVSSN);
             int dateIndex = c.getColumnIndex(AppContract.AppEntry.COLUMN_DATE);
             int flagsIndex = c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_FLAGS);
             int bannerIndex = c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_BANNER);

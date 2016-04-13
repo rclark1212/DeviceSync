@@ -57,6 +57,7 @@ public class AppContract {
         public static final String COLUMN_DEVICE_OSVER = "os_ver";
         public static final String COLUMN_DEVICE_TYPE = "type";
         public static final String COLUMN_DEVICE_LOCATION = "location";
+        public static final String COLUMN_DEVICE_TIMEUPDATED = "lasttouched";       //use this field to timestamp entries to CP
 
         public static Uri buildDeviceUri(long id) {
             return ContentUris.withAppendedId(CONTENT_URI, id);
@@ -104,7 +105,8 @@ public class AppContract {
         public static final String COLUMN_APP_BANNER = "app_banner";
         public static final String COLUMN_APP_VER = "app_version";
         public static final String COLUMN_APP_TYPE = "type";
-        public static final String COLUMN_DEV_SSN = "devicessn";
+        public static final String COLUMN_APP_DEVSSN = "devicessn";
+        public static final String COLUMN_APP_TIMEUPDATED = "lasttouched";       //use this field to timestamp entries to CP
 
         public static Uri buildAppUri(long id) {
             return ContentUris.withAppendedId(CONTENT_URI, id);

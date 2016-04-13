@@ -1,6 +1,5 @@
 package com.example.rclark.devicesync.data;
 
-import android.bluetooth.BluetoothClass;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
@@ -33,6 +32,7 @@ public class AppDbHelper extends SQLiteOpenHelper {
                 DevicesEntry.COLUMN_DEVICE_NAME + " TEXT NOT NULL, " +
                 DevicesEntry.COLUMN_DEVICE_OSVER + " TEXT NOT NULL, " +
                 DevicesEntry.COLUMN_DEVICE_TYPE + " INTEGER NOT NULL, " +
+                DevicesEntry.COLUMN_DEVICE_TIMEUPDATED + " INTEGER NOT NULL, " +
                 DevicesEntry.COLUMN_DEVICE_LOCATION + " TEXT NOT NULL " +
                 " );";
 
@@ -48,7 +48,8 @@ public class AppDbHelper extends SQLiteOpenHelper {
                 AppEntry.COLUMN_APP_VER + " TEXT NOT NULL, " +
                 AppEntry.COLUMN_APP_BANNER + " BLOB, " +
                 AppEntry.COLUMN_APP_TYPE + " INTEGER NOT NULL, " +
-                AppEntry.COLUMN_DEV_SSN + " TEXT NOT NULL " +
+                AppEntry.COLUMN_APP_TIMEUPDATED + " INTEGER NOT NULL, " +
+                AppEntry.COLUMN_APP_DEVSSN + " TEXT NOT NULL " +
                 " );";
 
         sqLiteDatabase.execSQL(SQL_CREATE_DEVICES_TABLE);

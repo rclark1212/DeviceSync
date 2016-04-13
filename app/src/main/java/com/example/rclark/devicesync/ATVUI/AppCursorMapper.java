@@ -1,9 +1,6 @@
 package com.example.rclark.devicesync.ATVUI;
 
-import android.content.Context;
 import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.support.v17.leanback.database.CursorMapper;
 
@@ -32,7 +29,7 @@ public final class AppCursorMapper extends CursorMapper {
         labelIndex = cursor.getColumnIndex(AppContract.AppEntry.COLUMN_APP_LABEL);
         pkgIndex = cursor.getColumnIndex(AppContract.AppEntry.COLUMN_APP_PKG);
         verIndex = cursor.getColumnIndex(AppContract.AppEntry.COLUMN_APP_VER);
-        serialIndex = cursor.getColumnIndex(AppContract.AppEntry.COLUMN_DEV_SSN);
+        serialIndex = cursor.getColumnIndex(AppContract.AppEntry.COLUMN_APP_DEVSSN);
         dateIndex = cursor.getColumnIndex(AppContract.AppEntry.COLUMN_DATE);
         flagsIndex = cursor.getColumnIndex(AppContract.AppEntry.COLUMN_APP_FLAGS);
         bannerIndex = cursor.getColumnIndex(AppContract.AppEntry.COLUMN_APP_BANNER);

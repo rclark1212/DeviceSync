@@ -1,26 +1,17 @@
 package com.example.rclark.devicesync.sync;
 
 import android.app.IntentService;
-import android.bluetooth.BluetoothAdapter;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
-import android.text.format.Time;
 import android.util.Log;
 
 import com.example.rclark.devicesync.ObjectDetail;
-import com.example.rclark.devicesync.AppList;
-import com.example.rclark.devicesync.R;
-import com.example.rclark.devicesync.Utils;
 import com.example.rclark.devicesync.data.AppContract;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -159,7 +150,8 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
      * parameters.
      */
     private void handleActionUpdate() {
-        // TODO: Handle action Foo
+        //grab current time first
+        long currentTime = System.currentTimeMillis();
 
         //Okay - first update the device database - serial number, nickname, date, model name, os_ver
         //Get an object with local device info...
@@ -210,18 +202,6 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
         //Get the device DB reference...
         Uri appDB = AppContract.AppEntry.CONTENT_URI;
 
-        //Step 0 - delete apps for this device which already exist in the database. On first glance, this seems
-        //heavy handed, not efficient. However for every app, we do update/freshen the CP DB anyway (to pick up
-        //new versions, etc). So this is really not inefficient either (we could do something clever like delete
-        //everything not touched before the time we entered this routine but that is actually going to end up being
-        //more energy intensive).
-        //Finally, to be fair, the CP _should_ be kept up to sync by the broadcast receiver. But good to have a full
-        //sync on start for data integrity/robustness.
-        //FIXME - this results in an ugly UI stutter at start. Do the clever delete based on date just to keep
-        //grid view from jumping on start.
-        Uri appDeleteUri = appDB.buildUpon().appendPath(device.serial).build();
-        getApplicationContext().getContentResolver().delete(appDeleteUri, null, null);
-
         //Step 1 - get a copy of the apps...
         ArrayList<ObjectDetail> apps = SyncUtils.loadApps(getApplicationContext());
 
@@ -264,7 +244,7 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
             contentValues.put(AppContract.AppEntry.COLUMN_APP_LABEL, app.label);
             contentValues.put(AppContract.AppEntry.COLUMN_APP_PKG, app.pkg);
             contentValues.put(AppContract.AppEntry.COLUMN_APP_VER, app.ver);
-            contentValues.put(AppContract.AppEntry.COLUMN_DEV_SSN, device.serial);
+            contentValues.put(AppContract.AppEntry.COLUMN_APP_DEVSSN, device.serial);
             contentValues.put(AppContract.AppEntry.COLUMN_DATE, app.installDate);
             contentValues.put(AppContract.AppEntry.COLUMN_APP_TYPE, AppContract.TYPE_ATV);
 
@@ -291,6 +271,28 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
 
             c.close();
         }
+
+        /**
+         *  Step last - delete apps for this device which already existed in database but are no longer on the device.
+         *  Technically, if our broadcast receiver was 100% reliable, should not need to do this. However, during debugging can
+         *  get out of sync. And not sure if sideloading/etc will trigger broadcast receiver. So sync up here.
+         *  Initially we did this a heavy handed way by deleting all the apps for this device at the start of this routine.
+         *  But this caused a nasty hitch when starting app up (apps would disappear and be repopulated).
+         *  So do a more advanced/elegant approach by deleting any app entry for this device which has a timestamp of
+         *  older than the time when we entered this routine.
+         */
+        //set up base URI (all apps)
+        Uri appDeleteUri = appDB.buildUpon().build();
+
+        //manually create the selection/search string - delete apps with matching devices but a timestamp less than entry time
+        String selection = AppContract.AppEntry.TABLE_NAME +
+                        "." + AppContract.AppEntry.COLUMN_APP_DEVSSN + " = ? AND " +
+                AppContract.AppEntry.TABLE_NAME +
+                "." + AppContract.AppEntry.COLUMN_APP_TIMEUPDATED + " < ?";
+        String[] selectionArgs = new String[]{device.serial, Long.toString(currentTime)};
+
+        //FIXME - clearing out entire CP...
+        //getApplicationContext().getContentResolver().delete(appDeleteUri, selection, selectionArgs);
 
     }
 
