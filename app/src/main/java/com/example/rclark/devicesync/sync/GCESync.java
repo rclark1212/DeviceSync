@@ -217,6 +217,8 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
         //more energy intensive).
         //Finally, to be fair, the CP _should_ be kept up to sync by the broadcast receiver. But good to have a full
         //sync on start for data integrity/robustness.
+        //FIXME - this results in an ugly UI stutter at start. Do the clever delete based on date just to keep
+        //grid view from jumping on start.
         Uri appDeleteUri = appDB.buildUpon().appendPath(device.serial).build();
         getApplicationContext().getContentResolver().delete(appDeleteUri, null, null);
 
