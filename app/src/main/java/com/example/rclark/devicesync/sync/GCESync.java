@@ -215,6 +215,8 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
         //new versions, etc). So this is really not inefficient either (we could do something clever like delete
         //everything not touched before the time we entered this routine but that is actually going to end up being
         //more energy intensive).
+        //Finally, to be fair, the CP _should_ be kept up to sync by the broadcast receiver. But good to have a full
+        //sync on start for data integrity/robustness.
         Uri appDeleteUri = appDB.buildUpon().appendPath(device.serial).build();
         getApplicationContext().getContentResolver().delete(appDeleteUri, null, null);
 

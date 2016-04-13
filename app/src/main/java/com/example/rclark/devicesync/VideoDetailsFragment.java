@@ -90,8 +90,8 @@ public class VideoDetailsFragment extends DetailsFragment {
             setupDetailsOverviewRowPresenter();
             //setupMovieListRow();
             //setupMovieListRowPresenter();
-            //FIXME - updateBackground(mSelectedObject.getBackgroundImageUrl());
-            setOnItemViewClickedListener(new ItemViewClickedListener());
+            updateBackground(mSelectedObject);
+            //setOnItemViewClickedListener(new ItemViewClickedListener());
         } else {
             Intent intent = new Intent(getActivity(), MainActivity.class);
             startActivity(intent);
@@ -111,7 +111,11 @@ public class VideoDetailsFragment extends DetailsFragment {
         getActivity().getWindowManager().getDefaultDisplay().getMetrics(mMetrics);
     }
 
-    protected void updateBackground(String uri) {
+    protected void updateBackground(ObjectDetail item) {
+//        if (item.banner != null) {
+  //          mBackgroundManager.setDrawable(item.banner);
+    //    }
+        /*
         Glide.with(getActivity())
                 .load(uri)
                 .centerCrop()
@@ -122,7 +126,7 @@ public class VideoDetailsFragment extends DetailsFragment {
                                                 GlideAnimation<? super GlideDrawable> glideAnimation) {
                         mBackgroundManager.setDrawable(resource);
                     }
-                });
+                }); */
     }
 
     private void setupAdapter() {
@@ -139,6 +143,7 @@ public class VideoDetailsFragment extends DetailsFragment {
                 .getApplicationContext(), DETAIL_THUMB_WIDTH);
         int height = Utils.convertDpToPixel(getActivity()
                 .getApplicationContext(), DETAIL_THUMB_HEIGHT);
+
         if (mSelectedObject.bIsDevice) {
             if (mSelectedObject.type == AppContract.TYPE_ATV) {
                 row.setImageDrawable(getResources().getDrawable(R.drawable.shieldtv));
@@ -164,6 +169,7 @@ public class VideoDetailsFragment extends DetailsFragment {
                     }
                 });
         */
+        //FIXME
         row.addAction(new Action(ACTION_WATCH_TRAILER, getResources().getString(
                 R.string.watch_trailer_1), getResources().getString(R.string.watch_trailer_2)));
         row.addAction(new Action(ACTION_RENT, getResources().getString(R.string.rent_1),
@@ -198,24 +204,8 @@ public class VideoDetailsFragment extends DetailsFragment {
         mPresenterSelector.addClassPresenter(DetailsOverviewRow.class, detailsPresenter);
     }
 
-    private void setupMovieListRow() {
-        String subcategories[] = {getString(R.string.related_movies)};
-        List<Movie> list = MovieList.list;
 
-        Collections.shuffle(list);
-        ArrayObjectAdapter listRowAdapter = new ArrayObjectAdapter(new CardPresenter());
-        for (int j = 0; j < NUM_COLS; j++) {
-            listRowAdapter.add(list.get(j % 5));
-        }
-
-        HeaderItem header = new HeaderItem(0, subcategories[0]);
-        mAdapter.add(new ListRow(header, listRowAdapter));
-    }
-
-    private void setupMovieListRowPresenter() {
-        mPresenterSelector.addClassPresenter(ListRow.class, new ListRowPresenter());
-    }
-
+    /*
     private final class ItemViewClickedListener implements OnItemViewClickedListener {
         @Override
         public void onItemClicked(Presenter.ViewHolder itemViewHolder, Object item,
@@ -237,5 +227,5 @@ public class VideoDetailsFragment extends DetailsFragment {
                 getActivity().startActivity(intent, bundle);
             }
         }
-    }
+    } */
 }
