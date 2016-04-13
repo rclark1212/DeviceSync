@@ -17,6 +17,7 @@ import java.util.List;
  */
 public class AppList {
 
+    //TODO - fix the list below - read headings out of headings.xml for use with phone nav bar, tablet TV. Rename to headings
     public static final String APP_CATEGORY[] = {
             "Devices",
             "Local",
