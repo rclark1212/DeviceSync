@@ -267,6 +267,14 @@ public class AppProvider extends ContentProvider {
                 rowsDeleted = db.delete(
                         AppContract.AppEntry.TABLE_NAME, selection, selectionArgs);
                 break;
+            case APPS_WITH_DEVICE: {
+                String device = AppContract.AppEntry.getDeviceFromUri(uri);
+                String[] parse_selectionArgs = new String[]{device};
+                String parse_selection = sAppWithDevicesSelection;
+                rowsDeleted = db.delete(
+                        AppContract.AppEntry.TABLE_NAME, parse_selection, parse_selectionArgs);
+                break;
+            }
             case DEVICES:
                 rowsDeleted = db.delete(
                         AppContract.DevicesEntry.TABLE_NAME, selection, selectionArgs);

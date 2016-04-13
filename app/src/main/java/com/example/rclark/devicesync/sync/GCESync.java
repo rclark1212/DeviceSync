@@ -207,13 +207,21 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
          * Okay - device database should be updated. Now time to do same for apps...
          */
 
+        //Get the device DB reference...
+        Uri appDB = AppContract.AppEntry.CONTENT_URI;
+
+        //Step 0 - delete apps for this device which already exist in the database. On first glance, this seems
+        //heavy handed, not efficient. However for every app, we do update/freshen the CP DB anyway (to pick up
+        //new versions, etc). So this is really not inefficient either (we could do something clever like delete
+        //everything not touched before the time we entered this routine but that is actually going to end up being
+        //more energy intensive).
+        Uri appDeleteUri = appDB.buildUpon().appendPath(device.serial).build();
+        getApplicationContext().getContentResolver().delete(appDeleteUri, null, null);
+
         //Step 1 - get a copy of the apps...
         ArrayList<ObjectDetail> apps = SyncUtils.loadApps(getApplicationContext());
 
         //Step 2 - write them to db...
-        //Get the device DB reference...
-        Uri appDB = AppContract.AppEntry.CONTENT_URI;
-
         for (int i = 0; i < apps.size(); i++) {
             //Now, search for the device (is it in DB yet?)
             ObjectDetail app = (ObjectDetail) apps.get(i);
@@ -280,10 +288,6 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
             c.close();
         }
 
-        //FIXME - and now we need to remove any apps that exist for this serial number that are not part of
-        //the list above... (or do this before we do the update apps)...
-
-        //throw new UnsupportedOperationException("Not yet implemented");
     }
 
 
