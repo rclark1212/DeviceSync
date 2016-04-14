@@ -3,14 +3,20 @@ package com.example.rclark.devicesync.PhoneUI;
 /*
 See ATVUI/MainActivity for summary
 
-This is the launch entry point on Phone/Tablet
+This is the launch entry point on Phone/Tablet. Currently simple skeleton for a recyclerview.
 
 */
 
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.content.Context;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
+import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
+import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,7 +24,10 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 
+import com.example.rclark.devicesync.ObjectDetail;
 import com.example.rclark.devicesync.R;
+import com.example.rclark.devicesync.data.AppContract;
+import com.example.rclark.devicesync.sync.GCESync;
 
 public class MainPhoneActivity extends AppCompatActivity
         implements NavigationDrawerFragment.NavigationDrawerCallbacks {
@@ -46,6 +55,10 @@ public class MainPhoneActivity extends AppCompatActivity
         mNavigationDrawerFragment.setUp(
                 R.id.navigation_drawer,
                 (DrawerLayout) findViewById(R.id.drawer_layout));
+
+        //Start up sync service
+        //And update the local content provider...
+        GCESync.startActionUpdateLocal(getApplicationContext(), null, null);
     }
 
     @Override
@@ -82,6 +95,10 @@ public class MainPhoneActivity extends AppCompatActivity
      * A placeholder fragment containing a simple view.
      */
     public static class PlaceholderFragment extends Fragment {
+        private RecyclerView mRecyclerView;
+        private RecyclerView.Adapter mAdapter;
+        private RecyclerView.LayoutManager mLayoutManager;
+
         /**
          * The fragment argument representing the section number for this
          * fragment.
@@ -106,7 +123,33 @@ public class MainPhoneActivity extends AppCompatActivity
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                                  Bundle savedInstanceState) {
-            View rootView = inflater.inflate(R.layout.main_phone, container, false);
+            View rootView = inflater.inflate(R.layout.fragment_phone, container, false);
+
+            mRecyclerView = (RecyclerView) rootView.findViewById(R.id.recycler_view);
+
+            // not changing the size of recyclerview
+            mRecyclerView.setHasFixedSize(true);
+
+            //how many columns can we get? Should be width of screen / width of grid element
+            DisplayMetrics displaymetrics = new DisplayMetrics();
+            getActivity().getWindowManager().getDefaultDisplay().getMetrics(displaymetrics);
+            int width = displaymetrics.widthPixels;
+
+            // use GridLayoutManager
+            mLayoutManager = new GridLayoutManager(getActivity(), (width/300));
+            mRecyclerView.setLayoutManager(mLayoutManager);
+
+            // get a cursor for this view...
+            //Get the device DB reference...
+            Uri appDB = AppContract.AppEntry.CONTENT_URI;
+
+            //grab the cursor
+            Cursor c = getActivity().getContentResolver().query(appDB, null, null, null, null);
+
+            // and set the adapter
+            mAdapter = new ListObjectAdapter(getActivity(), c);
+            mRecyclerView.setAdapter(mAdapter);
+
             return rootView;
         }
 

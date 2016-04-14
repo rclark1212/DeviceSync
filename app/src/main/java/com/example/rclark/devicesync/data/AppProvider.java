@@ -42,10 +42,7 @@ public class AppProvider extends ContentProvider {
 
     //app db - devices snn_setting = ? AND app label = ?
     private static final String sAppsWithDevicesAndAppsSelection =
-            AppContract.AppEntry.TABLE_NAME+
-                    "." + AppContract.AppEntry.COLUMN_APP_LABEL + " = ? AND " +
-                    AppContract.AppEntry.TABLE_NAME+
-                    "." + AppContract.AppEntry.COLUMN_APP_DEVSSN + " = ? ";
+            AppContract.AppEntry.COLUMN_APP_LABEL + " = ? AND " + AppContract.AppEntry.COLUMN_APP_DEVSSN + " = ? ";
 
     //get device by device
     private Cursor getDeviceByDevice(Uri uri, String[] projection, String sortOrder) {
@@ -217,7 +214,7 @@ public class AppProvider extends ContentProvider {
                 throw new UnsupportedOperationException("Unknown uri: " + uri);
         }
         retCursor.setNotificationUri(getContext().getContentResolver(), uri);
-        Log.v(TAG, "query - uri:" + uri.toString());
+        //Log.v(TAG, "query - uri:" + uri.toString());
         return retCursor;
     }
 
@@ -252,7 +249,7 @@ public class AppProvider extends ContentProvider {
                 throw new UnsupportedOperationException("Unknown uri: " + uri);
         }
         getContext().getContentResolver().notifyChange(uri, null);
-        Log.v(TAG, "insert - uri:" + uri.toString());
+        //Log.v(TAG, "insert - uri:" + uri.toString());
         return returnUri;
     }
 
@@ -286,7 +283,7 @@ public class AppProvider extends ContentProvider {
         // Because a null deletes all rows
         if (rowsDeleted != 0) {
             getContext().getContentResolver().notifyChange(uri, null);
-            Log.v(TAG, "delete - uri:" + uri.toString());
+            //Log.v(TAG, "delete - uri:" + uri.toString());
         }
         return rowsDeleted;
     }
@@ -334,7 +331,7 @@ public class AppProvider extends ContentProvider {
                 updateTimeStamp(values, true);
                 String device = AppContract.AppEntry.getDeviceFromUri(uri);
                 String label = AppContract.AppEntry.getAppFromUri(uri);
-                String[] parse_selectionArgs = new String[]{device, label};
+                String[] parse_selectionArgs = new String[]{label, device};
                 String parse_selection = sAppsWithDevicesAndAppsSelection;
 
                 rowsUpdated = db.update(AppContract.AppEntry.TABLE_NAME, values, parse_selection,
@@ -361,7 +358,7 @@ public class AppProvider extends ContentProvider {
         }
         if (rowsUpdated != 0) {
             getContext().getContentResolver().notifyChange(uri, null);
-            Log.v(TAG, "update - uri:" + uri.toString());
+            //Log.v(TAG, "update - uri:" + uri.toString());
         }
         return rowsUpdated;
     }

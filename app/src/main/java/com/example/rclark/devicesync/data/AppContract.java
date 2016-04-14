@@ -91,7 +91,8 @@ public class AppContract {
         // Flags for DB...
         // Keep it simple for now. If a file is marked to be deleted, flag it for the other devices...
         public static final int FLAG_FOR_DELETE = 2;
-        public static final int FLAG_APP_LOCAL = 1;
+        public static final int FLAG_FOR_ADD = 1;
+        public static final int FLAG_NO_ACTION = 0;
 
         // Column with the foreign key into the location table.
         public static final String COLUMN_DEVICES_KEY = "devices_id";

@@ -24,7 +24,6 @@ import com.example.rclark.devicesync.R;
  */
 public class DetailsActivity extends Activity {
     public static final String SHARED_ELEMENT_NAME = "hero";
-    public static final String MOVIE = "Movie";
     public static final String OBJECTURI = "ObjectUri";
 
     /**

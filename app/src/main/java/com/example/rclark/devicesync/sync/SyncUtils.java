@@ -74,11 +74,7 @@ public class SyncUtils {
             //FIXME - if package available in play store, null out above
             app.bIsDevice = false;
             //set the right type...
-            if (bATV) {
-                app.type = AppContract.TYPE_ATV;
-            } else {
-                app.type = AppContract.TYPE_TABLET;
-            }
+            app.type = bATV ? AppContract.TYPE_ATV : AppContract.TYPE_TABLET;
 
             try {
                 PackageInfo info = manager.getPackageInfo(app.pkg, 0);
@@ -102,7 +98,7 @@ public class SyncUtils {
 
             if (app.label.equals("LeanbackLauncher")) {
                 //also punt
-                //FIXME - need to filter out a lot more apps than just leanback launcher
+                //FIXME - need to filter out a lot more apps than just leanback launcher - both tablet and ATV
                 continue;
             }
 
@@ -135,11 +131,7 @@ public class SyncUtils {
         device.name = Build.MODEL;
         device.ver = Build.FINGERPRINT + " (" + Build.VERSION.RELEASE + ")";
 
-        if (Utils.bIsThisATV(ctx)) {
-            device.type = AppContract.TYPE_ATV;
-        } else {
-            device.type = AppContract.TYPE_TABLET;
-        }
+        device.type = Utils.bIsThisATV(ctx) ? AppContract.TYPE_ATV : AppContract.TYPE_TABLET;
 
         Time time = new Time();
         time.setToNow();

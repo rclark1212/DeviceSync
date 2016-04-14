@@ -21,12 +21,17 @@ import android.graphics.BitmapFactory;
 import android.graphics.Point;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
+import android.support.v7.app.AppCompatActivity;
+import android.telecom.ConnectionRequest;
 import android.text.format.Time;
+import android.util.Log;
 import android.view.Display;
 import android.view.WindowManager;
 import android.widget.Toast;
 
 import com.example.rclark.devicesync.data.AppContract;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GoogleApiAvailability;
 
 import java.text.SimpleDateFormat;
 
@@ -36,6 +41,8 @@ import java.text.SimpleDateFormat;
 public class Utils {
 
     public static final String DATE_FORMAT = "MM-dd-yyyy HH:mm";
+    private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
+    private static final String TAG = "DS_Utils";
 
     /*
      * Making sure public utility methods remain static
@@ -108,6 +115,9 @@ public class Utils {
         return ctx.getPackageManager().hasSystemFeature("com.google.android.tv");
     }
 
+    /*
+        Turns a normalized date ino a human readable one
+     */
     public static String unNormalizeDate(long normalizedDateInMillis) {
         Time time = new Time();
         time.setToNow();
@@ -116,6 +126,22 @@ public class Utils {
         return yearMonthDayString;
     }
 
+    /*
+        checkPlayServices
+     */
+    public static boolean checkPlayServices(AppCompatActivity activity) {
+        GoogleApiAvailability apiAvailability = GoogleApiAvailability.getInstance();
+        int resultCode = apiAvailability.isGooglePlayServicesAvailable(activity.getApplicationContext());
+        if (resultCode != ConnectionResult.SUCCESS) {
+            if (apiAvailability.isUserResolvableError(resultCode)) {
+                apiAvailability.getErrorDialog(activity, resultCode, PLAY_SERVICES_RESOLUTION_REQUEST).show();
+            } else {
+                Log.i(TAG, "This device does not support GMS services");
+            }
+            return false;
+        }
+        return true;
+    }
 
     /**
      * Routine that does what it says...
@@ -131,7 +157,8 @@ public class Utils {
     }
 
     /**
-     * Returns an ObjectDetail from the CP based on the URI
+     * Returns an ObjectDetail from the CP based on the URI.
+     * Used by detail view.
      */
     public static ObjectDetail getAppFromCP(Context ctx, Uri uri) {
         ObjectDetail returnObject = null;

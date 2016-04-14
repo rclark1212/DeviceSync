@@ -25,6 +25,7 @@ import android.support.v17.leanback.widget.ArrayObjectAdapter;
 import android.support.v17.leanback.widget.ClassPresenterSelector;
 import android.support.v17.leanback.widget.DetailsOverviewRow;
 import android.support.v17.leanback.widget.DetailsOverviewRowPresenter;
+import android.support.v17.leanback.widget.ListRowPresenter;
 import android.support.v17.leanback.widget.OnActionClickedListener;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -59,6 +60,9 @@ public class VideoDetailsFragment extends DetailsFragment {
     private BackgroundManager mBackgroundManager;
     private Drawable mDefaultBackground;
     private DisplayMetrics mMetrics;
+
+    private Action mActionInstall;
+    private Action mActionUninstall;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {

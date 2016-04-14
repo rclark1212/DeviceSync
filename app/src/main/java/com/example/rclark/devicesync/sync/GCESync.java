@@ -12,6 +12,7 @@ import android.os.Bundle;
 import android.util.Log;
 
 import com.example.rclark.devicesync.ObjectDetail;
+import com.example.rclark.devicesync.Utils;
 import com.example.rclark.devicesync.data.AppContract;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -177,12 +178,13 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
         }
 
         //load up contentValues with latest info...
+        long type = Utils.bIsThisATV(mCtx) ? AppContract.TYPE_ATV : AppContract.TYPE_TABLET;
         contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICES_SSN, device.serial);
         contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICE_NAME, device.label);
         contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICE_MODEL, device.name);
         contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICE_OSVER, device.ver);
         contentValues.put(AppContract.DevicesEntry.COLUMN_DATE, device.installDate);
-        contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICE_TYPE, AppContract.TYPE_ATV);
+        contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICE_TYPE, type);
         contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICE_LOCATION, device.location);
 
         if (c.getCount() > 0) {
@@ -237,19 +239,20 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
 
             //Do a bit of error checking...
             if (app.ver == null) {
-                app.ver = "?";
+                app.ver = "?";      //just in case
             }
             
             //load up contentValues with latest info...
+            long ostype = Utils.bIsThisATV(mCtx) ? AppContract.TYPE_ATV : AppContract.TYPE_TABLET;
             contentValues.put(AppContract.AppEntry.COLUMN_APP_LABEL, app.label);
             contentValues.put(AppContract.AppEntry.COLUMN_APP_PKG, app.pkg);
             contentValues.put(AppContract.AppEntry.COLUMN_APP_VER, app.ver);
             contentValues.put(AppContract.AppEntry.COLUMN_APP_DEVSSN, device.serial);
             contentValues.put(AppContract.AppEntry.COLUMN_DATE, app.installDate);
-            contentValues.put(AppContract.AppEntry.COLUMN_APP_TYPE, AppContract.TYPE_ATV);
+            contentValues.put(AppContract.AppEntry.COLUMN_APP_TYPE, ostype);
 
             //note that the app is local
-            flags = flags | AppContract.AppEntry.FLAG_APP_LOCAL;
+            //flags = flags | AppContract.AppEntry.FLAG_APP_LOCAL; - nope - SSN matching = local
             contentValues.put(AppContract.AppEntry.COLUMN_APP_FLAGS, flags);
 
             //now blob... - COLUMN_APP_BANNER
@@ -281,18 +284,13 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
          *  So do a more advanced/elegant approach by deleting any app entry for this device which has a timestamp of
          *  older than the time when we entered this routine.
          */
-        //set up base URI (all apps)
-        Uri appDeleteUri = appDB.buildUpon().build();
 
         //manually create the selection/search string - delete apps with matching devices but a timestamp less than entry time
-        String selection = AppContract.AppEntry.TABLE_NAME +
-                        "." + AppContract.AppEntry.COLUMN_APP_DEVSSN + " = ? AND " +
-                AppContract.AppEntry.TABLE_NAME +
-                "." + AppContract.AppEntry.COLUMN_APP_TIMEUPDATED + " < ?";
+        String selection = AppContract.AppEntry.COLUMN_APP_DEVSSN + " = ? AND " + AppContract.AppEntry.COLUMN_APP_TIMEUPDATED + " < ?";
         String[] selectionArgs = new String[]{device.serial, Long.toString(currentTime)};
 
         //FIXME - clearing out entire CP...
-        //getApplicationContext().getContentResolver().delete(appDeleteUri, selection, selectionArgs);
+        getApplicationContext().getContentResolver().delete(AppContract.AppEntry.CONTENT_URI, selection, selectionArgs);
 
     }
 

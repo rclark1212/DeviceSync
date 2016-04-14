@@ -1,6 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical" android:layout_width="match_parent"
-    android:layout_height="match_parent">
-    <!-- TODO - finish this layout file to be a list item used for phone recycler view -->
-</LinearLayout>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:padding="5dp">
+
+    <ImageView
+        android:id="@+id/grid_item_image"
+        android:layout_width="70dp"
+        android:layout_height="70dp"
+        android:layout_marginRight="5dp"/>
+
+    <TextView
+        android:id="@+id/grid_title"
+        android:layout_width="wrap_content"
+        android:layout_height="20dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textSize="14sp"
+        android:layout_below="@id/grid_item_image"/>
+
+    <TextView
+        android:id="@+id/grid_subtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="16dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textSize="11sp"
+        android:layout_below="@id/grid_title"/>
+
+
+    <!-- TODO - fix the hardcodes for margins, check RTL and contentdescriptions  -->
+</RelativeLayout>
