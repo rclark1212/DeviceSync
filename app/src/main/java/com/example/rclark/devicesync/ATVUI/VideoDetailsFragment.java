@@ -31,6 +31,7 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.example.rclark.devicesync.DBUtils;
 import com.example.rclark.devicesync.ObjectDetail;
 import com.example.rclark.devicesync.R;
 import com.example.rclark.devicesync.Utils;
@@ -73,7 +74,7 @@ public class VideoDetailsFragment extends DetailsFragment {
 
         Uri selectedUri = (Uri) getActivity().getIntent().getParcelableExtra(DetailsActivity.OBJECTURI);
         //and now load that Uri into an object...
-        mSelectedObject = Utils.getAppFromCP(getContext(), selectedUri);
+        mSelectedObject = DBUtils.getAppFromCP(getActivity(), selectedUri);
 
         if (mSelectedObject != null) {
             setupAdapter();

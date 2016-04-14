@@ -123,7 +123,7 @@ public class AppProvider extends ContentProvider {
          * For device db:
          * / - all devices
          * /devicesn - that specific device
-         * 
+         *
          */
         final UriMatcher matcher = new UriMatcher(UriMatcher.NO_MATCH);
         final String authority = AppContract.CONTENT_AUTHORITY;

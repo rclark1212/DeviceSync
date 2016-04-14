@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- do NOT change ordinals below - must keep mapping -->
+    <integer name="header_devices">0</integer>
+    <integer name="header_device_apps">1</integer>
+    <integer name="header_flagged_apps">2</integer>
+    <integer name="header_missing_apps">3</integer>
+    <integer name="header_unique_apps">4</integer>
+    <integer name="header_superset_apps">5</integer>
+    <integer name="header_remote_apps">6</integer>
+
+    <!-- note - both of the arrays below need to be kept in sync.
+         Do NOT change the ordinals in the function array - describes the function of the row.
+         An example of changing UI so it shows My Apps instead of Local Apps, just change header_name Local Apps to My Apps.
+         A further example of swapping order between Missing Apps/Flagged apps is to move Flagged Apps below Missing Apps
+         in the header_names array below *AND* moving the 2 below the 3 in the header_function array -->
+
+    <!-- do change oder below to change menu ordering in the app -->
+    <string-array name="header_names">
+        <item>Devices</item>
+        <item>Local Apps</item>
+        <item>Flagged Apps (all)</item>
+        <item>Missing Apps (local)</item>
+        <item>Unique Apps (local)</item>
+        <item>App Superset</item>
+        <item>Remotes</item>
+    </string-array>
+
+    <!-- do change order below to change menu ordering in the app -->
+    <integer-array name="header_function">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+    </integer-array>
+</resources>

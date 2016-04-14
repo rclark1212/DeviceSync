@@ -46,7 +46,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.rclark.devicesync.AppList;
+import com.example.rclark.devicesync.UIDataSetup;
 import com.example.rclark.devicesync.ObjectDetail;
 import com.example.rclark.devicesync.R;
 import com.example.rclark.devicesync.data.AppContract;
@@ -64,6 +64,8 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
     private ArrayList<String> mRows;        //row headers
     private ArrayList<Uri> mLoaderUris;     //uris to work with per row...
 
+    private UIDataSetup mUIDataSetup;
+
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
@@ -71,6 +73,8 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         super.onActivityCreated(savedInstanceState);
 
         setupUIElements();
+
+        mUIDataSetup = new UIDataSetup(getContext());
 
         loadRows();
 
@@ -84,17 +88,12 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
 
     private void loadRows() {
-        mRows = new ArrayList<String>();
         mLoaderUris = new ArrayList<Uri>();
-        Uri appDB = AppContract.AppEntry.CONTENT_URI;
-        Uri deviceDB = AppContract.DevicesEntry.CONTENT_URI;
         Uri searchUri;
+        int i;
 
         mRowsAdapter = new ArrayObjectAdapter(new ListRowPresenter());
         CardPresenter cardPresenter = new CardPresenter();
-
-        //init the rows list...
-        AppList.loadRows(mRows);
 
         /*
             For CursorObjectAdapter...
@@ -103,9 +102,8 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
             Need to construct the adapter, implement cursor callbacks
             Then off to races...
          */
-        int i;
-        for (i = 0; i < mRows.size(); i++) {
-            HeaderItem header = new HeaderItem(i, mRows.get(i));
+        for (i = 0; i < mUIDataSetup.getNumberOfHeaders(); i++) {
+            HeaderItem header = new HeaderItem(i, mUIDataSetup.getRowHeader(i));
 
             //see
             //https://github.com/googlesamples/androidtv-Leanback/blob/master/app/src/main/java/com/example/android/tvleanback/ui/VideoDetailsFragment.java
@@ -113,7 +111,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
             CursorObjectAdapter listRowAdapter = new CursorObjectAdapter(cardPresenter);
 
             //construct mapper
-            if (i == AppList.CAT_DEVICES) {
+            if (mUIDataSetup.isDevice(i)) {
                 DeviceCursorMapper deviceMapper = new DeviceCursorMapper();
                 listRowAdapter.setMapper(deviceMapper);
             } else {
@@ -123,13 +121,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
             //set up the cursorobjectadapter
             //open a query
-            if (i == AppList.CAT_DEVICES) {
-                searchUri = deviceDB.buildUpon().build();
-            } else if (i == AppList.CAT_LOCAL) {
-                searchUri = appDB.buildUpon().appendPath(Build.SERIAL).build();
-            } else {
-                searchUri = appDB.buildUpon().appendPath(Build.SERIAL).build();
-            }
+            searchUri = mUIDataSetup.getRowUri(i);
 
             //save off this uri
             mLoaderUris.add(i, searchUri);
@@ -152,7 +144,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         LoaderManager loaderManager = getLoaderManager();
 
         //loop through the uris and set up loaders (and yes, could use a bundle to the loader and a local variable instead of global).
-        for (i = 0; i < mRows.size(); i++) {
+        for (i = 0; i < mUIDataSetup.getNumberOfHeaders(); i++) {
             if (mLoaderUris.get(i) != null) {
                 loaderManager.initLoader(i, null, this);
             }
