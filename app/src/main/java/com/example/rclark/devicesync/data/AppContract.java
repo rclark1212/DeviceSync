@@ -75,7 +75,7 @@ public class AppContract {
     /* Inner class that defines the table contents of the app table */
     // URI Format
     // /* - all or...
-    // /deviceSN/applabel
+    // /deviceSN/app_pkg
     public static final class AppEntry implements BaseColumns {
 
         public static final Uri CONTENT_URI =
@@ -117,9 +117,9 @@ public class AppContract {
             return CONTENT_URI.buildUpon().appendPath(DeviceSSN).build();
         }
 
-        public static Uri buildAppWithApp(String DeviceSSN, String appLabel) {
+        public static Uri buildAppWithApp(String DeviceSSN, String appPkg) {
             return CONTENT_URI.buildUpon().appendPath(DeviceSSN)
-                    .appendPath(appLabel).build();
+                    .appendPath(appPkg).build();
         }
 
         public static String getDeviceFromUri(Uri uri) {

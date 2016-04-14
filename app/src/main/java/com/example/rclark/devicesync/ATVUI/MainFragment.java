@@ -243,7 +243,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                     elementUri = AppContract.DevicesEntry.CONTENT_URI.buildUpon().appendPath(element.serial).build();
                 } else {
                     elementUri = AppContract.AppEntry.CONTENT_URI.buildUpon()
-                            .appendPath(element.serial).appendPath(element.label).build();
+                            .appendPath(element.serial).appendPath(element.pkg).build();
                 }
 
                 //NOTE - we send the object id to the detail view as a URI, not as a serializable object.

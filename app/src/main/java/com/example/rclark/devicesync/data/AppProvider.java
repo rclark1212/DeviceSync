@@ -33,7 +33,7 @@ public class AppProvider extends ContentProvider {
     //app db - label_setting = ?
     private static final String sAppSelection =
             AppContract.AppEntry.TABLE_NAME+
-                    "." + AppContract.AppEntry.COLUMN_APP_LABEL + " = ? ";
+                    "." + AppContract.AppEntry.COLUMN_APP_PKG + " = ? ";
 
     //app db - devices sn = ?
     private static final String sAppWithDevicesSelection =
@@ -42,7 +42,7 @@ public class AppProvider extends ContentProvider {
 
     //app db - devices snn_setting = ? AND app label = ?
     private static final String sAppsWithDevicesAndAppsSelection =
-            AppContract.AppEntry.COLUMN_APP_LABEL + " = ? AND " + AppContract.AppEntry.COLUMN_APP_DEVSSN + " = ? ";
+            AppContract.AppEntry.COLUMN_APP_PKG + " = ? AND " + AppContract.AppEntry.COLUMN_APP_DEVSSN + " = ? ";
 
     //get device by device
     private Cursor getDeviceByDevice(Uri uri, String[] projection, String sortOrder) {
@@ -113,6 +113,18 @@ public class AppProvider extends ContentProvider {
         // All paths added to the UriMatcher have a corresponding code to return when a match is
         // found.  The code passed into the constructor represents the code to return for the root
         // URI.  It's common to use NO_MATCH as the code for this case.
+
+        /**
+         * For apps db:
+         * / - all apps
+         * /devicesn - apps for this serial number
+         * /devicesn/app_pkg - specific app for specific device
+         *
+         * For device db:
+         * / - all devices
+         * /devicesn - that specific device
+         * 
+         */
         final UriMatcher matcher = new UriMatcher(UriMatcher.NO_MATCH);
         final String authority = AppContract.CONTENT_AUTHORITY;
 

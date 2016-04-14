@@ -214,7 +214,7 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
             long flags = 0;
 
             //Remember, device.pkg contains the serial number... (unique)
-            Uri appSearchUri = appDB.buildUpon().appendPath(device.serial).appendPath(app.label).build();
+            Uri appSearchUri = appDB.buildUpon().appendPath(device.serial).appendPath(app.pkg).build();
 
             //Build an insert URI to trigger notifications...
             Uri insertUri = appDB.buildUpon().appendPath(device.serial).build();
