@@ -121,6 +121,47 @@ public class DBUtils {
     }
 
     /**
+     *  Routine to indicate if device, app combo is local
+     *  (groupby won't always tell you)
+     */
+    public static boolean isAppLocal(Context ctx, String app) {
+
+        boolean bret = false;
+        Uri appDB = AppContract.AppEntry.CONTENT_URI;
+        //build up the local device query
+        appDB = appDB.buildUpon().appendPath(Build.SERIAL).appendPath(app).build();
+
+        //grab the cursor
+        Cursor c = ctx.getContentResolver().query(appDB, null, null, null, null);
+
+        if (c.getCount() > 0) {
+            bret = true;
+        }
+
+        c.close();
+        return bret;
+    }
+
+    /**
+     *  Routine to count number of apps in database
+     */
+    public static int countApp(Context ctx, String app) {
+
+        int count = 0;
+        Uri appDB = AppContract.AppEntry.CONTENT_URI;
+        //build up the local device query
+        appDB = appDB.buildUpon().appendPath("*").appendPath(app).build();
+
+        //grab the cursor
+        Cursor c = ctx.getContentResolver().query(appDB, null, null, null, null);
+
+        count = c.getCount();
+
+        c.close();
+        return count;
+    }
+
+    /**
      * Routine for testing CP and queries only...
      */
     public static void loadFakeData(Context ctx) {

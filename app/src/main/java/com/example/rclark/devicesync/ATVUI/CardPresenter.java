@@ -14,12 +14,18 @@
 
 package com.example.rclark.devicesync.ATVUI;
 
+import android.graphics.Color;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.support.v17.leanback.widget.ImageCardView;
 import android.support.v17.leanback.widget.Presenter;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
+import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
+import com.example.rclark.devicesync.DBUtils;
 import com.example.rclark.devicesync.ObjectDetail;
 import com.example.rclark.devicesync.R;
 import com.example.rclark.devicesync.data.AppContract;
@@ -74,10 +80,13 @@ public class CardPresenter extends Presenter {
 
         Log.d(TAG, "onBindViewHolder");
         if (element.label.length() > 0) {
-            cardView.setTitleText(element.label + " (" + element.serial + ")");
             cardView.setMainImageDimensions(CARD_WIDTH, CARD_HEIGHT);
 
+            //decorate the card
+            decorateCardViewImage(cardView, element);
+
             if (element.bIsDevice) {
+                cardView.setTitleText(element.label + " (" + element.serial + ")");
                 cardView.setContentText(element.name);
                 Drawable drawable;
                 if (element.type == AppContract.TYPE_ATV) {
@@ -87,10 +96,64 @@ public class CardPresenter extends Presenter {
                 }
                 cardView.setMainImage(drawable);
             } else {
+                cardView.setTitleText(element.label);
                 cardView.setContentText(element.pkg);
                 if (element.banner != null) {
                     cardView.setMainImage(element.banner);
+                } else {
+                    cardView.setMainImage(mDefaultCardImage);
                 }
+            }
+        }
+    }
+
+    /**
+     * Updates the view item per the element
+     * For example, gray out remote. And add a badge
+     * FIXME - not done yet.
+     * Suggest badge = number of installs total
+     * Can also be a flag (to show flagged)
+     * Can also be local/remote
+     */
+    private void decorateCardViewImage(ImageCardView cardView, ObjectDetail element) {
+        boolean bLocal = false;
+
+        //check serial number first - a lot cheaper than CP.
+        if (element.serial.equals(Build.SERIAL)) {
+            bLocal = true;
+        } else if (!element.bIsDevice) {
+            if (DBUtils.isAppLocal(cardView.getContext(), element.pkg)) {
+                bLocal = true;
+            }
+        }
+
+        //Is this a local or remote object?
+        if (!bLocal) {
+            cardView.setBadgeImage(ContextCompat.getDrawable(cardView.getContext(), R.drawable.star_icon));
+            //fade it out a bit (I know, expensive)
+            cardView.setAlpha(0.6f);
+            //get the text views
+            TextView title = (TextView) cardView.findViewById(R.id.title_text);
+            TextView subtitle = (TextView) cardView.findViewById(R.id.content_text);
+            if (title != null) {
+                title.setTextColor(ContextCompat.getColor(cardView.getContext(), R.color.remote_text));
+            }
+            if (subtitle != null) {
+                title.setTextColor(ContextCompat.getColor(cardView.getContext(), R.color.remote_text));
+            }
+        } else {
+            //view may have been recycled... restore it
+            cardView.setBadgeImage(null);
+            //fade it out a bit (I know, expensive)
+            cardView.setAlpha(1.0f);
+            //get the text views
+            TextView title = (TextView) cardView.findViewById(R.id.title_text);
+            TextView subtitle = (TextView) cardView.findViewById(R.id.content_text);
+            if (title != null) {
+                title.setTextColor(Color.WHITE);
+            }
+            if (subtitle != null) {
+                title.setTextColor(Color.WHITE);
             }
         }
     }

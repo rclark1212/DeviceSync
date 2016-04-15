@@ -1,5 +1,6 @@
 <resources>
     <color name="brand_color">#244840</color>
+    <color name="remote_text">#DDDDDD</color>
     <color name="background_gradient_start">#000000</color>
     <color name="background_gradient_end">#DDDDDD</color>
     <color name="fastlane_background">@color/brand_color</color>

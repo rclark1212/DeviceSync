@@ -129,12 +129,24 @@ public class UIDataSetup {
         if (mFunction[row] == DEVICES_ROW) {
             Uri deviceDB = AppContract.DevicesEntry.CONTENT_URI;
             retUri = deviceDB.buildUpon().build();
+        } else if (mFunction[row] == FLAGGEDAPPS_ROW)  {
+            //Need a groupbyquery. Do the fuglyness in the uri here...
+            Uri appDB = AppContract.AppEntry.GROUPBY_URI;
+            //embedd the group by column here...
+            retUri = appDB.buildUpon().appendPath(AppContract.AppEntry.COLUMN_APP_PKG).build();
+        } else if (mFunction[row] == MISSINGAPPS_ROW)  {
+            //Need a groupbyquery. Do the fuglyness in the uri here...
+            Uri appDB = AppContract.AppEntry.GROUPBY_URI;
+            //embedd the group by column here...
+            retUri = appDB.buildUpon().appendPath(AppContract.AppEntry.COLUMN_APP_PKG).build();
         } else if (mFunction[row] == SUPERSET_ROW)  {
             //Need a groupbyquery. Do the fuglyness in the uri here...
             Uri appDB = AppContract.AppEntry.GROUPBY_URI;
             //embedd the group by column here...
             retUri = appDB.buildUpon().appendPath(AppContract.AppEntry.COLUMN_APP_PKG).build();
-        } else  {
+        } else if (mFunction[row] == REMOTESTART_ROW)  {
+            retUri = null;  //nothing for now
+        } else {
             //everything else is app database
             Uri appDB = AppContract.AppEntry.CONTENT_URI;
             retUri = appDB.buildUpon().appendPath(Build.SERIAL).build();
@@ -145,6 +157,7 @@ public class UIDataSetup {
     /**
      * Critical routine #2 - return the selectionString for the row
      * This controls what the row shows from CP (along with Uri, selectionArgs)
+     * And the ugly language reference is here: https://www.sqlite.org/lang_select.html
      */
     public String getRowSelection(int row) {
         String selection = null;
@@ -153,10 +166,23 @@ public class UIDataSetup {
             //Selection should be for unique app names, across all devices that have a flag setting != FLAG_NO_ACTION
             //I think this should be written as:
             //SELECT flag != ? {FLAG_NO_ACTION} FROM app_table GROUP BY pkgname
+            selection = AppContract.AppEntry.COLUMN_APP_FLAGS + " != ? ";
         } else if (mFunction[row] == MISSINGAPPS_ROW) {
             //Selection should be for unique missing apps from this device
+            //I think this should be written as:
+            //SELECT device != ? {serial} FROM app_table GROUP BY pkgname
+            //Nope - if you have duplicate apps, the app from non-local serial number will be picked up.
+            //Think we have to do a fugly compound SELECT statement of all serial numbers *except* local
+            //OR, per docs, if having clause is false, a group is discarded. So can do having localserial number, should discard a group
+            selection = AppContract.AppEntry.COLUMN_APP_DEVSSN + " != ? ";
         } else if (mFunction[row] == UNIQUEAPPS_ROW) {
             //Selection should be for apps that only exist on this device (and not others)
+            //I think this should be written as:
+            //tough one - need to think about it...
+            //Really needs to be a device\app search that only has one entry...
+            //Can be done with the having command - look for all apps, group them and then do a having just for this device...
+            //And FIXME - fix the ordering. Put in a standard ordering for ordering by label
+
         } else if (mFunction[row] == SUPERSET_ROW) {
             //Selection should be for all unique apps
             //I think this should be written as:
@@ -177,7 +203,11 @@ public class UIDataSetup {
         String[] selectionArgs = null;
 
         if (mFunction[row] == FLAGGEDAPPS_ROW) {
+            selectionArgs = new String[1];
+            selectionArgs[0] = String.valueOf(AppContract.AppEntry.FLAG_NO_ACTION);
         } else if (mFunction[row] == MISSINGAPPS_ROW) {
+            selectionArgs = new String[1];
+            selectionArgs[0] = Build.SERIAL;
         } else if (mFunction[row] == UNIQUEAPPS_ROW) {
         } else if (mFunction[row] == SUPERSET_ROW) {
         }

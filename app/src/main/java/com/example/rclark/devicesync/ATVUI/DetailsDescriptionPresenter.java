@@ -16,6 +16,7 @@ package com.example.rclark.devicesync.ATVUI;
 
 import android.support.v17.leanback.widget.AbstractDetailsDescriptionPresenter;
 
+import com.example.rclark.devicesync.DBUtils;
 import com.example.rclark.devicesync.ObjectDetail;
 import com.example.rclark.devicesync.Utils;
 
@@ -35,7 +36,7 @@ public class DetailsDescriptionPresenter extends AbstractDetailsDescriptionPrese
             } else {
                 viewHolder.getTitle().setText(element.label);
                 viewHolder.getSubtitle().setText(element.pkg);
-                String body = "Version: " + element.ver + "\nInstallDate: " + Utils.unNormalizeDate(element.installDate);
+                String body = "Version: " + element.ver + "\nInstallDate: " + Utils.unNormalizeDate(element.installDate) + "\nCount: " + DBUtils.countApp(viewHolder.view.getContext(),element.pkg);
                 viewHolder.getBody().setText(body);
             }
         }
