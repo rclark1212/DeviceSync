@@ -25,7 +25,7 @@ public class ObjectDetail implements Serializable {
     public long flags;
     public Drawable banner;     //this should only be used for apps not in app store FIXME
     public boolean bIsDevice;   //true if using object to represent device, false for app
-    public int type;            //indicates device type for both apps/devices - 0=atv, 1=tablet
+    public long type;            //indicates device type for both apps/devices - 0=atv, 1=tablet
     public String location;     //location for devices
     public ApplicationInfo ai;
     public Resources res;

@@ -25,7 +25,6 @@ import android.support.v17.leanback.widget.ArrayObjectAdapter;
 import android.support.v17.leanback.widget.ClassPresenterSelector;
 import android.support.v17.leanback.widget.DetailsOverviewRow;
 import android.support.v17.leanback.widget.DetailsOverviewRowPresenter;
-import android.support.v17.leanback.widget.ListRowPresenter;
 import android.support.v17.leanback.widget.OnActionClickedListener;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -74,7 +73,7 @@ public class VideoDetailsFragment extends DetailsFragment {
 
         Uri selectedUri = (Uri) getActivity().getIntent().getParcelableExtra(DetailsActivity.OBJECTURI);
         //and now load that Uri into an object...
-        mSelectedObject = DBUtils.getAppFromCP(getActivity(), selectedUri);
+        mSelectedObject = DBUtils.getObjectFromCP(getActivity(), selectedUri);
 
         if (mSelectedObject != null) {
             setupAdapter();

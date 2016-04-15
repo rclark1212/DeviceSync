@@ -17,6 +17,7 @@ public class AppContract {
 
     public static final String PATH_APPS = "apps";
     public static final String PATH_DEVICES = "devices";
+    public static final String PATH_GROUPBY = "appsgroupby";
 
     public static final int TYPE_ATV = 0;       //indicates this is an ATV app/device
     public static final int TYPE_TABLET = 1;    //indicates this is a phone/tablet app/device
@@ -80,6 +81,13 @@ public class AppContract {
 
         public static final Uri CONTENT_URI =
                 BASE_CONTENT_URI.buildUpon().appendPath(PATH_APPS).build();
+
+        //This is fugly but is due to an android failure. No groupBy ability in a content provider.
+        //So make a fake URI matcher that will alias to global /APPS but with a groupBy parameter.
+        //So /APPS/groupBy.
+        //USED ONLY FOR QUERIES! USED ONLY FOR GLOBAL APP SEARCHES!!!!
+        public static final Uri GROUPBY_URI =
+                BASE_CONTENT_URI.buildUpon().appendPath(PATH_GROUPBY).build();
 
         public static final String CONTENT_TYPE =
                 ContentResolver.CURSOR_DIR_BASE_TYPE + "/" + CONTENT_AUTHORITY + "/" + PATH_APPS;

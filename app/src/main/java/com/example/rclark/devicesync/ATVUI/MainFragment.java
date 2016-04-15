@@ -46,6 +46,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.rclark.devicesync.DBUtils;
 import com.example.rclark.devicesync.UIDataSetup;
 import com.example.rclark.devicesync.ObjectDetail;
 import com.example.rclark.devicesync.R;
@@ -61,9 +62,6 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
     private final Handler mHandler = new Handler();
     private ArrayObjectAdapter mRowsAdapter;
 
-    private ArrayList<String> mRows;        //row headers
-    private ArrayList<Uri> mLoaderUris;     //uris to work with per row...
-
     private UIDataSetup mUIDataSetup;
 
 
@@ -74,11 +72,17 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
         setupUIElements();
 
-        mUIDataSetup = new UIDataSetup(getContext());
+        //Update the local content provider...
+        GCESync.startActionUpdateLocal(getActivity(), null, null);
+
+        mUIDataSetup = new UIDataSetup(getActivity());
 
         loadRows();
 
         setupEventListeners();
+
+        //and set up fake data - hack - FIXME remove later
+        DBUtils.loadFakeData(getActivity());
     }
 
     @Override
@@ -88,8 +92,6 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
 
     private void loadRows() {
-        mLoaderUris = new ArrayList<Uri>();
-        Uri searchUri;
         int i;
 
         mRowsAdapter = new ArrayObjectAdapter(new ListRowPresenter());
@@ -119,12 +121,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                 listRowAdapter.setMapper(appMapper);
             }
 
-            //set up the cursorobjectadapter
-            //open a query
-            searchUri = mUIDataSetup.getRowUri(i);
-
-            //save off this uri
-            mLoaderUris.add(i, searchUri);
+            //set up the cursorobjectadapter - note, we reference cursor loader by row and set up cursor there...
 
             //set it
             mRowsAdapter.add(new ListRow(header, listRowAdapter));
@@ -145,14 +142,11 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
         //loop through the uris and set up loaders (and yes, could use a bundle to the loader and a local variable instead of global).
         for (i = 0; i < mUIDataSetup.getNumberOfHeaders(); i++) {
-            if (mLoaderUris.get(i) != null) {
+            //if uri that comes back is null, don't init a cursor (blank row)
+            if (mUIDataSetup.getRowUri(i) != null) {
                 loaderManager.initLoader(i, null, this);
             }
         }
-
-        //And update the local content provider...
-        GCESync.startActionUpdateLocal(getActivity(), null, null);
-
     }
 
     /**
@@ -164,8 +158,9 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
      *      when doing an operation (but this should never fail).
      */
     @Override
-    public Loader<Cursor> onCreateLoader(int id, final Bundle args) {
-        return new CursorLoader(getActivity(), mLoaderUris.get(id), null, null, null, null);
+    public Loader<Cursor> onCreateLoader(int rowid, final Bundle args) {
+        return new CursorLoader(getActivity(), mUIDataSetup.getRowUri(rowid), null,
+                mUIDataSetup.getRowSelection(rowid), mUIDataSetup.getRowSelectionArgs(rowid), null);
     }
 
     @Override

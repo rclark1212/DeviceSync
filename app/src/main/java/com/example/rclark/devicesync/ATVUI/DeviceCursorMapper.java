@@ -19,6 +19,7 @@ public class DeviceCursorMapper extends CursorMapper {
     private static int dateIndex;
     private static int typeIndex;
     private static int locationIndex;
+    private static int flagIndex;
 
     @Override
     protected void bindColumns(Cursor cursor) {
@@ -46,7 +47,7 @@ public class DeviceCursorMapper extends CursorMapper {
         device.location = cursor.getString(locationIndex);
 
         device.installDate = cursor.getLong(dateIndex);
-        device.type = cursor.getInt(typeIndex);
+        device.type = cursor.getLong(typeIndex);
 
         //deal with some device specific items...
         device.banner = null;       //will be picked up from resource and type

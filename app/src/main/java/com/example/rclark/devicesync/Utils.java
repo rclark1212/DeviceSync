@@ -14,7 +14,9 @@
 
 package com.example.rclark.devicesync;
 
+import android.app.UiModeManager;
 import android.content.Context;
+import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -112,7 +114,10 @@ public class Utils {
         indicates if we are on an ATV or tablet
      */
     public static boolean bIsThisATV(Context ctx) {
-        return ctx.getPackageManager().hasSystemFeature("com.google.android.tv");
+        boolean bRet = false;
+        UiModeManager uiModeManager = (UiModeManager) ctx.getSystemService(Context.UI_MODE_SERVICE);
+        bRet = (uiModeManager.getCurrentModeType() == Configuration.UI_MODE_TYPE_TELEVISION);
+        return bRet;
     }
 
     /*

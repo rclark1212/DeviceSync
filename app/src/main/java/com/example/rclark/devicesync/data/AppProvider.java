@@ -22,6 +22,7 @@ public class AppProvider extends ContentProvider {
     static final int APPS = 100;
     static final int APPS_WITH_DEVICE = 101;
     static final int APPS_WITH_DEVICE_AND_APP = 102;
+    static final int APPS_WITH_GROUPBY = 200;
     static final int DEVICES = 300;
     static final int DEVICES_WITH_DEVICE = 301;
 
@@ -136,6 +137,8 @@ public class AppProvider extends ContentProvider {
         matcher.addURI(authority, AppContract.PATH_DEVICES, DEVICES);
         matcher.addURI(authority, AppContract.PATH_DEVICES + "/*", DEVICES_WITH_DEVICE);
 
+        matcher.addURI(authority, AppContract.PATH_GROUPBY + "/*", APPS_WITH_GROUPBY);
+
         return matcher;
     }
 
@@ -198,6 +201,20 @@ public class AppProvider extends ContentProvider {
                         selection,
                         selectionArgs,
                         null,
+                        null,
+                        sortOrder
+                );
+                break;
+            }
+            //fugly hack to get around android limitation of no groupBy for CP. Alias in a special Uri.
+            case APPS_WITH_GROUPBY: {
+                String groupBy = uri.getPathSegments().get(1);          //grab the encoded groupBy...
+                retCursor = mOpenHelper.getReadableDatabase().query(
+                        AppContract.AppEntry.TABLE_NAME,
+                        projection,
+                        selection,
+                        selectionArgs,
+                        groupBy,
                         null,
                         sortOrder
                 );

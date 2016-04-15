@@ -243,6 +243,7 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
             }
             
             //load up contentValues with latest info...
+            //Force the OS type by definition...
             long ostype = Utils.bIsThisATV(mCtx) ? AppContract.TYPE_ATV : AppContract.TYPE_TABLET;
             contentValues.put(AppContract.AppEntry.COLUMN_APP_LABEL, app.label);
             contentValues.put(AppContract.AppEntry.COLUMN_APP_PKG, app.pkg);

@@ -22,6 +22,7 @@ public final class AppCursorMapper extends CursorMapper {
     private static int dateIndex;
     private static int flagsIndex;
     private static int bannerIndex;
+    private static int typeIndex;
 
     @Override
     protected void bindColumns(Cursor cursor) {
@@ -33,6 +34,7 @@ public final class AppCursorMapper extends CursorMapper {
         dateIndex = cursor.getColumnIndex(AppContract.AppEntry.COLUMN_DATE);
         flagsIndex = cursor.getColumnIndex(AppContract.AppEntry.COLUMN_APP_FLAGS);
         bannerIndex = cursor.getColumnIndex(AppContract.AppEntry.COLUMN_APP_BANNER);
+        typeIndex = cursor.getColumnIndex(AppContract.AppEntry.COLUMN_APP_TYPE);
     }
 
     @Override
@@ -48,6 +50,7 @@ public final class AppCursorMapper extends CursorMapper {
         app.serial = cursor.getString(serialIndex);
         app.installDate = cursor.getLong(dateIndex);
         app.flags = cursor.getLong(flagsIndex);
+        app.type = cursor.getLong(typeIndex);
 
         //deal with bitmap...
         byte[] blob = cursor.getBlob(bannerIndex);

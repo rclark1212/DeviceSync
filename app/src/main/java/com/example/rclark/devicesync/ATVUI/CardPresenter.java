@@ -74,7 +74,7 @@ public class CardPresenter extends Presenter {
 
         Log.d(TAG, "onBindViewHolder");
         if (element.label.length() > 0) {
-            cardView.setTitleText(element.label);
+            cardView.setTitleText(element.label + " (" + element.serial + ")");
             cardView.setMainImageDimensions(CARD_WIDTH, CARD_HEIGHT);
 
             if (element.bIsDevice) {

@@ -8,6 +8,7 @@ import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
+import android.support.annotation.Nullable;
 
 import com.example.rclark.devicesync.data.AppContract;
 
@@ -128,6 +129,11 @@ public class UIDataSetup {
         if (mFunction[row] == DEVICES_ROW) {
             Uri deviceDB = AppContract.DevicesEntry.CONTENT_URI;
             retUri = deviceDB.buildUpon().build();
+        } else if (mFunction[row] == SUPERSET_ROW)  {
+            //Need a groupbyquery. Do the fuglyness in the uri here...
+            Uri appDB = AppContract.AppEntry.GROUPBY_URI;
+            //embedd the group by column here...
+            retUri = appDB.buildUpon().appendPath(AppContract.AppEntry.COLUMN_APP_PKG).build();
         } else  {
             //everything else is app database
             Uri appDB = AppContract.AppEntry.CONTENT_URI;
@@ -141,14 +147,42 @@ public class UIDataSetup {
      * This controls what the row shows from CP (along with Uri, selectionArgs)
      */
     public String getRowSelection(int row) {
-        return null;
+        String selection = null;
+
+        if (mFunction[row] == FLAGGEDAPPS_ROW) {
+            //Selection should be for unique app names, across all devices that have a flag setting != FLAG_NO_ACTION
+            //I think this should be written as:
+            //SELECT flag != ? {FLAG_NO_ACTION} FROM app_table GROUP BY pkgname
+        } else if (mFunction[row] == MISSINGAPPS_ROW) {
+            //Selection should be for unique missing apps from this device
+        } else if (mFunction[row] == UNIQUEAPPS_ROW) {
+            //Selection should be for apps that only exist on this device (and not others)
+        } else if (mFunction[row] == SUPERSET_ROW) {
+            //Selection should be for all unique apps
+            //I think this should be written as:
+            //SELECT * FROM app_table GROUP BY pkgname
+            //see http://stackoverflow.com/questions/6127338/sql-mysql-select-distinct-unique-but-return-all-columns
+            //null = SELECT *
+        }
+
+        return selection;
     }
+
 
     /**
      * Critical routine #3 - return the selectionArgs for the row
      * This controls what the row shows from CP (along with Uri, selectionString)
      */
     public String[] getRowSelectionArgs(int row) {
-        return null;
+        String[] selectionArgs = null;
+
+        if (mFunction[row] == FLAGGEDAPPS_ROW) {
+        } else if (mFunction[row] == MISSINGAPPS_ROW) {
+        } else if (mFunction[row] == UNIQUEAPPS_ROW) {
+        } else if (mFunction[row] == SUPERSET_ROW) {
+        }
+
+        return selectionArgs;
     }
+
 }
