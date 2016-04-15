@@ -158,6 +158,7 @@ public class UIDataSetup {
      * Critical routine #2 - return the selectionString for the row
      * This controls what the row shows from CP (along with Uri, selectionArgs)
      * And the ugly language reference is here: https://www.sqlite.org/lang_select.html
+     * Or see http://www.w3schools.com/sql/sql_having.asp
      */
     public String getRowSelection(int row) {
         String selection = null;
@@ -174,6 +175,7 @@ public class UIDataSetup {
             //Nope - if you have duplicate apps, the app from non-local serial number will be picked up.
             //Think we have to do a fugly compound SELECT statement of all serial numbers *except* local
             //OR, per docs, if having clause is false, a group is discarded. So can do having localserial number, should discard a group
+            //see http://www.w3schools.com/sql/sql_having.asp
             selection = AppContract.AppEntry.COLUMN_APP_DEVSSN + " != ? ";
         } else if (mFunction[row] == UNIQUEAPPS_ROW) {
             //Selection should be for apps that only exist on this device (and not others)
@@ -181,6 +183,7 @@ public class UIDataSetup {
             //tough one - need to think about it...
             //Really needs to be a device\app search that only has one entry...
             //Can be done with the having command - look for all apps, group them and then do a having just for this device...
+            //Also can use COUNT function (COUNT of 1 w/local device)
             //And FIXME - fix the ordering. Put in a standard ordering for ordering by label
 
         } else if (mFunction[row] == SUPERSET_ROW) {

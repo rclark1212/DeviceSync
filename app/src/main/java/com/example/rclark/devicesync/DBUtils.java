@@ -145,6 +145,7 @@ public class DBUtils {
     /**
      *  Routine to count number of apps in database
      */
+    //FIXME - broken right now. SQL wildcard for devices? Just do a select query...
     public static int countApp(Context ctx, String app) {
 
         int count = 0;
