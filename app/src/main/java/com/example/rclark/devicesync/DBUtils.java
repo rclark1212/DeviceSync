@@ -11,6 +11,7 @@ import android.os.Build;
 import android.util.Log;
 
 import com.example.rclark.devicesync.data.AppContract;
+import com.example.rclark.devicesync.data.AppProvider;
 import com.example.rclark.devicesync.sync.SyncUtils;
 
 import java.io.ByteArrayOutputStream;
@@ -144,21 +145,54 @@ public class DBUtils {
 
     /**
      *  Routine to count number of apps in database
+     *  if app = null, count all unique apps
      */
-    //FIXME - broken right now. SQL wildcard for devices? Just do a select query...
     public static int countApp(Context ctx, String app) {
 
         int count = 0;
-        Uri appDB = AppContract.AppEntry.CONTENT_URI;
-        //build up the local device query
-        appDB = appDB.buildUpon().appendPath("*").appendPath(app).build();
+        if (app != null) {
+            Uri appDB = AppContract.AppEntry.CONTENT_URI;
+
+            //Build up the selection string
+            String selection = AppContract.AppEntry.COLUMN_APP_PKG + " = ? ";
+            String selectionArgs[] = {app};
+
+            //grab the cursor
+            Cursor c = ctx.getContentResolver().query(appDB, null, selection, selectionArgs, null);
+
+            count = c.getCount();
+
+            c.close();
+        } else {
+            Uri appDB = AppContract.AppEntry.GROUPBY_URI;
+            //embedd the group by column here... (using our special groupby uri query)
+            appDB = appDB.buildUpon().appendPath(AppContract.AppEntry.COLUMN_APP_PKG).build();
+
+            //grab the cursor
+            Cursor c = ctx.getContentResolver().query(appDB, null, null, null, null);
+
+            count = c.getCount();
+
+            c.close();
+        }
+        return count;
+    }
+
+    /**
+     *  Routine to count number of devices in database
+     */
+    public static int countDevices(Context ctx) {
+
+        int count = 0;
+        Uri deviceDB = AppContract.DevicesEntry.CONTENT_URI;
 
         //grab the cursor
-        Cursor c = ctx.getContentResolver().query(appDB, null, null, null, null);
+        Cursor c = ctx.getContentResolver().query(deviceDB, null, null, null, null);
 
         count = c.getCount();
 
         c.close();
+
         return count;
     }
 
@@ -184,6 +218,7 @@ public class DBUtils {
 
 
         ObjectDetail device = getObjectFromCP(ctx, localdeviceDB);
+        if (device == null) return;     //so on fresh installs, might have to rnu twice to get fake data.
         String serialbase = device.serial;  //save off base serial
         ContentValues contentValues = new ContentValues();
 
@@ -274,8 +309,6 @@ public class DBUtils {
                     //deal with bitmap...
                     byte[] blob = c.getBlob(bannerIndex);
                     if (blob != null) {
-                        //FIXME - can't get a context for scaling. Should we just make everything a bitmap and not drawable?
-                        //OR, leave this null if package available on play store and download...
                         app.banner = new BitmapDrawable(Utils.convertByteArrayToBitmap(blob));
                     }
 

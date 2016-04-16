@@ -26,6 +26,8 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.support.v17.leanback.app.BrowseFragment;
 import android.support.v17.leanback.database.CursorMapper;
 import android.support.v17.leanback.widget.ArrayObjectAdapter;
@@ -53,7 +55,9 @@ import com.example.rclark.devicesync.R;
 import com.example.rclark.devicesync.data.AppContract;
 import com.example.rclark.devicesync.sync.GCESync;
 
-public class MainFragment extends BrowseFragment implements LoaderManager.LoaderCallbacks<Cursor> {
+
+public class MainFragment extends BrowseFragment implements LoaderManager.LoaderCallbacks<Cursor>,
+        ContentObserverCallback {
     private static final String TAG = "MainFragment";
 
     private static final int GRID_ITEM_WIDTH = 200;
@@ -61,6 +65,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
     private final Handler mHandler = new Handler();
     private ArrayObjectAdapter mRowsAdapter;
+    private AppObserver mAppObserver;
 
     private UIDataSetup mUIDataSetup;
 
@@ -83,6 +88,44 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
         //and set up fake data - hack - FIXME remove later
         DBUtils.loadFakeData(getActivity());
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        //set up handler and register content observer
+        if (mAppObserver == null) {
+            mAppObserver = new AppObserver(this);
+        }
+        getActivity().getContentResolver().registerContentObserver(AppContract.AppEntry.CONTENT_URI,
+                true,
+                mAppObserver);
+
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        // always call unregisterContentObserver in onPause
+        getActivity().getContentResolver().unregisterContentObserver(mAppObserver);
+    }
+
+
+    @Override
+    public void updateFromCP() {
+        //called when CP changes underneath us
+        getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                // Run this on UI thread.
+                //Update the text on title view
+                String titleformat = getString(R.string.browse_title);
+                String title = String.format(titleformat, DBUtils.countDevices(getActivity()), DBUtils.countApp(getActivity(), null));
+
+                setTitle(title); // Badge, when set, takes precedent
+            }
+        });
     }
 
     @Override
@@ -190,7 +233,10 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
     private void setupUIElements() {
         // setBadgeDrawable(getActivity().getResources().getDrawable(
         // R.drawable.videos_by_google_banner));
-        setTitle(getString(R.string.browse_title)); // Badge, when set, takes precedent
+        String titleformat = getString(R.string.browse_title);
+        String title = String.format(titleformat, DBUtils.countDevices(getActivity()), DBUtils.countApp(getActivity(), null));
+
+        setTitle(title); // Badge, when set, takes precedent
         // over title
         setHeadersState(HEADERS_ENABLED);
         setHeadersTransitionOnBackEnabled(true);
