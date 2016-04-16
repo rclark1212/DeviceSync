@@ -14,8 +14,6 @@
 
 package com.example.rclark.devicesync.ATVUI;
 
-import java.util.ArrayList;
-
 import android.app.LoaderManager;
 import android.content.CursorLoader;
 import android.content.Intent;
@@ -23,11 +21,8 @@ import android.content.Loader;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Looper;
-import android.os.Message;
 import android.support.v17.leanback.app.BrowseFragment;
 import android.support.v17.leanback.database.CursorMapper;
 import android.support.v17.leanback.widget.ArrayObjectAdapter;
@@ -153,10 +148,12 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
             //see
             //https://github.com/googlesamples/androidtv-Leanback/blob/master/app/src/main/java/com/example/android/tvleanback/ui/VideoDetailsFragment.java
 
+            //Sigh - can't do all the queries we want with a cursor and CP. So we will do a mix.
+            //Where we can use a CP, we will. Where we can't, we will use an arrayadapter
             CursorObjectAdapter listRowAdapter = new CursorObjectAdapter(cardPresenter);
 
             //construct mapper
-            if (mUIDataSetup.isDevice(i)) {
+            if (mUIDataSetup.isDeviceRow(i)) {
                 DeviceCursorMapper deviceMapper = new DeviceCursorMapper();
                 listRowAdapter.setMapper(deviceMapper);
             } else {
@@ -202,8 +199,14 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
      */
     @Override
     public Loader<Cursor> onCreateLoader(int rowid, final Bundle args) {
+        String sortorder = null;
+        //if it is an app, sort by app label
+        if (!mUIDataSetup.isDeviceRow(rowid)) {
+            sortorder = AppContract.AppEntry.COLUMN_APP_LABEL + " ASC";
+        }
+
         return new CursorLoader(getActivity(), mUIDataSetup.getRowUri(rowid), null,
-                mUIDataSetup.getRowSelection(rowid), mUIDataSetup.getRowSelectionArgs(rowid), null);
+                mUIDataSetup.getRowSelection(rowid), mUIDataSetup.getRowSelectionArgs(rowid), sortorder);
     }
 
     @Override

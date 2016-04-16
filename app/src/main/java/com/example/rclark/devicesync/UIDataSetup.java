@@ -108,12 +108,38 @@ public class UIDataSetup {
      * @param row
      * @return
      */
-    public boolean isDevice(int row) {
+    public boolean isDeviceRow(int row) {
         if (mFunction[row] == DEVICES_ROW) {
             return true;
         } else {
             return false;
         }
+    }
+
+    /**
+     *  URI Query Logic for cursor...
+     *  If getRowUri returns non-null, then also call getSelection and getSelectionArgs to return
+     *  back supplemental information for the standard query.
+     *  Note that we use some fake alias Uris here to get access to group by, having and count functions
+     */
+
+    /**
+     *  Some of the queries are too advanced for a simple SQL query.
+     *  So our UI actually uses a mix of cursor loaders and array adapters (original plan was to do
+     *  everything with cursor adapters but oh well - perhaps an SQL genius can create the ultimate
+     *  query strings here).
+     */
+    public boolean useArrayAdapter(int row) {
+        boolean bret = false;
+
+        //Okay - two rows we will use array objects for. Missing apps and unique apps
+        if (mFunction[row] == UNIQUEAPPS_ROW) {
+            bret = true;
+        } else if (mFunction[row] == MISSINGAPPS_ROW) {
+            bret = true;
+        }
+
+        return bret;
     }
 
     /**
@@ -139,6 +165,9 @@ public class UIDataSetup {
             Uri appDB = AppContract.AppEntry.GROUPBY_URI;
             //embedd the group by column here...
             retUri = appDB.buildUpon().appendPath(AppContract.AppEntry.COLUMN_APP_PKG).build();
+        } else if (mFunction[row] == UNIQUEAPPS_ROW) {
+            //using an arrayadapter for this
+            retUri = null;
         } else if (mFunction[row] == SUPERSET_ROW)  {
             //Need a groupbyquery. Do the fuglyness in the uri here...
             Uri appDB = AppContract.AppEntry.GROUPBY_URI;
@@ -185,7 +214,6 @@ public class UIDataSetup {
             //Can be done with the having command - look for all apps, group them and then do a having just for this device...
             //Also can use COUNT function (COUNT of 1 w/local device)
             //And FIXME - fix the ordering. Put in a standard ordering for ordering by label
-
         } else if (mFunction[row] == SUPERSET_ROW) {
             //Selection should be for all unique apps
             //I think this should be written as:

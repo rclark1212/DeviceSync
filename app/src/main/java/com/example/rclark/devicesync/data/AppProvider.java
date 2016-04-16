@@ -23,8 +23,10 @@ public class AppProvider extends ContentProvider {
     static final int APPS_WITH_DEVICE = 101;
     static final int APPS_WITH_DEVICE_AND_APP = 102;
     static final int APPS_WITH_GROUPBY = 200;
+    static final int APPS_WITH_GROUPBY_AND_HAVING = 201;
     static final int DEVICES = 300;
     static final int DEVICES_WITH_DEVICE = 301;
+
 
     //devices ssn_setting = ?
     private static final String sDevicesSelection =
@@ -137,7 +139,14 @@ public class AppProvider extends ContentProvider {
         matcher.addURI(authority, AppContract.PATH_DEVICES, DEVICES);
         matcher.addURI(authority, AppContract.PATH_DEVICES + "/*", DEVICES_WITH_DEVICE);
 
+        //These are effectively fake (aliased) Uris. Android does not support groupby/having in
+        //its CP. But we need to use syncadapters with CP. Get around this with a fake Uri
+        //that lets us pass groupby/having info to the query behind the CP adapter.
+        //db = apps, * = group by this column (pass this param into groupby)
         matcher.addURI(authority, AppContract.PATH_GROUPBY + "/*", APPS_WITH_GROUPBY);
+        //db = apps, /* (get(1)) = group by this column (pass this param into groupby)
+        // /*/* (get(2)) = pass this into having param
+        matcher.addURI(authority, AppContract.PATH_GROUPBY + "/*/*", APPS_WITH_GROUPBY_AND_HAVING);
 
         return matcher;
     }
@@ -216,6 +225,21 @@ public class AppProvider extends ContentProvider {
                         selectionArgs,
                         groupBy,
                         null,
+                        sortOrder
+                );
+                break;
+            }
+            //fugly hack2 to get around android limitation of no groupBy/having for CP. Alias in a special Uri.
+            case APPS_WITH_GROUPBY_AND_HAVING: {
+                String groupBy = uri.getPathSegments().get(1);          //grab the encoded groupBy...
+                String having = uri.getPathSegments().get(2);
+                retCursor = mOpenHelper.getReadableDatabase().query(
+                        AppContract.AppEntry.TABLE_NAME,
+                        projection,
+                        selection,
+                        selectionArgs,
+                        groupBy,
+                        having,
                         sortOrder
                 );
                 break;

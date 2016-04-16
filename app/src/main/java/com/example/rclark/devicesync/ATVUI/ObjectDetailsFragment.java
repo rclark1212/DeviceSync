@@ -14,6 +14,7 @@
 
 package com.example.rclark.devicesync.ATVUI;
 
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
@@ -40,7 +41,7 @@ import com.example.rclark.devicesync.data.AppContract;
  * LeanbackDetailsFragment extends DetailsFragment, a Wrapper fragment for leanback details screens.
  * It shows a detailed view of video and its meta plus related videos.
  */
-public class VideoDetailsFragment extends DetailsFragment {
+public class ObjectDetailsFragment extends DetailsFragment {
     private static final String TAG = "VideoDetailsFragment";
 
     private static final int ACTION_WATCH_TRAILER = 1;

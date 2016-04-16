@@ -17,7 +17,7 @@ public class AppContract {
 
     public static final String PATH_APPS = "apps";
     public static final String PATH_DEVICES = "devices";
-    public static final String PATH_GROUPBY = "appsgroupby";
+    public static final String PATH_GROUPBY = "appsgroupby";    //aliases to apps db
 
     public static final int TYPE_ATV = 0;       //indicates this is an ATV app/device
     public static final int TYPE_TABLET = 1;    //indicates this is a phone/tablet app/device

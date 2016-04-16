@@ -122,10 +122,30 @@ public class DBUtils {
     }
 
     /**
+     * Check to see if the passed in object is local or remote
+     * @param ctx
+     * @param object
+     * @return
+     */
+    public static boolean isObjectLocal(Context ctx, ObjectDetail object) {
+        Boolean bLocal = false;
+
+        //check serial number first - a lot cheaper than CP.
+        if (object.serial.equals(Build.SERIAL)) {
+            bLocal = true;
+        } else if (!object.bIsDevice) {
+            if (DBUtils.isAppLocal(ctx, object.pkg)) {
+                bLocal = true;
+            }
+        }
+        return bLocal;
+    }
+
+    /**
      *  Routine to indicate if device, app combo is local
      *  (groupby won't always tell you)
      */
-    public static boolean isAppLocal(Context ctx, String app) {
+    private static boolean isAppLocal(Context ctx, String app) {
 
         boolean bret = false;
         Uri appDB = AppContract.AppEntry.CONTENT_URI;
@@ -219,6 +239,8 @@ public class DBUtils {
 
         ObjectDetail device = getObjectFromCP(ctx, localdeviceDB);
         if (device == null) return;     //so on fresh installs, might have to rnu twice to get fake data.
+                                        //populating CP is done on a intent service. This call done on UI thread.
+                                        //thus a potential sync issue.
         String serialbase = device.serial;  //save off base serial
         ContentValues contentValues = new ContentValues();
 

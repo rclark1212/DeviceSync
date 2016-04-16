@@ -27,14 +27,21 @@ public class DetailsDescriptionPresenter extends AbstractDetailsDescriptionPrese
         ObjectDetail element = (ObjectDetail) item;
 
         if (element != null) {
+            String title = element.label;
+            if (!DBUtils.isObjectLocal(viewHolder.view.getContext(), element)) {
+                title = title + " (Remote)";
+            } else {
+                title = title + " (Local)";
+            }
+
             if (element.bIsDevice) {
-                viewHolder.getTitle().setText(element.label);
+                viewHolder.getTitle().setText(title);
                 viewHolder.getSubtitle().setText(element.name);
                 String body = "Serial: " + element.serial + "\nLocation: " + element.location +
                         "\nOSVer: " + element.ver + "\nUpdated: " + Utils.unNormalizeDate(element.installDate);
                 viewHolder.getBody().setText(body);
             } else {
-                viewHolder.getTitle().setText(element.label);
+                viewHolder.getTitle().setText(title);
                 viewHolder.getSubtitle().setText(element.pkg);
                 String body = "Version: " + element.ver + "\nInstallDate: " + Utils.unNormalizeDate(element.installDate) + "\nCount: " + DBUtils.countApp(viewHolder.view.getContext(),element.pkg);
                 viewHolder.getBody().setText(body);

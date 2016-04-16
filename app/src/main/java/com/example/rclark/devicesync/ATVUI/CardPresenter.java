@@ -118,14 +118,8 @@ public class CardPresenter extends Presenter {
     private void decorateCardViewImage(ImageCardView cardView, ObjectDetail element) {
         boolean bLocal = false;
 
-        //check serial number first - a lot cheaper than CP.
-        if (element.serial.equals(Build.SERIAL)) {
-            bLocal = true;
-        } else if (!element.bIsDevice) {
-            if (DBUtils.isAppLocal(cardView.getContext(), element.pkg)) {
-                bLocal = true;
-            }
-        }
+        //Is this object local?
+        bLocal = DBUtils.isObjectLocal(cardView.getContext(), element);
 
         //Is this a local or remote object?
         if (!bLocal) {
