@@ -28,6 +28,8 @@ public class UIDataSetup {
     private ArrayList<String> mRemotes; //Remotes can be variable size - this supplements above
     private boolean[] mHide;            //do we hide the row? (user config) - TODO
     private Context mCtx;
+    public ArrayList<ObjectDetail> mUnique;     //array list of unique apps on this device
+    public ArrayList<ObjectDetail> mMissing;    //array list of missing apps on this device
 
     // The defined row functions we support. Do not edit below. If you want to hide, change description, re-order, please modify the array.xml file
     // If you want to add a function, add an ordinal define below and make sure array.xml matches
@@ -42,6 +44,14 @@ public class UIDataSetup {
     public UIDataSetup(Context ctx) {
         mCtx = ctx;
         loadDataFromResources();
+
+        //Ugg - can't use cursor adapters for all. Need arrays...
+        if (mUnique == null) {
+            mUnique = new ArrayList<ObjectDetail>();
+        }
+        if (mMissing == null) {
+            mMissing = new ArrayList<ObjectDetail>();
+        }
     }
 
     /**
@@ -117,17 +127,122 @@ public class UIDataSetup {
     }
 
     /**
-     *  URI Query Logic for cursor...
-     *  If getRowUri returns non-null, then also call getSelection and getSelectionArgs to return
-     *  back supplemental information for the standard query.
-     *  Note that we use some fake alias Uris here to get access to group by, having and count functions
+     *  Return back an array of unique apps for the device
      */
+    private ArrayList<ObjectDetail> getUnique() {
+        //clear the array
+        mUnique.clear();
+
+        //Set up the query
+        Uri appDB = AppContract.AppEntry.CONTENT_URI;
+
+        //set up a local app query
+        Uri localApp = appDB.buildUpon().appendPath(Build.SERIAL).build();
+
+        //grab the cursor
+        Cursor c = mCtx.getContentResolver().query(localApp, null, null, null, null);
+
+        if (c.getCount() > 0) {
+            //Okay - we have a cursor with all the local apps.
+
+            //Loop through the app names
+            for (int i = 0; i < c.getCount(); i++) {
+                //move to position
+                c.moveToPosition(i);
+
+                //get the app name
+                String appname = c.getString(c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_PKG));
+
+                //Now query full database
+                String selection = AppContract.AppEntry.COLUMN_APP_PKG + " = ? ";
+                String[] selectionArgs = {appname};
+
+                //grab the cursor (and sort by app label)
+                Cursor c_all = mCtx.getContentResolver().query(appDB, null, selection, selectionArgs, AppContract.AppEntry.COLUMN_APP_LABEL + " ASC");
+
+                //and is there only one?
+                if (c_all.getCount() < 2) {
+                    //Okay - we just found a unique app. Yay!
+                    //For simplicity sake, grab the object with a utility
+                    Uri getApp = appDB.buildUpon().appendPath(Build.SERIAL).appendPath(appname).build();
+                    ObjectDetail unique = DBUtils.getObjectFromCP(mCtx, getApp);
+                    mUnique.add(unique);
+                }
+                c_all.close();
+            }
+        }
+
+        c.close();
+
+        return mUnique;
+    }
+
+    /**
+     *  Return back an array of unique apps for the device
+     */
+    private ArrayList<ObjectDetail> getMissing() {
+        mMissing.clear();
+
+        //Set up the query
+        Uri appDB = AppContract.AppEntry.CONTENT_URI;
+        //Use a groupby for outer loop to prevent dup apps
+        Uri groupByApp = AppContract.AppEntry.GROUPBY_URI;
+        groupByApp = groupByApp.buildUpon().appendPath(AppContract.AppEntry.COLUMN_APP_PKG).build();
+
+        //set up a query for apps that don't exist locally
+        String selection = AppContract.AppEntry.COLUMN_APP_DEVSSN + " != ? ";
+        String selectionArgs[] = {Build.SERIAL};
+
+        //grab the cursor
+        Cursor c = mCtx.getContentResolver().query(groupByApp, null, selection, selectionArgs, AppContract.AppEntry.COLUMN_APP_LABEL + " ASC");
+
+        if (c.getCount() > 0) {
+            //Okay - we have a cursor with all the remote apps.
+
+            //Loop through the app names
+            for (int i = 0; i < c.getCount(); i++) {
+                //move to position
+                c.moveToPosition(i);
+
+                //get the app name
+                String appname = c.getString(c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_PKG));
+
+                //Now query local device database
+                Uri localApp = appDB.buildUpon().appendPath(Build.SERIAL).appendPath(appname).build();
+
+                //grab the local cursor (and sort by app label)
+                Cursor c_local = mCtx.getContentResolver().query(localApp, null, null, null, null);
+
+                //and is there only one?
+                if (c_local.getCount() < 1) {
+                    //Okay - we just found a missing app. Yay!
+                    //For simplicity sake, grab the object with a utility
+                    String serial = c.getString(c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_DEVSSN));
+                    Uri getApp = appDB.buildUpon().appendPath(serial).appendPath(appname).build();
+                    ObjectDetail unique = DBUtils.getObjectFromCP(mCtx, getApp);
+                    mMissing.add(unique);
+                }
+                c_local.close();
+            }
+        }
+
+        c.close();
+
+        return mMissing;
+    }
+
+
 
     /**
      *  Some of the queries are too advanced for a simple SQL query.
      *  So our UI actually uses a mix of cursor loaders and array adapters (original plan was to do
      *  everything with cursor adapters but oh well - perhaps an SQL genius can create the ultimate
      *  query strings here).
+     */
+    /**
+     * This routine indicates if the row should be satisfied with a cursor or a backing array
+     * @param row
+     * @return
      */
     public boolean useArrayAdapter(int row) {
         boolean bret = false;
@@ -141,6 +256,28 @@ public class UIDataSetup {
 
         return bret;
     }
+
+    /**
+     * This routine returns back a backing array for a browse row when not using a cursor.
+     */
+    public ArrayList<ObjectDetail> getArrayAdapter(int row) {
+
+        //Okay - two rows we will use array objects for. Missing apps and unique apps
+        if (mFunction[row] == UNIQUEAPPS_ROW) {
+            return getUnique();
+        } else if (mFunction[row] == MISSINGAPPS_ROW) {
+            return getMissing();
+        }
+
+        return null;
+    }
+
+    /**
+     *  URI Query Logic for cursor...
+     *  If getRowUri returns non-null, then also call getSelection and getSelectionArgs to return
+     *  back supplemental information for the standard query.
+     *  Note that we use some fake alias Uris here to get access to group by, having and count functions
+     */
 
     /**
      * Critical routine #1 - return the Uri for the row
@@ -166,8 +303,10 @@ public class UIDataSetup {
             //embedd the group by column here...
             retUri = appDB.buildUpon().appendPath(AppContract.AppEntry.COLUMN_APP_PKG).build();
         } else if (mFunction[row] == UNIQUEAPPS_ROW) {
-            //using an arrayadapter for this
-            retUri = null;
+            //Need a groupbyquery. Do the fuglyness in the uri here...
+            Uri appDB = AppContract.AppEntry.GROUPBY_URI;
+            //embedd the group by column here...
+            retUri = appDB.buildUpon().appendPath(AppContract.AppEntry.COLUMN_APP_PKG).build();
         } else if (mFunction[row] == SUPERSET_ROW)  {
             //Need a groupbyquery. Do the fuglyness in the uri here...
             Uri appDB = AppContract.AppEntry.GROUPBY_URI;

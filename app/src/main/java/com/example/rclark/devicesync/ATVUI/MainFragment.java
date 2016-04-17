@@ -50,6 +50,8 @@ import com.example.rclark.devicesync.R;
 import com.example.rclark.devicesync.data.AppContract;
 import com.example.rclark.devicesync.sync.GCESync;
 
+import java.util.ArrayList;
+
 
 public class MainFragment extends BrowseFragment implements LoaderManager.LoaderCallbacks<Cursor>,
         ContentObserverCallback {
@@ -110,6 +112,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
     @Override
     public void updateFromCP() {
         //called when CP changes underneath us
+        //FIXME - need to update the backing array store for missing/unique apps
         getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -129,6 +132,9 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
     }
 
 
+    /**
+     *  Loads the browse rows (headers and data).
+     */
     private void loadRows() {
         int i;
 
@@ -150,21 +156,35 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
             //Sigh - can't do all the queries we want with a cursor and CP. So we will do a mix.
             //Where we can use a CP, we will. Where we can't, we will use an arrayadapter
-            CursorObjectAdapter listRowAdapter = new CursorObjectAdapter(cardPresenter);
+            if (mUIDataSetup.useArrayAdapter(i)) {
+                //set up an array adapter
+                ArrayObjectAdapter listRowAdapter = new ArrayObjectAdapter(cardPresenter);
+                //get the data
+                ArrayList<ObjectDetail> objectArray = mUIDataSetup.getArrayAdapter(i);
 
-            //construct mapper
-            if (mUIDataSetup.isDeviceRow(i)) {
-                DeviceCursorMapper deviceMapper = new DeviceCursorMapper();
-                listRowAdapter.setMapper(deviceMapper);
+                //and if data is valid
+                if (objectArray != null) {
+                    //add it to the object adapter
+                    for (int j = 0; j < objectArray.size(); j++) {
+                        listRowAdapter.add(objectArray.get(j));
+                    }
+                    mRowsAdapter.add(new ListRow(header, listRowAdapter));
+                }
             } else {
-                CursorMapper appMapper = new AppCursorMapper();
-                listRowAdapter.setMapper(appMapper);
+                CursorObjectAdapter listRowAdapter = new CursorObjectAdapter(cardPresenter);
+
+                //construct mapper
+                if (mUIDataSetup.isDeviceRow(i)) {
+                    DeviceCursorMapper deviceMapper = new DeviceCursorMapper();
+                    listRowAdapter.setMapper(deviceMapper);
+                } else {
+                    CursorMapper appMapper = new AppCursorMapper();
+                    listRowAdapter.setMapper(appMapper);
+                }
+                //set up the cursorobjectadapter - note, we reference cursor loader by row and set up cursor there...
+                //set it
+                mRowsAdapter.add(new ListRow(header, listRowAdapter));
             }
-
-            //set up the cursorobjectadapter - note, we reference cursor loader by row and set up cursor there...
-
-            //set it
-            mRowsAdapter.add(new ListRow(header, listRowAdapter));
         }
 
         HeaderItem gridHeader = new HeaderItem(i, "PREFERENCES");

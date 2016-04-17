@@ -14,7 +14,6 @@
 
 package com.example.rclark.devicesync.ATVUI;
 
-import android.content.Context;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
@@ -143,7 +142,11 @@ public class ObjectDetailsFragment extends DetailsFragment {
                 row.setImageDrawable(getResources().getDrawable(R.drawable.shieldtablet));
             }
         } else {
-            row.setImageDrawable(mSelectedObject.banner);
+            if (mSelectedObject.banner != null) {
+                row.setImageDrawable(mSelectedObject.banner);
+            } else {
+                row.setImageDrawable(getResources().getDrawable(R.drawable.noimage));
+            }
         }
         /* FIXME
         Glide.with(getActivity())
