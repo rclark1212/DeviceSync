@@ -15,8 +15,11 @@
 package com.example.rclark.devicesync.ATVUI;
 
 import android.app.LoaderManager;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.CursorLoader;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.Loader;
 import android.database.Cursor;
 import android.graphics.Color;
@@ -36,10 +39,13 @@ import android.support.v17.leanback.widget.Presenter;
 import android.support.v17.leanback.widget.Row;
 import android.support.v17.leanback.widget.RowPresenter;
 import android.support.v4.app.ActivityOptionsCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -47,6 +53,7 @@ import com.example.rclark.devicesync.DBUtils;
 import com.example.rclark.devicesync.UIDataSetup;
 import com.example.rclark.devicesync.ObjectDetail;
 import com.example.rclark.devicesync.R;
+import com.example.rclark.devicesync.Utils;
 import com.example.rclark.devicesync.data.AppContract;
 import com.example.rclark.devicesync.sync.GCESync;
 
@@ -66,6 +73,35 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
     private UIDataSetup mUIDataSetup;
 
+    //We use broadcast intents to message back from GCESync to the main activity.
+    //Define our handler for this here.
+    private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            // Get extra data included in the Intent
+            int status = intent.getIntExtra(GCESync.EXTENDED_DATA_STATUS, GCESync.EXTENDED_DATA_STATUS_NULL);
+            if (status == GCESync.EXTENDED_DATA_STATUS_LOCALUPDATECOMPLETE) {
+                //Okay - done with loading local data!
+
+                //set up some fake data - hack - FIXME remove later
+                DBUtils.loadFakeData(getActivity());
+
+                //And finish up the initialization we started in onActivityCreated
+                mUIDataSetup = new UIDataSetup(getActivity());
+
+                loadRows();
+
+                setupEventListeners();
+                
+                //and finally, update the title
+                String titleformat = getString(R.string.browse_title);
+                String title = String.format(titleformat, DBUtils.countDevices(getActivity()), DBUtils.countApp(getActivity(), null));
+
+                setTitle(title);
+            }
+            Log.d("DS_mainfrag_receiver", "Got status: " + status);
+        }
+    };
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
@@ -77,14 +113,16 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         //Update the local content provider...
         GCESync.startActionUpdateLocal(getActivity(), null, null);
 
+        //Small optimization here - postpone setup of the UI until we get through the initial thrash
+        //of local device updates. (Don't want a ton of active content observer updates to be thrashing along as well).
+        //So, kick off the last 3 tasks below in the message receiver which is called when the intent service done updating CP.
+        /*
         mUIDataSetup = new UIDataSetup(getActivity());
 
         loadRows();
 
         setupEventListeners();
-
-        //and set up fake data - hack - FIXME remove later
-        DBUtils.loadFakeData(getActivity());
+        */
     }
 
     @Override
@@ -99,6 +137,9 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                 true,
                 mAppObserver);
 
+        //Register receiver
+        LocalBroadcastManager.getInstance(this.getActivity()).registerReceiver(mMessageReceiver, new IntentFilter(GCESync.BROADCAST_ACTION));
+
     }
 
     @Override
@@ -106,22 +147,63 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         super.onPause();
         // always call unregisterContentObserver in onPause
         getActivity().getContentResolver().unregisterContentObserver(mAppObserver);
+
+        //Unregister receiver
+        LocalBroadcastManager.getInstance(this.getActivity()).unregisterReceiver(mMessageReceiver);
     }
 
 
     @Override
     public void updateFromCP() {
         //called when CP changes underneath us
-        //FIXME - need to update the backing array store for missing/unique apps
         getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 // Run this on UI thread.
-                //Update the text on title view
-                String titleformat = getString(R.string.browse_title);
-                String title = String.format(titleformat, DBUtils.countDevices(getActivity()), DBUtils.countApp(getActivity(), null));
+                // But not until we have initialized the UI (don't bother before then). Look at mUIDataSetup to tell us if we are initialized.
+                if (mUIDataSetup != null) {
+                    //Update the text on title view
+                    String titleformat = getString(R.string.browse_title);
+                    String title = String.format(titleformat, DBUtils.countDevices(getActivity()), DBUtils.countApp(getActivity(), null));
+                    setTitle(title); // Badge, when set, takes precedent
 
-                setTitle(title); // Badge, when set, takes precedent
+                    //And now, since we are using arrays for the missing apps/unique apps, on a CP change, we have to regenerate. Grr...
+                    //Get the rows first...
+                    ListRow lr_missing = (ListRow) mRowsAdapter.get(mUIDataSetup.getMissingRow());
+                    ListRow lr_unique = (ListRow) mRowsAdapter.get(mUIDataSetup.getUniqueRow());
+
+                    //Now get the adapters
+                    ArrayObjectAdapter missing_adapter = (ArrayObjectAdapter) lr_missing.getAdapter();
+                    ArrayObjectAdapter unique_adapter = (ArrayObjectAdapter) lr_unique.getAdapter();
+
+                    //Update the backing stores for the missing adapter
+                    ArrayList<ObjectDetail> objectArray = mUIDataSetup.getArrayAdapter(mUIDataSetup.getMissingRow());
+
+                    //and if data is valid
+                    if (objectArray != null) {
+                        //clear the existing adapter...
+                        missing_adapter.clear();
+                        //add it to the object adapter
+                        for (int j = 0; j < objectArray.size(); j++) {
+                            missing_adapter.add(objectArray.get(j));
+                        }
+                    }
+
+                    //Update the backing stores for the unique adapter
+                   objectArray = mUIDataSetup.getArrayAdapter(mUIDataSetup.getUniqueRow());
+
+                    //and if data is valid
+                    if (objectArray != null) {
+                        //clear the existing adapter...
+                        unique_adapter.clear();
+                        //add it to the object adapter
+                        for (int j = 0; j < objectArray.size(); j++) {
+                            unique_adapter.add(objectArray.get(j));
+                        }
+                    }
+
+                    //All done!
+                }
             }
         });
     }
@@ -256,10 +338,12 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
     private void setupUIElements() {
         // setBadgeDrawable(getActivity().getResources().getDrawable(
         // R.drawable.videos_by_google_banner));
-        String titleformat = getString(R.string.browse_title);
-        String title = String.format(titleformat, DBUtils.countDevices(getActivity()), DBUtils.countApp(getActivity(), null));
 
-        setTitle(title); // Badge, when set, takes precedent
+        //Update the title at end of initial load...
+        //String titleformat = getString(R.string.browse_title);
+        //String title = String.format(titleformat, DBUtils.countDevices(getActivity()), DBUtils.countApp(getActivity(), null));
+
+        setTitle(getString(R.string.please_wait)); // Badge, when set, takes precedent
         // over title
         setHeadersState(HEADERS_ENABLED);
         setHeadersTransitionOnBackEnabled(true);

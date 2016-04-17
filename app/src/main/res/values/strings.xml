@@ -4,6 +4,7 @@
     <string name="app_name">AppSyncr</string>
 
     <string name="browse_title" formatted="false">AppSyncr - %d Devices, %d Apps</string>
+    <string name="please_wait">Please Wait...</string>
     <string name="version">Version: %1$s</string>
 
     <string name="preferences">PREFERENCES</string>

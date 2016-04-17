@@ -9,6 +9,7 @@ import android.database.DatabaseUtils;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import com.example.rclark.devicesync.ObjectDetail;
@@ -49,6 +50,12 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
     // TODO: Rename parameters
     private static final String EXTRA_PARAM1 = "com.example.rclark.devicesync.sync.extra.PARAM1";
     private static final String EXTRA_PARAM2 = "com.example.rclark.devicesync.sync.extra.PARAM2";
+
+    // Message defines for communicating back to calling activity
+    public static final String BROADCAST_ACTION = "com.example.rclark.devicesync.gcesync.BROADCAST";
+    public static final String EXTENDED_DATA_STATUS = "com.example.rclark.devicesync.gcesync.STATUS";
+    public static final int EXTENDED_DATA_STATUS_NULL = 0;
+    public static final int EXTENDED_DATA_STATUS_LOCALUPDATECOMPLETE = 1;
 
     private static Context mCtx;
     private static boolean mbUseLocation = false;
@@ -147,8 +154,7 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
     }
 
     /**
-     * Handle action Foo in the provided background thread with the provided
-     * parameters.
+     * Routine below will update local CP with local device data.
      */
     private void handleActionUpdate() {
         //grab current time first
@@ -290,8 +296,13 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
         String selection = AppContract.AppEntry.COLUMN_APP_DEVSSN + " = ? AND " + AppContract.AppEntry.COLUMN_APP_TIMEUPDATED + " < ?";
         String[] selectionArgs = new String[]{device.serial, Long.toString(currentTime)};
 
-        //FIXME - clearing out entire CP...
+        //Delete only those elements with the old timestamp
         getApplicationContext().getContentResolver().delete(AppContract.AppEntry.CONTENT_URI, selection, selectionArgs);
+
+        //And finally, send a message back to indicate that we are all done with the local work
+        Intent localIntent = new Intent(BROADCAST_ACTION).putExtra(EXTENDED_DATA_STATUS, EXTENDED_DATA_STATUS_LOCALUPDATECOMPLETE);
+        //And broadcast the message
+        LocalBroadcastManager.getInstance(this).sendBroadcast(localIntent);
 
     }
 

@@ -115,8 +115,6 @@ public class UIDataSetup {
 
     /**
      * Is this a device row?
-     * @param row
-     * @return
      */
     public boolean isDeviceRow(int row) {
         if (mFunction[row] == DEVICES_ROW) {
@@ -125,6 +123,29 @@ public class UIDataSetup {
             return false;
         }
     }
+
+    /**
+     * Get "MISSING" row
+     */
+    public int getMissingRow() {
+        int i;
+        for (i = 0; i < mFunction.length; i++) {
+            if (mFunction[i] == MISSINGAPPS_ROW) break;
+        }
+        return i;
+    }
+
+    /**
+     * Get "UNIQUE" row
+     */
+    public int getUniqueRow() {
+        int i;
+        for (i = 0; i < mFunction.length; i++) {
+            if (mFunction[i] == UNIQUEAPPS_ROW) break;
+        }
+        return i;
+    }
+
 
     /**
      *  Return back an array of unique apps for the device
