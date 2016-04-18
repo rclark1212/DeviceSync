@@ -302,7 +302,7 @@ public class AppProvider extends ContentProvider {
                 throw new UnsupportedOperationException("Unknown uri: " + uri);
         }
         getContext().getContentResolver().notifyChange(uri, null);
-        //Log.v(TAG, "insert - uri:" + uri.toString());
+        Log.v(TAG, "insert - uri:" + uri.toString());
         return returnUri;
     }
 
@@ -336,7 +336,7 @@ public class AppProvider extends ContentProvider {
         // Because a null deletes all rows
         if (rowsDeleted != 0) {
             getContext().getContentResolver().notifyChange(uri, null);
-            //Log.v(TAG, "delete - uri:" + uri.toString());
+            Log.v(TAG, "delete - uri:" + uri.toString());
         }
         return rowsDeleted;
     }
@@ -411,7 +411,7 @@ public class AppProvider extends ContentProvider {
         }
         if (rowsUpdated != 0) {
             getContext().getContentResolver().notifyChange(uri, null);
-            //Log.v(TAG, "update - uri:" + uri.toString());
+            Log.v(TAG, "update - uri:" + uri.toString());
         }
         return rowsUpdated;
     }

@@ -84,6 +84,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                 //Okay - done with loading local data!
 
                 //set up some fake data - hack - FIXME remove later
+                //NOTE - causes the delay at start
                 DBUtils.loadFakeData(getActivity());
 
                 //And finish up the initialization we started in onActivityCreated

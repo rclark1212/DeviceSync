@@ -1,14 +1,17 @@
 package com.example.rclark.devicesync.sync;
 
 import android.app.IntentService;
+import android.content.ContentProviderOperation;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.content.Context;
+import android.content.OperationApplicationException;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.RemoteException;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
@@ -213,7 +216,10 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
         //Step 1 - get a copy of the apps...
         ArrayList<ObjectDetail> apps = SyncUtils.loadApps(getApplicationContext());
 
-        //Step 2 - write them to db...
+        //Step 2 - use a ContentProviderOperation for better perf...
+        ArrayList<ContentProviderOperation> ops = new ArrayList<ContentProviderOperation>();
+
+        //Step 3 - write them to db...
         for (int i = 0; i < apps.size(); i++) {
             //Now, search for the device (is it in DB yet?)
             ObjectDetail app = (ObjectDetail) apps.get(i);
@@ -273,13 +279,30 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
 
             if (c.getCount() > 0) {
                 //replace
-                getApplicationContext().getContentResolver().update(appSearchUri, contentValues, null, null);
+                //getApplicationContext().getContentResolver().update(appSearchUri, contentValues, null, null);
+                ops.add(ContentProviderOperation.newUpdate(appSearchUri)
+                        .withValues(contentValues)
+                        .withYieldAllowed(true)
+                        .build());
             } else {
                 //add
-                getApplicationContext().getContentResolver().insert(insertUri, contentValues);
+                //getApplicationContext().getContentResolver().insert(insertUri, contentValues);
+                ops.add(ContentProviderOperation.newUpdate(insertUri)
+                        .withValues(contentValues)
+                        .withYieldAllowed(true)
+                        .build());
             }
 
             c.close();
+        }
+
+        //Step 4 - apply the content operation batch
+        try {
+            getApplicationContext().getContentResolver().applyBatch(AppContract.CONTENT_AUTHORITY, ops);
+        } catch (RemoteException e) {
+            Log.v(TAG, "Batch - remoteException err");
+        } catch (OperationApplicationException e) {
+            Log.v(TAG, "Batch - OperationApplicationException err");
         }
 
         /**
