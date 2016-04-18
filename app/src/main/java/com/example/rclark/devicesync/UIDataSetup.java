@@ -25,7 +25,8 @@ public class UIDataSetup {
 
     private String[] mHeaders;          // base header strings
     private int[] mFunction;            //function per header
-    private ArrayList<String> mRemotes; //Remotes can be variable size - this supplements above
+    private ArrayList<String> mRemotes;     //Remotes can be variable size - this supplements above - this is the serial number of remote
+    private ArrayList<String> mRemotesName; //This goes with array above - this is the friendly name (label) of the remote
     private boolean[] mHide;            //do we hide the row? (user config) - TODO
     private Context mCtx;
     public ArrayList<ObjectDetail> mUnique;     //array list of unique apps on this device
@@ -43,15 +44,22 @@ public class UIDataSetup {
 
     public UIDataSetup(Context ctx) {
         mCtx = ctx;
-        loadDataFromResources();
 
         //Ugg - can't use cursor adapters for all. Need arrays...
         if (mUnique == null) {
             mUnique = new ArrayList<ObjectDetail>();
         }
+
         if (mMissing == null) {
             mMissing = new ArrayList<ObjectDetail>();
         }
+
+        if (mRemotes == null) {
+            mRemotes = new ArrayList<String>();
+            mRemotesName = new ArrayList<String>();
+        }
+
+        loadDataFromResources();
     }
 
     /**
@@ -63,8 +71,9 @@ public class UIDataSetup {
         //read the data in the order set in xml. We will return proper order on the fetch routines
         mFunction = mCtx.getResources().getIntArray(R.array.header_function);
         mHeaders = mCtx.getResources().getStringArray(R.array.header_names);
-        mHide = new boolean[mFunction.length];
-        mRemotes = new ArrayList<String>();
+        if (mHide == null) {
+            mHide = new boolean[mFunction.length];      //TODO - not used/loaded anywhere. Fix  this
+        }
 
         decorateRowHeaders();
 
@@ -72,7 +81,7 @@ public class UIDataSetup {
     }
 
     /**
-     * Adds any text fixup to the headers that is needed
+     * Adds any text fixup to the headers that is needed (does nothing for remotes rows - those are pre-decorated)
      */
     private void decorateRowHeaders() {
 
@@ -87,10 +96,39 @@ public class UIDataSetup {
     }
 
     /**
-     * Reads the CP to load up all the unique remotes
+     * Reads the CP to load up all the unique remotes (labels and serial numbers)
      */
     private void loadRemotes() {
-        //TODO - read CP and populate mRemotes
+        //Okay - loop through device cp to create this.
+        Uri deviceDB = AppContract.DevicesEntry.CONTENT_URI;
+
+        //grab the cursor
+        Cursor c = mCtx.getContentResolver().query(deviceDB, null, null, null, null);
+
+        if (c.getCount() > 0) {
+            //Okay - we have a cursor to the device db
+
+            int index = 0;
+            for (int i = 0; i < c.getCount(); i++) {
+                c.moveToPosition(i);
+                //get the serial #
+                String serial = c.getString(c.getColumnIndex(AppContract.DevicesEntry.COLUMN_DEVICES_SSN));
+                //if it is our local device, skip
+                if (serial.equals(Build.SERIAL)) {
+                    continue;
+                }
+
+                //get the name
+                String label = c.getString(c.getColumnIndex(AppContract.DevicesEntry.COLUMN_DEVICE_NAME));
+
+                //and add to the array
+                mRemotes.add(index, serial);
+                mRemotesName.add(index, label);
+                index++;
+            }
+        }
+        //all done...
+        c.close();
     }
 
     /**
@@ -103,21 +141,49 @@ public class UIDataSetup {
      */
     public int getNumberOfHeaders() {
         //TODO - fix up for REMOTES (hide ATV issue here?)
-        return mHeaders.length;
+        return mHeaders.length + mRemotes.size();
     }
 
     /**
      *  Returns rows in the order which was set within array.xml ordering
      */
     public String getRowHeader(int row) {
-        return mHeaders[row];
+        if (row < mHeaders.length) {
+            return mHeaders[row];
+        } else {    //remotes!
+            //TODO - replace below (and other occurances) with a string that can be localized)
+            return mRemotesName.get(row - mHeaders.length) + " (" + mRemotes.get(row - mHeaders.length) + ")";
+        }
     }
 
     /**
      * Is this a device row?
      */
     public boolean isDeviceRow(int row) {
+
+        //Check if this is a remotes row - return null
+        if (row >= mFunction.length) {
+            return false;
+        }
+
         if (mFunction[row] == DEVICES_ROW) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Is this a headers row? (no data population - really for the tablet UI)
+     */
+    private boolean isHeaderRow(int row) {
+
+        //Check if this is a remotes row - return null
+        if (row >= mFunction.length) {
+            return false;
+        }
+
+        if (mFunction[row] == REMOTESTART_ROW) {
             return true;
         } else {
             return false;
@@ -268,10 +334,17 @@ public class UIDataSetup {
     public boolean useArrayAdapter(int row) {
         boolean bret = false;
 
+        //Check if this is a remotes row - return null
+        if (row >= mFunction.length) {
+            return false;
+        }
+
         //Okay - two rows we will use array objects for. Missing apps and unique apps
         if (mFunction[row] == UNIQUEAPPS_ROW) {
             bret = true;
         } else if (mFunction[row] == MISSINGAPPS_ROW) {
+            bret = true;
+        } else if (isHeaderRow(row)) {
             bret = true;
         }
 
@@ -282,6 +355,11 @@ public class UIDataSetup {
      * This routine returns back a backing array for a browse row when not using a cursor.
      */
     public ArrayList<ObjectDetail> getArrayAdapter(int row) {
+
+        //Check if this is a remotes row - return null
+        if (row >= mFunction.length) {
+            return null;
+        }
 
         //Okay - two rows we will use array objects for. Missing apps and unique apps
         if (mFunction[row] == UNIQUEAPPS_ROW) {
@@ -310,35 +388,44 @@ public class UIDataSetup {
         //Have to match up the function of this row to a cursor.
         Uri retUri = null;
 
-        if (mFunction[row] == DEVICES_ROW) {
-            Uri deviceDB = AppContract.DevicesEntry.CONTENT_URI;
-            retUri = deviceDB.buildUpon().build();
-        } else if (mFunction[row] == FLAGGEDAPPS_ROW)  {
-            //Need a groupbyquery. Do the fuglyness in the uri here...
-            Uri appDB = AppContract.AppEntry.GROUPBY_URI;
-            //embedd the group by column here...
-            retUri = appDB.buildUpon().appendPath(AppContract.AppEntry.COLUMN_APP_PKG).build();
-        } else if (mFunction[row] == MISSINGAPPS_ROW)  {
-            //Need a groupbyquery. Do the fuglyness in the uri here...
-            Uri appDB = AppContract.AppEntry.GROUPBY_URI;
-            //embedd the group by column here...
-            retUri = appDB.buildUpon().appendPath(AppContract.AppEntry.COLUMN_APP_PKG).build();
-        } else if (mFunction[row] == UNIQUEAPPS_ROW) {
-            //Need a groupbyquery. Do the fuglyness in the uri here...
-            Uri appDB = AppContract.AppEntry.GROUPBY_URI;
-            //embedd the group by column here...
-            retUri = appDB.buildUpon().appendPath(AppContract.AppEntry.COLUMN_APP_PKG).build();
-        } else if (mFunction[row] == SUPERSET_ROW)  {
-            //Need a groupbyquery. Do the fuglyness in the uri here...
-            Uri appDB = AppContract.AppEntry.GROUPBY_URI;
-            //embedd the group by column here...
-            retUri = appDB.buildUpon().appendPath(AppContract.AppEntry.COLUMN_APP_PKG).build();
-        } else if (mFunction[row] == REMOTESTART_ROW)  {
-            retUri = null;  //nothing for now
-        } else {
-            //everything else is app database
+        //first, is this a query for remote row or the fixed rows?
+        if (row >= mFunction.length) {
+            //This is a remotes query...
+            //Return back an app search Uri for that device
             Uri appDB = AppContract.AppEntry.CONTENT_URI;
-            retUri = appDB.buildUpon().appendPath(Build.SERIAL).build();
+            retUri = appDB.buildUpon().appendPath(mRemotes.get(row-mFunction.length)).build();
+        } else {
+            //query is for the fixed rows
+            if (mFunction[row] == DEVICES_ROW) {
+                Uri deviceDB = AppContract.DevicesEntry.CONTENT_URI;
+                retUri = deviceDB.buildUpon().build();
+            } else if (mFunction[row] == FLAGGEDAPPS_ROW) {
+                //Need a groupbyquery. Do the fuglyness in the uri here...
+                Uri appDB = AppContract.AppEntry.GROUPBY_URI;
+                //embedd the group by column here...
+                retUri = appDB.buildUpon().appendPath(AppContract.AppEntry.COLUMN_APP_PKG).build();
+            } else if (mFunction[row] == MISSINGAPPS_ROW) {
+                //Need a groupbyquery. Do the fuglyness in the uri here...
+                Uri appDB = AppContract.AppEntry.GROUPBY_URI;
+                //embedd the group by column here...
+                retUri = appDB.buildUpon().appendPath(AppContract.AppEntry.COLUMN_APP_PKG).build();
+            } else if (mFunction[row] == UNIQUEAPPS_ROW) {
+                //Need a groupbyquery. Do the fuglyness in the uri here...
+                Uri appDB = AppContract.AppEntry.GROUPBY_URI;
+                //embedd the group by column here...
+                retUri = appDB.buildUpon().appendPath(AppContract.AppEntry.COLUMN_APP_PKG).build();
+            } else if (mFunction[row] == SUPERSET_ROW) {
+                //Need a groupbyquery. Do the fuglyness in the uri here...
+                Uri appDB = AppContract.AppEntry.GROUPBY_URI;
+                //embedd the group by column here...
+                retUri = appDB.buildUpon().appendPath(AppContract.AppEntry.COLUMN_APP_PKG).build();
+            } else if (mFunction[row] == REMOTESTART_ROW) {
+                retUri = null;  //nothing for now - just a header
+            } else {
+                //everything else is app database for local device
+                Uri appDB = AppContract.AppEntry.CONTENT_URI;
+                retUri = appDB.buildUpon().appendPath(Build.SERIAL).build();
+            }
         }
         return retUri;
     }
@@ -351,6 +438,11 @@ public class UIDataSetup {
      */
     public String getRowSelection(int row) {
         String selection = null;
+
+        //Check if this is a remotes row - return null
+        if (row >= mFunction.length) {
+            return null;
+        }
 
         if (mFunction[row] == FLAGGEDAPPS_ROW) {
             //Selection should be for unique app names, across all devices that have a flag setting != FLAG_NO_ACTION
@@ -392,6 +484,11 @@ public class UIDataSetup {
      */
     public String[] getRowSelectionArgs(int row) {
         String[] selectionArgs = null;
+
+        //Check if this is a remotes row - return null
+        if (row >= mFunction.length) {
+            return null;
+        }
 
         if (mFunction[row] == FLAGGEDAPPS_ROW) {
             selectionArgs = new String[1];

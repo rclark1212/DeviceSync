@@ -254,8 +254,8 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                     for (int j = 0; j < objectArray.size(); j++) {
                         listRowAdapter.add(objectArray.get(j));
                     }
-                    mRowsAdapter.add(new ListRow(header, listRowAdapter));
                 }
+                mRowsAdapter.add(new ListRow(header, listRowAdapter));
             } else {
                 CursorObjectAdapter listRowAdapter = new CursorObjectAdapter(cardPresenter);
 
@@ -306,6 +306,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
     @Override
     public Loader<Cursor> onCreateLoader(int rowid, final Bundle args) {
         String sortorder = null;
+
         //if it is an app, sort by app label
         if (!mUIDataSetup.isDeviceRow(rowid)) {
             sortorder = AppContract.AppEntry.COLUMN_APP_LABEL + " ASC";
