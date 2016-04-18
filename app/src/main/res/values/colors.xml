@@ -5,7 +5,7 @@
     <color name="background_gradient_end">#DDDDDD</color>
     <color name="fastlane_background">@color/brand_color</color>
     <color name="search_opaque">#ffaa3f</color>
-    <color name="selected_background">#ffaa3f</color>
+    <color name="selected_background">#ef9a2f</color>
     <color name="detail_background">#0096a6</color>
     <color name="soft_opaque">#30000000</color>
     <color name="img_soft_opaque">#30FF0000</color>

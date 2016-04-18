@@ -42,7 +42,6 @@ import java.text.SimpleDateFormat;
  */
 public class Utils {
 
-    public static final String DATE_FORMAT = "MM-dd-yyyy HH:mm";
     private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
     private static final String TAG = "DS_Utils";
 
@@ -123,10 +122,10 @@ public class Utils {
     /*
         Turns a normalized date ino a human readable one
      */
-    public static String unNormalizeDate(long normalizedDateInMillis) {
+    public static String unNormalizeDate(Context ctx, long normalizedDateInMillis) {
         Time time = new Time();
         time.setToNow();
-        SimpleDateFormat dbDateFormat = new SimpleDateFormat(Utils.DATE_FORMAT);
+        SimpleDateFormat dbDateFormat = new SimpleDateFormat(ctx.getResources().getString(R.string.date_format));
         String yearMonthDayString = dbDateFormat.format(normalizedDateInMillis);
         return yearMonthDayString;
     }

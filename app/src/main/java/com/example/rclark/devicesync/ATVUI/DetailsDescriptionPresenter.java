@@ -18,6 +18,7 @@ import android.support.v17.leanback.widget.AbstractDetailsDescriptionPresenter;
 
 import com.example.rclark.devicesync.DBUtils;
 import com.example.rclark.devicesync.ObjectDetail;
+import com.example.rclark.devicesync.R;
 import com.example.rclark.devicesync.Utils;
 
 public class DetailsDescriptionPresenter extends AbstractDetailsDescriptionPresenter {
@@ -29,21 +30,22 @@ public class DetailsDescriptionPresenter extends AbstractDetailsDescriptionPrese
         if (element != null) {
             String title = element.label;
             if (!DBUtils.isObjectLocal(viewHolder.view.getContext(), element)) {
-                title = title + " (Remote)";
+                title = String.format(viewHolder.view.getResources().getString(R.string.append_remote), title);
             } else {
-                title = title + " (Local)";
+                title = String.format(viewHolder.view.getResources().getString(R.string.append_local), title);
             }
 
+            //FIX BELOW
             if (element.bIsDevice) {
                 viewHolder.getTitle().setText(title);
                 viewHolder.getSubtitle().setText(element.name);
                 String body = "Serial: " + element.serial + "\nLocation: " + element.location +
-                        "\nOSVer: " + element.ver + "\nUpdated: " + Utils.unNormalizeDate(element.installDate);
+                        "\nOSVer: " + element.ver + "\nUpdated: " + Utils.unNormalizeDate(viewHolder.view.getContext(), element.installDate);
                 viewHolder.getBody().setText(body);
             } else {
                 viewHolder.getTitle().setText(title);
                 viewHolder.getSubtitle().setText(element.pkg);
-                String body = "Version: " + element.ver + "\nInstallDate: " + Utils.unNormalizeDate(element.installDate) + "\nCount: " + DBUtils.countApp(viewHolder.view.getContext(),element.pkg);
+                String body = "Version: " + element.ver + "\nInstallDate: " + Utils.unNormalizeDate(viewHolder.view.getContext(), element.installDate) + "\nCount: " + DBUtils.countApp(viewHolder.view.getContext(),element.pkg);
                 viewHolder.getBody().setText(body);
             }
         }

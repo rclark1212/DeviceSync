@@ -31,6 +31,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.example.rclark.devicesync.DBUtils;
+import com.example.rclark.devicesync.InstallUtil;
 import com.example.rclark.devicesync.ObjectDetail;
 import com.example.rclark.devicesync.R;
 import com.example.rclark.devicesync.Utils;
@@ -43,9 +44,11 @@ import com.example.rclark.devicesync.data.AppContract;
 public class ObjectDetailsFragment extends DetailsFragment {
     private static final String TAG = "VideoDetailsFragment";
 
-    private static final int ACTION_WATCH_TRAILER = 1;
-    private static final int ACTION_RENT = 2;
-    private static final int ACTION_BUY = 3;
+    private static final int ACTION_INSTALL = 1;
+    private static final int ACTION_UNINSTALL = 2;
+    private static final int ACTION_CLONEFROM = 3;
+    private static final int ACTION_REMOVEDEVICE = 4;
+    private static final int ACTION_SHOWAPPS = 5;
 
     private static final int DETAIL_THUMB_WIDTH = 274;
     private static final int DETAIL_THUMB_HEIGHT = 274;
@@ -129,6 +132,7 @@ public class ObjectDetailsFragment extends DetailsFragment {
     private void setupDetailsOverviewRow() {
         Log.d(TAG, "doInBackground: " + mSelectedObject.toString());
         final DetailsOverviewRow row = new DetailsOverviewRow(mSelectedObject);
+        ArrayObjectAdapter actionAdapter = new ArrayObjectAdapter();
         row.setImageDrawable(getResources().getDrawable(R.drawable.default_background));
         int width = Utils.convertDpToPixel(getActivity()
                 .getApplicationContext(), DETAIL_THUMB_WIDTH);
@@ -141,11 +145,27 @@ public class ObjectDetailsFragment extends DetailsFragment {
             } else {
                 row.setImageDrawable(getResources().getDrawable(R.drawable.shieldtablet));
             }
+            //and setup the actions...
+            if (DBUtils.isObjectLocal(getActivity(), mSelectedObject)) {
+                actionAdapter.add(new Action(ACTION_SHOWAPPS, getResources().getString(R.string.show_apps)));
+            } else {
+                actionAdapter.add(new Action(ACTION_SHOWAPPS, getResources().getString(R.string.show_apps)));
+                actionAdapter.add(new Action(ACTION_REMOVEDEVICE, getResources().getString(R.string.remove_device)));
+                actionAdapter.add(new Action(ACTION_CLONEFROM, getResources().getString(R.string.clonefrom)));
+            }
         } else {
             if (mSelectedObject.banner != null) {
                 row.setImageDrawable(mSelectedObject.banner);
             } else {
                 row.setImageDrawable(getResources().getDrawable(R.drawable.noimage));
+            }
+            //and setup the actions...
+            if (DBUtils.isObjectLocal(getActivity(), mSelectedObject)) {
+                //uninstall
+                actionAdapter.add(new Action(ACTION_UNINSTALL, getResources().getString(R.string.uninstall)));
+            } else {
+                //install
+                actionAdapter.add(new Action(ACTION_INSTALL, getResources().getString(R.string.install)));
             }
         }
         /* FIXME
@@ -164,13 +184,9 @@ public class ObjectDetailsFragment extends DetailsFragment {
                     }
                 });
         */
-        //FIXME
-        row.addAction(new Action(ACTION_WATCH_TRAILER, getResources().getString(
-                R.string.watch_trailer_1), getResources().getString(R.string.watch_trailer_2)));
-        row.addAction(new Action(ACTION_RENT, getResources().getString(R.string.rent_1),
-                getResources().getString(R.string.rent_2)));
-        row.addAction(new Action(ACTION_BUY, getResources().getString(R.string.buy_1),
-                getResources().getString(R.string.buy_2)));
+        if (actionAdapter.size() > 0) {
+            row.setActionsAdapter(actionAdapter);
+        }
 
         mAdapter.add(row);
     }
@@ -189,10 +205,22 @@ public class ObjectDetailsFragment extends DetailsFragment {
         detailsPresenter.setOnActionClickedListener(new OnActionClickedListener() {
             @Override
             public void onActionClicked(Action action) {
-                if (action.getId() == ACTION_WATCH_TRAILER) {
-                    //do something
-                } else {
-                    Toast.makeText(getActivity(), action.toString(), Toast.LENGTH_SHORT).show();
+                switch ((int) action.getId()) {
+                    case ACTION_SHOWAPPS:
+                        Toast.makeText(getActivity(), action.toString(), Toast.LENGTH_SHORT).show();
+                        break;
+                    case ACTION_INSTALL:
+                        InstallUtil.installAPK(getActivity(), mSelectedObject.pkg);
+                        break;
+                    case ACTION_UNINSTALL:
+                        InstallUtil.uninstallAPK(getActivity(), mSelectedObject.pkg);
+                        break;
+                    case ACTION_REMOVEDEVICE:
+                        Toast.makeText(getActivity(), action.toString(), Toast.LENGTH_SHORT).show();
+                        break;
+                    case ACTION_CLONEFROM:
+                        Toast.makeText(getActivity(), action.toString(), Toast.LENGTH_SHORT).show();
+                        break;
                 }
             }
         });

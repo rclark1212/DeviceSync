@@ -92,7 +92,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                 loadRows();
 
                 setupEventListeners();
-                
+
                 //and finally, update the title
                 String titleformat = getString(R.string.browse_title);
                 String title = String.format(titleformat, DBUtils.countDevices(getActivity()), DBUtils.countApp(getActivity(), null));
@@ -162,6 +162,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                 // Run this on UI thread.
                 // But not until we have initialized the UI (don't bother before then). Look at mUIDataSetup to tell us if we are initialized.
                 if (mUIDataSetup != null) {
+                    Log.d("DS_mainfrag_updateFrmCP", "Starting update");
                     //Update the text on title view
                     String titleformat = getString(R.string.browse_title);
                     String title = String.format(titleformat, DBUtils.countDevices(getActivity()), DBUtils.countApp(getActivity(), null));
@@ -190,7 +191,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                     }
 
                     //Update the backing stores for the unique adapter
-                   objectArray = mUIDataSetup.getArrayAdapter(mUIDataSetup.getUniqueRow());
+                    objectArray = mUIDataSetup.getArrayAdapter(mUIDataSetup.getUniqueRow());
 
                     //and if data is valid
                     if (objectArray != null) {
@@ -203,6 +204,8 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                     }
 
                     //All done!
+                } else {
+                    Log.d("DS_mainfrag_updateFrmCP", "Skip update");
                 }
             }
         });
