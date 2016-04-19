@@ -2,6 +2,8 @@ package com.example.rclark.devicesync;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.graphics.Bitmap;
@@ -9,6 +11,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.util.Log;
+import android.widget.ProgressBar;
 
 import com.example.rclark.devicesync.data.AppContract;
 import com.example.rclark.devicesync.data.AppProvider;
@@ -39,7 +42,7 @@ public class DBUtils {
      */
     public static ObjectDetail getObjectFromCP(Context ctx, Uri uri) {
         ObjectDetail returnObject = null;
-        Boolean bApp = false;
+        boolean bApp = false;
 
         //First are we loading an app or a device object?
         String type = ctx.getContentResolver().getType(uri);
@@ -122,6 +125,117 @@ public class DBUtils {
     }
 
     /**
+     * Saves an ObjectDetail App to the CP based on the URI.
+     * Used by broadcast receiver for apps
+     */
+    public static void saveAppToCP(Context ctx, Uri uri, ObjectDetail app) {
+        boolean bExists = false;
+
+        //First are we loading an app or a device object?
+        String type = ctx.getContentResolver().getType(uri);
+
+        if (type != AppContract.AppEntry.CONTENT_ITEM_TYPE) {
+            //bad uri - return
+            return;
+        }
+
+        //create the buffer
+        ContentValues contentValues = new ContentValues();
+
+        //grab the cursor
+        Cursor c = ctx.getContentResolver().query(uri, null, null, null, null);
+
+        if (c.getCount() > 0) {
+            //exists!!!
+            c.moveToFirst();
+            bExists = true;
+        }
+
+        bindAppToContentValues(app, contentValues);
+
+        if (bExists) {
+            //update
+            ctx.getContentResolver().update(uri, contentValues, null, null);
+        } else {
+            //add
+            //create insert uri here
+            Uri insertUri = AppContract.AppEntry.CONTENT_URI;
+            insertUri = insertUri.buildUpon().appendPath(app.serial).build();
+            ctx.getContentResolver().insert(insertUri, contentValues);
+        }
+
+        c.close();
+    }
+
+    /**
+     *  Binds an app object detail to a content values object
+     */
+    public static void bindAppToContentValues(ObjectDetail app, ContentValues contentValues) {
+
+        contentValues.put(AppContract.AppEntry.COLUMN_APP_LABEL, app.label);
+        contentValues.put(AppContract.AppEntry.COLUMN_APP_PKG, app.pkg);
+        contentValues.put(AppContract.AppEntry.COLUMN_APP_VER, app.ver);
+        contentValues.put(AppContract.AppEntry.COLUMN_APP_DEVSSN, app.serial);
+        contentValues.put(AppContract.AppEntry.COLUMN_DATE, app.installDate);
+        contentValues.put(AppContract.AppEntry.COLUMN_APP_TYPE, app.type);
+        contentValues.put(AppContract.AppEntry.COLUMN_APP_FLAGS, app.flags);
+
+        //now blob... - COLUMN_APP_BANNER
+        //convert drawable to bytestream
+        Bitmap bitmap = SyncUtils.drawableToBitmap(app.banner);           //convert drawable to bitmap
+        if (bitmap != null) {
+            ByteArrayOutputStream stream = new ByteArrayOutputStream();
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream);
+            byte[] imageInByte = stream.toByteArray();
+            //And now into contentValues
+            contentValues.put(AppContract.AppEntry.COLUMN_APP_BANNER, imageInByte);
+        }
+    }
+
+    public static void processInstallApp(Context ctx, String packageName) {
+
+        //Construct the Uri...
+        Uri appDB = AppContract.AppEntry.CONTENT_URI;
+        //build up the local device query
+        appDB = appDB.buildUpon().appendPath(Build.SERIAL).appendPath(packageName).build();
+
+        //Create an object
+        ObjectDetail app = new ObjectDetail();
+
+        //install the app. Get the app info.
+        PackageManager manager = ctx.getPackageManager();
+
+        //FIXME - if package available in play store, null out above
+        app.bIsDevice = false;
+        //set the right type...
+        app.type = Utils.bIsThisATV(ctx) ? AppContract.TYPE_ATV : AppContract.TYPE_TABLET;
+
+        try {
+            PackageInfo info = manager.getPackageInfo(packageName, 0);
+            app.ver = info.versionName;
+            app.installDate = info.lastUpdateTime;
+            app.label = info.applicationInfo.loadLabel(manager).toString();
+            app.pkg = packageName;
+            app.serial = Build.SERIAL;  //this serial number
+            app.flags = AppContract.AppEntry.FLAG_NO_ACTION;
+
+
+            app.name = info.applicationInfo.name;
+            app.banner = info.applicationInfo.loadBanner(manager);
+            if (app.banner == null) {
+                info.applicationInfo.loadIcon(manager);
+            }
+            //FIXME - if package available in play store, null out above
+
+        } catch (PackageManager.NameNotFoundException e) {
+            Log.v(TAG, "Can't find package err!!!");
+        }
+
+        //Okay - we have an app object... Put it into CP
+        DBUtils.saveAppToCP(ctx, appDB, app);
+    }
+
+    /**
      * Check to see if the passed in object is local or remote
      * @param ctx
      * @param object
@@ -145,7 +259,7 @@ public class DBUtils {
      *  Routine to indicate if device, app combo is local
      *  (groupby won't always tell you)
      */
-    private static boolean isAppLocal(Context ctx, String app) {
+    public static boolean isAppLocal(Context ctx, String app) {
 
         boolean bret = false;
         Uri appDB = AppContract.AppEntry.CONTENT_URI;

@@ -13,6 +13,7 @@ import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.os.Build;
 import android.text.format.Time;
+import android.util.Log;
 
 import com.example.rclark.devicesync.ObjectDetail;
 import com.example.rclark.devicesync.R;
@@ -35,6 +36,7 @@ import java.util.List;
 public class SyncUtils {
     private static PackageManager manager;
     public static ArrayList<ObjectDetail> apps;
+    private static final String TAG = "GCESyncUtils";
 
     /*
     * Making sure public utility methods remain static
@@ -71,6 +73,7 @@ public class SyncUtils {
             app.pkg = ri.activityInfo.packageName;
             app.name = ri.activityInfo.name;
             app.banner = ri.activityInfo.loadBanner(manager);
+
             //FIXME - if package available in play store, null out above
             app.bIsDevice = false;
             //set the right type...
@@ -81,7 +84,7 @@ public class SyncUtils {
                 app.ver = info.versionName;
                 app.installDate = info.lastUpdateTime;
             } catch (PackageManager.NameNotFoundException e) {
-
+                Log.v(TAG, "Can't find package on initial loop");
             }
 
             //Have we already added this?
@@ -90,7 +93,7 @@ public class SyncUtils {
                 continue;
             }
 
-            //hmm - for some apps, this not getting us data...
+            //hmm - for some apps, this not getting us data... (well, tablet apps of course)
             if (app.banner == null) {
                 //use the icon...
                 app.banner = ri.activityInfo.loadIcon(manager);
@@ -151,6 +154,10 @@ public class SyncUtils {
      */
     public static Bitmap drawableToBitmap(Drawable drawable) {
         Bitmap bitmap = null;
+
+        if (drawable == null) {
+            return null;
+        }
 
         if (drawable instanceof BitmapDrawable) {
             BitmapDrawable bitmapDrawable = (BitmapDrawable) drawable;

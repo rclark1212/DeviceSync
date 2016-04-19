@@ -85,14 +85,16 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
                 //set up some fake data - hack - FIXME remove later
                 //NOTE - causes the delay at start
-                DBUtils.loadFakeData(getActivity());
+                //DBUtils.loadFakeData(getActivity());
 
                 //And finish up the initialization we started in onActivityCreated
-                mUIDataSetup = new UIDataSetup(getActivity());
+                if (mUIDataSetup == null) {
+                    mUIDataSetup = new UIDataSetup(getActivity());
 
-                loadRows();
+                    loadRows();
 
-                setupEventListeners();
+                    setupEventListeners();
+                }
 
                 //and finally, update the title
                 String titleformat = getString(R.string.browse_title);
@@ -112,18 +114,25 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         setupUIElements();
 
         //Update the local content provider...
-        GCESync.startActionUpdateLocal(getActivity(), null, null);
+        //Nope - don't do this here - have a forced sync button in settings.
+        //FIXME
+        //GCESync.startActionUpdateLocal(getActivity(), null, null);
 
         //Small optimization here - postpone setup of the UI until we get through the initial thrash
         //of local device updates. (Don't want a ton of active content observer updates to be thrashing along as well).
         //So, kick off the last 3 tasks below in the message receiver which is called when the intent service done updating CP.
-        /*
+        //And finish up the initialization we started in onActivityCreated
         mUIDataSetup = new UIDataSetup(getActivity());
 
         loadRows();
 
         setupEventListeners();
-        */
+
+        //and finally, update the title
+        String titleformat = getString(R.string.browse_title);
+        String title = String.format(titleformat, DBUtils.countDevices(getActivity()), DBUtils.countApp(getActivity(), null));
+
+        setTitle(title);
     }
 
     @Override

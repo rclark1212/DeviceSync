@@ -15,6 +15,7 @@ import android.os.RemoteException;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
+import com.example.rclark.devicesync.DBUtils;
 import com.example.rclark.devicesync.ObjectDetail;
 import com.example.rclark.devicesync.Utils;
 import com.example.rclark.devicesync.data.AppContract;
@@ -256,26 +257,14 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
             
             //load up contentValues with latest info...
             //Force the OS type by definition...
-            long ostype = Utils.bIsThisATV(mCtx) ? AppContract.TYPE_ATV : AppContract.TYPE_TABLET;
-            contentValues.put(AppContract.AppEntry.COLUMN_APP_LABEL, app.label);
-            contentValues.put(AppContract.AppEntry.COLUMN_APP_PKG, app.pkg);
-            contentValues.put(AppContract.AppEntry.COLUMN_APP_VER, app.ver);
-            contentValues.put(AppContract.AppEntry.COLUMN_APP_DEVSSN, device.serial);
-            contentValues.put(AppContract.AppEntry.COLUMN_DATE, app.installDate);
-            contentValues.put(AppContract.AppEntry.COLUMN_APP_TYPE, ostype);
-
             //note that the app is local
             //flags = flags | AppContract.AppEntry.FLAG_APP_LOCAL; - nope - SSN matching = local
-            contentValues.put(AppContract.AppEntry.COLUMN_APP_FLAGS, flags);
+            app.type = Utils.bIsThisATV(mCtx) ? AppContract.TYPE_ATV : AppContract.TYPE_TABLET;
+            app.flags = flags;
+            app.serial = device.serial;
 
-            //now blob... - COLUMN_APP_BANNER
-            //convert drawable to bytestream
-            Bitmap bitmap = SyncUtils.drawableToBitmap(app.banner);           //convert drawable to bitmap
-            ByteArrayOutputStream stream = new ByteArrayOutputStream();
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream);
-            byte[] imageInByte = stream.toByteArray();
-            //And now into contentValues
-            contentValues.put(AppContract.AppEntry.COLUMN_APP_BANNER, imageInByte);
+            //bind app to the contentValues
+            DBUtils.bindAppToContentValues(app, contentValues);
 
             if (c.getCount() > 0) {
                 //replace

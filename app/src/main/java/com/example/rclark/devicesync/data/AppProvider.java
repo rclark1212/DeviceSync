@@ -314,10 +314,11 @@ public class AppProvider extends ContentProvider {
         // this makes delete all rows return the number of rows deleted
         if ( null == selection ) selection = "1";
         switch (match) {
-            case APPS:
+            case APPS: {
                 rowsDeleted = db.delete(
                         AppContract.AppEntry.TABLE_NAME, selection, selectionArgs);
                 break;
+            }
             case APPS_WITH_DEVICE: {
                 String device = AppContract.AppEntry.getDeviceFromUri(uri);
                 String[] parse_selectionArgs = new String[]{device};
@@ -326,6 +327,16 @@ public class AppProvider extends ContentProvider {
                         AppContract.AppEntry.TABLE_NAME, parse_selection, parse_selectionArgs);
                 break;
             }
+            case APPS_WITH_DEVICE_AND_APP: {
+                String device = AppContract.AppEntry.getDeviceFromUri(uri);
+                String label = AppContract.AppEntry.getAppFromUri(uri);
+                String[] parse_selectionArgs = new String[]{label, device};
+                String parse_selection = sAppsWithDevicesAndAppsSelection;
+                rowsDeleted = db.delete(
+                        AppContract.AppEntry.TABLE_NAME, parse_selection, parse_selectionArgs);
+                break;
+            }
+
             case DEVICES:
                 rowsDeleted = db.delete(
                         AppContract.DevicesEntry.TABLE_NAME, selection, selectionArgs);
