@@ -53,8 +53,8 @@ public class DeviceSyncReceiver extends BroadcastReceiver {
 
         //Update the CP with this record...
         if (bInstall) {
-            //grr - not getting the icon banner on all installs. Suspect it is due to executing code right at broadcast method.
-            //delay by 2 seconds to let the icon/banner settle. (else getting null)
+            //TODO - review this as part of final review. Initially was seeing us getting called before a bitmap for app available (getting null back).
+            //But that was while single stepping. When running, appears we get several calls including one which lets us successfully get bitmap.
             DBUtils.processInstallApp(ctx, packageName);
         } else {
             //okay - easy one.

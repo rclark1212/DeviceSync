@@ -70,6 +70,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
     private final Handler mHandler = new Handler();
     private ArrayObjectAdapter mRowsAdapter;
     private AppObserver mAppObserver;
+    private boolean mbAllowUpdates = false;         //semaphore used to block updates from the initial CP flurry of loads...
 
     private UIDataSetup mUIDataSetup;
 
@@ -84,10 +85,10 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                 //Okay - done with loading local data!
 
                 //set up some fake data - hack - FIXME remove later
-                //NOTE - causes the delay at start
+                //NOTE - causes a delay at start
                 //DBUtils.loadFakeData(getActivity());
 
-                //And finish up the initialization we started in onActivityCreated
+                //And finish up the initialization we started in onActivityCreated (if we punt on initial setup in onActivityCreated)
                 if (mUIDataSetup == null) {
                     mUIDataSetup = new UIDataSetup(getActivity());
 
@@ -96,11 +97,11 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                     setupEventListeners();
                 }
 
-                //and finally, update the title
-                String titleformat = getString(R.string.browse_title);
-                String title = String.format(titleformat, DBUtils.countDevices(getActivity()), DBUtils.countApp(getActivity(), null));
+                //Enable updates once initial CP load complete
+                mbAllowUpdates = true;
 
-                setTitle(title);
+                //And force an update
+                updateFromCP(null);
             }
             Log.d("DS_mainfrag_receiver", "Got status: " + status);
         }
@@ -113,15 +114,18 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
         setupUIElements();
 
-        //Update the local content provider...
-        //Nope - don't do this here - have a forced sync button in settings.
-        //FIXME
-        //GCESync.startActionUpdateLocal(getActivity(), null, null);
+        //Update the local content provider if running for first time...
+        //FIXME - remember to add a force sync button to settings page
+        if (Utils.isRunningForFirstTime()) {
+            GCESync.startActionUpdateLocal(getActivity(), null, null);
+        } else {
+            //Note an optimization we made. We block processing of the notify callback from CP until the sync adapter
+            //has had a chance to complete on the initial run. The sync service will send a message if this is first run.
+            //If it is not first run, enable updates here
+            mbAllowUpdates = true;
+        }
 
-        //Small optimization here - postpone setup of the UI until we get through the initial thrash
-        //of local device updates. (Don't want a ton of active content observer updates to be thrashing along as well).
-        //So, kick off the last 3 tasks below in the message receiver which is called when the intent service done updating CP.
-        //And finish up the initialization we started in onActivityCreated
+        //Load the UI structure
         mUIDataSetup = new UIDataSetup(getActivity());
 
         loadRows();
@@ -164,61 +168,69 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
 
     @Override
-    public void updateFromCP() {
+    public void updateFromCP(Uri uri) {
         //called when CP changes underneath us
-        getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                // Run this on UI thread.
-                // But not until we have initialized the UI (don't bother before then). Look at mUIDataSetup to tell us if we are initialized.
-                if (mUIDataSetup != null) {
-                    Log.d("DS_mainfrag_updateFrmCP", "Starting update");
-                    //Update the text on title view
-                    String titleformat = getString(R.string.browse_title);
-                    String title = String.format(titleformat, DBUtils.countDevices(getActivity()), DBUtils.countApp(getActivity(), null));
-                    setTitle(title); // Badge, when set, takes precedent
-
-                    //And now, since we are using arrays for the missing apps/unique apps, on a CP change, we have to regenerate. Grr...
-                    //Get the rows first...
-                    ListRow lr_missing = (ListRow) mRowsAdapter.get(mUIDataSetup.getMissingRow());
-                    ListRow lr_unique = (ListRow) mRowsAdapter.get(mUIDataSetup.getUniqueRow());
-
-                    //Now get the adapters
-                    ArrayObjectAdapter missing_adapter = (ArrayObjectAdapter) lr_missing.getAdapter();
-                    ArrayObjectAdapter unique_adapter = (ArrayObjectAdapter) lr_unique.getAdapter();
-
-                    //Update the backing stores for the missing adapter
-                    ArrayList<ObjectDetail> objectArray = mUIDataSetup.getArrayAdapter(mUIDataSetup.getMissingRow());
-
-                    //and if data is valid
-                    if (objectArray != null) {
-                        //clear the existing adapter...
-                        missing_adapter.clear();
-                        //add it to the object adapter
-                        for (int j = 0; j < objectArray.size(); j++) {
-                            missing_adapter.add(objectArray.get(j));
-                        }
-                    }
-
-                    //Update the backing stores for the unique adapter
-                    objectArray = mUIDataSetup.getArrayAdapter(mUIDataSetup.getUniqueRow());
-
-                    //and if data is valid
-                    if (objectArray != null) {
-                        //clear the existing adapter...
-                        unique_adapter.clear();
-                        //add it to the object adapter
-                        for (int j = 0; j < objectArray.size(); j++) {
-                            unique_adapter.add(objectArray.get(j));
-                        }
-                    }
-
-                    //All done!
+        if (mbAllowUpdates) {
+            if (mUIDataSetup != null) {
+                if (uri != null) {
+                    Log.d("DS_mainfrag_updateFrmCP", "Starting update for " + uri.toString());
                 } else {
-                    Log.d("DS_mainfrag_updateFrmCP", "Skip update");
+                    Log.d("DS_mainfrag_updateFrmCP", "Starting update for (no uri)");
                 }
             }
-        });
+            getActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    // Run this on UI thread.
+                    // But not until we have initialized the UI (don't bother before then). Look at mUIDataSetup to tell us if we are initialized.
+                    if (mUIDataSetup != null) {
+                        //Update the text on title view
+                        String titleformat = getString(R.string.browse_title);
+                        String title = String.format(titleformat, DBUtils.countDevices(getActivity()), DBUtils.countApp(getActivity(), null));
+                        setTitle(title); // Badge, when set, takes precedent
+
+                        //And now, since we are using arrays for the missing apps/unique apps, on a CP change, we have to regenerate. Grr...
+                        //Get the rows first...
+                        ListRow lr_missing = (ListRow) mRowsAdapter.get(mUIDataSetup.getMissingRow());
+                        ListRow lr_unique = (ListRow) mRowsAdapter.get(mUIDataSetup.getUniqueRow());
+
+                        //Now get the adapters
+                        ArrayObjectAdapter missing_adapter = (ArrayObjectAdapter) lr_missing.getAdapter();
+                        ArrayObjectAdapter unique_adapter = (ArrayObjectAdapter) lr_unique.getAdapter();
+
+                        //Update the backing stores for the missing adapter
+                        ArrayList<ObjectDetail> objectArray = mUIDataSetup.getArrayAdapter(mUIDataSetup.getMissingRow());
+
+                        //and if data is valid
+                        if (objectArray != null) {
+                            //clear the existing adapter...
+                            missing_adapter.clear();
+                            //add it to the object adapter
+                            for (int j = 0; j < objectArray.size(); j++) {
+                                missing_adapter.add(objectArray.get(j));
+                            }
+                        }
+
+                        //Update the backing stores for the unique adapter
+                        objectArray = mUIDataSetup.getArrayAdapter(mUIDataSetup.getUniqueRow());
+
+                        //and if data is valid
+                        if (objectArray != null) {
+                            //clear the existing adapter...
+                            unique_adapter.clear();
+                            //add it to the object adapter
+                            for (int j = 0; j < objectArray.size(); j++) {
+                                unique_adapter.add(objectArray.get(j));
+                            }
+                        }
+
+                        //All done!
+                    } else {
+                        Log.d("DS_mainfrag_updateFrmCP", "Skip update");
+                    }
+                }
+            });
+        }
     }
 
     @Override

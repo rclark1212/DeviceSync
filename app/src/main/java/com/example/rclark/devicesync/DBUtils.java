@@ -181,14 +181,19 @@ public class DBUtils {
         contentValues.put(AppContract.AppEntry.COLUMN_APP_FLAGS, app.flags);
 
         //now blob... - COLUMN_APP_BANNER
-        //convert drawable to bytestream
-        Bitmap bitmap = SyncUtils.drawableToBitmap(app.banner);           //convert drawable to bitmap
-        if (bitmap != null) {
-            ByteArrayOutputStream stream = new ByteArrayOutputStream();
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream);
-            byte[] imageInByte = stream.toByteArray();
-            //And now into contentValues
-            contentValues.put(AppContract.AppEntry.COLUMN_APP_BANNER, imageInByte);
+        //First, is this image available on network?
+        if (Utils.getAppImageUriOnNextwork(app.pkg) == null) {
+            //nope - not available. So save off
+
+            //convert drawable to bytestream
+            Bitmap bitmap = Utils.drawableToBitmap(app.banner);           //convert drawable to bitmap
+            if (bitmap != null) {
+                ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream);
+                byte[] imageInByte = stream.toByteArray();
+                //And now into contentValues
+                contentValues.put(AppContract.AppEntry.COLUMN_APP_BANNER, imageInByte);
+            }
         }
     }
 
@@ -345,6 +350,8 @@ public class DBUtils {
         //Okay - first update the device database - serial number, nickname, date, model name, os_ver
         //Get an object with local device info...
         //Get the device DB reference...
+        Log.v(TAG, "Starting fake update population");
+
         ArrayList<String> fakedevice = new ArrayList<String>();
 
         Uri deviceDB = AppContract.DevicesEntry.CONTENT_URI;
@@ -463,14 +470,20 @@ public class DBUtils {
                     contentValues.put(AppContract.AppEntry.COLUMN_APP_FLAGS, app.flags);
 
                     //now blob... - COLUMN_APP_BANNER
-                    //convert drawable to bytestream
-                    Bitmap bitmap = SyncUtils.drawableToBitmap(app.banner);           //convert drawable to bitmap
-                    ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream);
-                    byte[] imageInByte = stream.toByteArray();
-                    //And now into contentValues
-                    contentValues.put(AppContract.AppEntry.COLUMN_APP_BANNER, imageInByte);
+                    //First, is this image available on network?
+                    if (Utils.getAppImageUriOnNextwork(app.pkg) == null) {
+                        //nope - not available. So save off
 
+                        //convert drawable to bytestream
+                        Bitmap bitmap = Utils.drawableToBitmap(app.banner);           //convert drawable to bitmap
+                        if (bitmap != null) {
+                            ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream);
+                            byte[] imageInByte = stream.toByteArray();
+                            //And now into contentValues
+                            contentValues.put(AppContract.AppEntry.COLUMN_APP_BANNER, imageInByte);
+                        }
+                    }
 
                     if (cout.getCount() > 0) {
                         //replace
@@ -518,6 +531,8 @@ public class DBUtils {
             }
             c.close();
         }
+        Log.v(TAG, "Complete fake update population");
+
     }
 
 }

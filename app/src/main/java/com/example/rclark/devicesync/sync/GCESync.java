@@ -276,7 +276,7 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
             } else {
                 //add
                 //getApplicationContext().getContentResolver().insert(insertUri, contentValues);
-                ops.add(ContentProviderOperation.newUpdate(insertUri)
+                ops.add(ContentProviderOperation.newInsert(insertUri)
                         .withValues(contentValues)
                         .withYieldAllowed(true)
                         .build());
@@ -287,7 +287,9 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
 
         //Step 4 - apply the content operation batch
         try {
+            Log.v(TAG, "Starting batch CP application");
             getApplicationContext().getContentResolver().applyBatch(AppContract.CONTENT_AUTHORITY, ops);
+            Log.v(TAG, "Complete batch CP application");
         } catch (RemoteException e) {
             Log.v(TAG, "Batch - remoteException err");
         } catch (OperationApplicationException e) {

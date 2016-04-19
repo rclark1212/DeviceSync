@@ -25,15 +25,14 @@ public class AppObserver extends ContentObserver {
         this.contentObserverCallback = contentObserverCallback;
     }
 
-    /*
     @Override
     public void onChange(boolean selfChange) {
-        this.onChange(selfChange, null);
-    } */
+        onChange(selfChange, null);
+    }
 
     @Override
     public void onChange(boolean selfChange, Uri uri) {
         //send a message to update the UI (or anything else that needs updating)
-        contentObserverCallback.updateFromCP();
+        contentObserverCallback.updateFromCP(uri);
     }
 }
