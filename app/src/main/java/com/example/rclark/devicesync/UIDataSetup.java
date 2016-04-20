@@ -23,12 +23,13 @@ import java.util.List;
 public class UIDataSetup {
     private static final String TAG = "DS_UIDataSetup";
 
-    private String[] mHeaders;          // base header strings
-    private int[] mFunction;            //function per header
+    private String[] mHeaders;              // base header strings
+    private int[] mFunction;                //function per header
     private ArrayList<String> mRemotes;     //Remotes can be variable size - this supplements above - this is the serial number of remote
     private ArrayList<String> mRemotesName; //This goes with array above - this is the friendly name (label) of the remote
-    private boolean[] mHide;            //do we hide the row? (user config) - TODO
+    private boolean[] mHide;                //do we hide the row? (user config) - TODO
     private Context mCtx;
+    private boolean mbIsATV;                //cache a copy of whether we are ATV...
     public ArrayList<ObjectDetail> mUnique;     //array list of unique apps on this device
     public ArrayList<ObjectDetail> mMissing;    //array list of missing apps on this device
 
@@ -44,6 +45,8 @@ public class UIDataSetup {
 
     public UIDataSetup(Context ctx) {
         mCtx = ctx;
+
+        mbIsATV = Utils.bIsThisATV(ctx);
 
         //Ugg - can't use cursor adapters for all. Need arrays...
         if (mUnique == null) {
@@ -265,7 +268,8 @@ public class UIDataSetup {
     }
 
     /**
-     *  Return back an array of unique apps for the device
+     *  Return back an array of missing apps for the device
+     *  Note - we have to query/differentiate for the OS here... (tablet vs ATV)
      */
     private ArrayList<ObjectDetail> getMissing() {
         mMissing.clear();
@@ -276,9 +280,11 @@ public class UIDataSetup {
         Uri groupByApp = AppContract.AppEntry.GROUPBY_URI;
         groupByApp = groupByApp.buildUpon().appendPath(AppContract.AppEntry.COLUMN_APP_PKG).build();
 
-        //set up a query for apps that don't exist locally
-        String selection = AppContract.AppEntry.COLUMN_APP_DEVSSN + " != ? ";
-        String selectionArgs[] = {Build.SERIAL};
+        //set up a query for apps that don't exist locally and of the right type
+        //do a negative search on type so we can add a TYPE_FLAG later of BOTH. (i.e. this app).
+        String selection = AppContract.AppEntry.COLUMN_APP_DEVSSN + " != ? AND " + AppContract.AppEntry.COLUMN_APP_TYPE + " != ? ";
+        String type = mbIsATV ? String.valueOf(AppContract.TYPE_TABLET) : String.valueOf(AppContract.TYPE_ATV);
+        String selectionArgs[] = {Build.SERIAL, type};
 
         //grab the cursor
         Cursor c = mCtx.getContentResolver().query(groupByApp, null, selection, selectionArgs, AppContract.AppEntry.COLUMN_APP_LABEL + " ASC");
@@ -471,7 +477,8 @@ public class UIDataSetup {
             //I think this should be written as:
             //SELECT * FROM app_table GROUP BY pkgname
             //see http://stackoverflow.com/questions/6127338/sql-mysql-select-distinct-unique-but-return-all-columns
-            //null = SELECT *
+            //however we DO need to check the type. Do a negative search to allow for a type of BOTH
+            selection = AppContract.AppEntry.COLUMN_APP_TYPE + " != ? ";
         }
 
         return selection;
@@ -498,6 +505,9 @@ public class UIDataSetup {
             selectionArgs[0] = Build.SERIAL;
         } else if (mFunction[row] == UNIQUEAPPS_ROW) {
         } else if (mFunction[row] == SUPERSET_ROW) {
+            //Set up the type param to exclude (is a negative search)
+            selectionArgs = new String[1];
+            selectionArgs[0] = mbIsATV ? String.valueOf(AppContract.TYPE_TABLET) : String.valueOf(AppContract.TYPE_ATV);
         }
 
         return selectionArgs;

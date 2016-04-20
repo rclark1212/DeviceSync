@@ -160,10 +160,17 @@ public class SyncUtils {
     gets location of device
     */
     public static String getLocation(Context ctx, GoogleApiClient mClient) {
-        //FIXME - not using callbacks here...
         String ret = ctx.getResources().getString(R.string.unknown);
+        Location location = null;
 
-        Location location = LocationServices.FusedLocationApi.getLastLocation(mClient);
+        //Double check permissions (should have been asked for at startup)
+        int permissionCheck = ContextCompat.checkSelfPermission(ctx,
+                Manifest.permission.ACCESS_COARSE_LOCATION);
+
+        if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
+            //its okay to get last location here - don't need accuracy of realtime ping for location
+            location = LocationServices.FusedLocationApi.getLastLocation(mClient);
+        }
 
         //above may fail (no cached location or user may deny privileges)
         if (location != null) {
@@ -183,9 +190,14 @@ public class SyncUtils {
 
             if ((addresses != null) && (addresses.size() > 0)) {
                 //We got an address!!!
-                ret = addresses.get(0).getLocality() + ", " + addresses.get(0).getAdminArea();
+                if (Utils.bIsThisATV(ctx)) {
+                    ret = String.format(ctx.getResources().getString(R.string.atv_location), addresses.get(0).getLocality(), addresses.get(0).getAdminArea());
+                } else {
+                    ret = String.format(ctx.getResources().getString(R.string.phone_location),
+                            addresses.get(0).getAddressLine(0), addresses.get(0).getLocality(), addresses.get(0).getAdminArea());
+                }
             } else {
-                ret = "Lat: " + location.getLatitude() + ", Long: " + location.getLongitude();
+                ret = String.format(ctx.getResources().getString(R.string.latlong_location), addresses.get(0).getLatitude(), addresses.get(0).getLongitude());
             }
         }
 

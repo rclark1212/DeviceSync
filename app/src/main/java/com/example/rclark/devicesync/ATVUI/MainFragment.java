@@ -119,9 +119,9 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
         setupUIElements();
 
-        //Make sure we have location permissions
+        //Make sure we have location permissions at start
         // Assume thisActivity is the current activity
-        int permissionCheck = ContextCompat.checkSelfPermission(getContext(),
+        int permissionCheck = ContextCompat.checkSelfPermission(getActivity(),
                 Manifest.permission.ACCESS_COARSE_LOCATION);
 
         if (permissionCheck != PackageManager.PERMISSION_GRANTED) {

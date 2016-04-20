@@ -10,6 +10,9 @@
     <string name="date_format">MM-dd-yyyy kk:mm</string>
     <string name="append_local">%s (local)</string>
     <string name="append_remote">%s (remote)</string>
+    <string name="phone_location" formatted="false">%s, %s, %s</string>
+    <string name="atv_location" formatted="false">%s, %s</string>
+    <string name="latlong_location" formatted="false">Lat: %f, Long: %.2f</string>
 
     <string name="install">Install</string>
     <string name="uninstall">Uninstall</string>
