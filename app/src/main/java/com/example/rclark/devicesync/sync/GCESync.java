@@ -62,6 +62,7 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
     public static final int EXTENDED_DATA_STATUS_LOCALUPDATECOMPLETE = 1;
 
     private static Context mCtx;
+    private static boolean mbIsATV;
     private static boolean mbUseLocation = false;
     private static GoogleApiClient mGoogleApiClient = null;
 
@@ -129,6 +130,8 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
         //first, do we have context saved off?
         if (mCtx == null) {
             mCtx = getApplicationContext();
+            //also cache OS status here...
+            mbIsATV = Utils.bIsThisATV(mCtx);
         }
 
         //next attach to GMS if not yet attached...
@@ -192,7 +195,7 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
         }
 
         //load up contentValues with latest info...
-        long type = Utils.bIsThisATV(mCtx) ? AppContract.TYPE_ATV : AppContract.TYPE_TABLET;
+        long type = mbIsATV ? AppContract.TYPE_ATV : AppContract.TYPE_TABLET;
         contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICES_SSN, device.serial);
         contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICE_NAME, device.label);
         contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICE_MODEL, device.name);
@@ -263,12 +266,12 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
             //Force the OS type by definition...
             //note that the app is local
             //flags = flags | AppContract.AppEntry.FLAG_APP_LOCAL; - nope - SSN matching = local
-            app.type = Utils.bIsThisATV(mCtx) ? AppContract.TYPE_ATV : AppContract.TYPE_TABLET;
+            app.type = mbIsATV ? AppContract.TYPE_ATV : AppContract.TYPE_TABLET;
             app.flags = flags;
             app.serial = device.serial;
 
             //bind app to the contentValues
-            DBUtils.bindAppToContentValues(app, contentValues);
+            DBUtils.bindAppToContentValues(app, contentValues, mCtx);
 
             if (c.getCount() > 0) {
                 //replace

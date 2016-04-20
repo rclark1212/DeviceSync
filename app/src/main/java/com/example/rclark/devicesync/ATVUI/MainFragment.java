@@ -133,7 +133,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
         //Update the local content provider if running for first time...
         //FIXME - remember to add a force sync button to settings page
-        if (Utils.isRunningForFirstTime()) {
+        if (Utils.isRunningForFirstTime(getActivity())) {
             GCESync.startActionUpdateLocal(getActivity(), null, null);
         } else {
             //Note an optimization we made. We block processing of the notify callback from CP until the sync adapter

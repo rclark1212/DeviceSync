@@ -151,7 +151,7 @@ public class DBUtils {
             bExists = true;
         }
 
-        bindAppToContentValues(app, contentValues);
+        bindAppToContentValues(app, contentValues, ctx);
 
         if (bExists) {
             //update
@@ -170,7 +170,7 @@ public class DBUtils {
     /**
      *  Binds an app object detail to a content values object
      */
-    public static void bindAppToContentValues(ObjectDetail app, ContentValues contentValues) {
+    public static void bindAppToContentValues(ObjectDetail app, ContentValues contentValues, Context ctx) {
 
         contentValues.put(AppContract.AppEntry.COLUMN_APP_LABEL, app.label);
         contentValues.put(AppContract.AppEntry.COLUMN_APP_PKG, app.pkg);
@@ -182,7 +182,7 @@ public class DBUtils {
 
         //now blob... - COLUMN_APP_BANNER
         //First, is this image available on network?
-        if (Utils.getAppImageUriOnNextwork(app.pkg) == null) {
+        if (Utils.getAppImageUriOnNextwork(app.pkg, ctx) == null) {
             //nope - not available. So save off
 
             //convert drawable to bytestream
@@ -471,7 +471,7 @@ public class DBUtils {
 
                     //now blob... - COLUMN_APP_BANNER
                     //First, is this image available on network?
-                    if (Utils.getAppImageUriOnNextwork(app.pkg) == null) {
+                    if (Utils.getAppImageUriOnNextwork(app.pkg, ctx) == null) {
                         //nope - not available. So save off
 
                         //convert drawable to bytestream

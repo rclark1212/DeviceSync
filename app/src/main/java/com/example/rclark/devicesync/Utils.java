@@ -16,6 +16,7 @@ package com.example.rclark.devicesync;
 
 import android.app.UiModeManager;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -25,6 +26,7 @@ import android.graphics.Point;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.telecom.ConnectionRequest;
 import android.text.format.Time;
@@ -46,7 +48,7 @@ public class Utils {
 
     private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
     private static final String TAG = "DS_Utils";
-
+    private static final String PREFS_HAS_RUN_ALREADY = "prefs_has_run_already";
     /*
      * Making sure public utility methods remain static
      */
@@ -195,9 +197,23 @@ public class Utils {
     /**
      *  Routine to check if this is a first time run
      */
-    public static boolean isRunningForFirstTime() {
-        return true;
-        //FIXME - fix this stub
+    public static boolean isRunningForFirstTime(Context ctx) {
+        boolean bret = true;
+
+        //Get the pref bool flag...
+        SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(ctx);
+        boolean bhasrun = pref.getBoolean(PREFS_HAS_RUN_ALREADY, false);
+
+        if (bhasrun == true) {
+            bret = false;
+        }
+
+        //And, if we are here, we have run for first time so mark preferences as such
+        SharedPreferences.Editor edit = pref.edit();
+        edit.putBoolean(PREFS_HAS_RUN_ALREADY, true);
+        edit.commit();
+
+        return bret;
     }
 
     /**
@@ -205,7 +221,7 @@ public class Utils {
      *  Return null if not available.
      *  Return a uri if available.
      */
-    public static Uri getAppImageUriOnNextwork(String pkgname) {
+    public static Uri getAppImageUriOnNextwork(String pkgname, Context ctx) {
         return null;
         //FIXME - fix this stub
     }
