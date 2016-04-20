@@ -1,5 +1,7 @@
 package com.example.rclark.devicesync.sync;
 
+import android.Manifest;
+import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 import android.content.Intent;
@@ -10,8 +12,12 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.os.Build;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.text.format.Time;
 import android.util.Log;
 
@@ -22,6 +28,7 @@ import com.example.rclark.devicesync.data.AppContract;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -160,7 +167,26 @@ public class SyncUtils {
 
         //above may fail (no cached location or user may deny privileges)
         if (location != null) {
-            ret = location.toString();
+            Geocoder geo = new Geocoder(ctx);
+
+            List<Address> addresses = null;
+
+            if (geo != null) {
+                try {
+                    addresses = geo.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
+                } catch (IOException e) {
+                    Log.e(TAG, "Error getting address on geolocation");
+                } catch (IllegalArgumentException illegalArgumentException) {
+                    Log.e(TAG, "Bad lat and long");
+                }
+            }
+
+            if ((addresses != null) && (addresses.size() > 0)) {
+                //We got an address!!!
+                ret = addresses.get(0).getLocality() + ", " + addresses.get(0).getAdminArea();
+            } else {
+                ret = "Lat: " + location.getLatitude() + ", Long: " + location.getLongitude();
+            }
         }
 
         return ret;

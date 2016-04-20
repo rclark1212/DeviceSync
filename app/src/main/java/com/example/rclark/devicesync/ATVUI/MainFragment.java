@@ -14,6 +14,8 @@
 
 package com.example.rclark.devicesync.ATVUI;
 
+import android.Manifest;
+import android.app.Activity;
 import android.app.LoaderManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -21,6 +23,7 @@ import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.Loader;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.net.Uri;
@@ -38,7 +41,9 @@ import android.support.v17.leanback.widget.OnItemViewClickedListener;
 import android.support.v17.leanback.widget.Presenter;
 import android.support.v17.leanback.widget.Row;
 import android.support.v17.leanback.widget.RowPresenter;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.Gravity;
@@ -113,6 +118,18 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         super.onActivityCreated(savedInstanceState);
 
         setupUIElements();
+
+        //Make sure we have location permissions
+        // Assume thisActivity is the current activity
+        int permissionCheck = ContextCompat.checkSelfPermission(getContext(),
+                Manifest.permission.ACCESS_COARSE_LOCATION);
+
+        if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
+            if (!ActivityCompat.shouldShowRequestPermissionRationale(getActivity(), Manifest.permission.ACCESS_COARSE_LOCATION)) {
+                String[] permissions = {Manifest.permission.ACCESS_COARSE_LOCATION};
+                ActivityCompat.requestPermissions(getActivity(), permissions, 0);
+            }
+        }
 
         //Update the local content provider if running for first time...
         //FIXME - remember to add a force sync button to settings page

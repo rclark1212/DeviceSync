@@ -75,13 +75,17 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
     @Override
     public void onConnected(Bundle bundle) {
         // Display the connection status
+        Log.v(TAG, "Success - google GMS services connect");
     }
 
     @Override
-    public void onConnectionFailed(ConnectionResult result) {};
+    public void onConnectionFailed(ConnectionResult result) {
+        Log.e(TAG, "Failed google GMS services connect");
+    };
 
     @Override
     public void onConnectionSuspended(int i) {
+        Log.e(TAG, "Suspended google GMS services connect");
     }
 
     /**
