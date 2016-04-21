@@ -16,7 +16,9 @@ package com.example.rclark.devicesync;
 
 import android.app.UiModeManager;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -226,4 +228,24 @@ public class Utils {
         //FIXME - fix this stub
     }
 
+    /**
+     * Launches an app
+     * @param ctx
+     * @param pkgName
+     */
+    public static void launchApp(Context ctx, String pkgName) {
+        PackageManager manager = ctx.getPackageManager();
+
+        Intent i = manager.getLaunchIntentForPackage(pkgName);
+        if (i == null) {
+            return;
+        }
+
+        if (bIsThisATV(ctx)) {
+            i.addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER);
+        } else {
+            i.addCategory(Intent.CATEGORY_LAUNCHER);
+        }
+        ctx.startActivity(i);
+    }
 }

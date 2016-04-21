@@ -49,6 +49,7 @@ public class ObjectDetailsFragment extends DetailsFragment {
     private static final int ACTION_CLONEFROM = 3;
     private static final int ACTION_REMOVEDEVICE = 4;
     private static final int ACTION_SHOWAPPS = 5;
+    private static final int ACTION_RUNAPP = 6;
 
     private static final int DETAIL_THUMB_WIDTH = 274;
     private static final int DETAIL_THUMB_HEIGHT = 274;
@@ -161,7 +162,8 @@ public class ObjectDetailsFragment extends DetailsFragment {
             }
             //and setup the actions...
             if (DBUtils.isObjectLocal(getActivity(), mSelectedObject)) {
-                //uninstall
+                //run app and uninstall
+                actionAdapter.add(new Action(ACTION_RUNAPP, getResources().getString(R.string.run_app)));
                 actionAdapter.add(new Action(ACTION_UNINSTALL, getResources().getString(R.string.uninstall)));
             } else {
                 //install
@@ -193,7 +195,7 @@ public class ObjectDetailsFragment extends DetailsFragment {
 
     private void setupDetailsOverviewRowPresenter() {
         // Set detail background and style.
-        DetailsOverviewRowPresenter detailsPresenter =
+        final DetailsOverviewRowPresenter detailsPresenter =
                 new DetailsOverviewRowPresenter(new DetailsDescriptionPresenter());
         detailsPresenter.setBackgroundColor(getResources().getColor(R.color.selected_background));
         detailsPresenter.setStyleLarge(true);
@@ -207,19 +209,27 @@ public class ObjectDetailsFragment extends DetailsFragment {
             public void onActionClicked(Action action) {
                 switch ((int) action.getId()) {
                     case ACTION_SHOWAPPS:
+                        //TODO - go to app row...
                         Toast.makeText(getActivity(), action.toString(), Toast.LENGTH_SHORT).show();
                         break;
                     case ACTION_INSTALL:
                         InstallUtil.installAPK(getActivity(), mSelectedObject.pkg);
+                        getActivity().onBackPressed();
                         break;
                     case ACTION_UNINSTALL:
                         InstallUtil.uninstallAPK(getActivity(), mSelectedObject.pkg);
+                        getActivity().onBackPressed();
                         break;
                     case ACTION_REMOVEDEVICE:
                         Toast.makeText(getActivity(), action.toString(), Toast.LENGTH_SHORT).show();
+                        getActivity().onBackPressed();
                         break;
                     case ACTION_CLONEFROM:
                         Toast.makeText(getActivity(), action.toString(), Toast.LENGTH_SHORT).show();
+                        break;
+                    case ACTION_RUNAPP:
+                        Utils.launchApp(getActivity(), mSelectedObject.pkg);
+                        getActivity().onBackPressed();
                         break;
                 }
             }

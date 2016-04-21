@@ -72,6 +72,8 @@ public class DeviceSyncReceiver extends BroadcastReceiver {
         //Create an object
         ObjectDetail app = new ObjectDetail();
 
+        //TODO - insert a *brief* wait here to allow image to get captured.
+
         //install the app. Get the app info.
         PackageManager manager = ctx.getPackageManager();
 

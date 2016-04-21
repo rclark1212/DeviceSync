@@ -19,6 +19,7 @@
     <string name="clonefrom">Clone From</string>
     <string name="remove_device">Remove Device</string>
     <string name="show_apps">Show Apps</string>
+    <string name="run_app">Launch App</string>
 
     <string name="google_app_id">com.example.rclark.devicesync</string>
 
