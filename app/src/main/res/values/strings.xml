@@ -23,6 +23,14 @@
 
     <string name="google_app_id">com.example.rclark.devicesync</string>
 
+    <string name="pref_use_network_for_images">Get app icons from network</string>
+    <string name="pref_use_network_for_images_summ">If checked, will try to find app icons on network (and not store in database). When unchecked, will grab local icon and store in database"</string>
+    <string name="pref_disable_rows">Disable rows</string>
+    <string name="pref_disable_rows_summ">Allows you to hide rows in the UI which you do not use</string>
+    <string name="pref_disable_rows_list">Available rows to hide (fixme)</string>
+    <string name="pref_disable_rows_list_default">Devices</string>
+    <string name="pref_account_settings">Account Settings</string>
+
     <string name="preferences">PREFERENCES</string>
     <string name="grid_view">Grid View</string>
     <string name="error_fragment">Error Fragment</string>

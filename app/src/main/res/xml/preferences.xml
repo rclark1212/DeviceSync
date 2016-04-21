@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <CheckBoxPreference
+        android:key="pref_use_network_for_images"
+        android:title="@string/pref_use_network_for_images"
+        android:summary="@string/pref_use_network_for_images_summ"
+        android:defaultValue="true" />
+    <CheckBoxPreference
+        android:key="pref_disable_rows"
+        android:title="@string/pref_disable_rows"
+        android:summary="@string/pref_disable_rows_summ"
+        android:defaultValue="false" />
+    <!-- <ListPreference
+        android:dependency="pref_disable_rows"
+        android:key="pref_disable_rows_list"
+        android:title="@string/pref_disable_rows_list"
+        android:dialogTitle="@string/pref_disable_rows_list"
+        android:entries="@array/header_names"
+        android:entryValues="@array/header_function"
+        android:defaultValue="@string/pref_disable_rows_list_default" /> -->
+    <PreferenceScreen
+        android:key="prefs_account_setting_key"
+        android:title="@string/pref_account_settings"
+        android:persistent="false">
+        <CheckBoxPreference
+            android:key="pref_dummy"
+            android:title="dummy setting"
+            android:summary="dummy summary"
+            android:defaultValue="false" />
+        <Preference android:title="dummy web page load" >
+            <intent android:action="android.intent.action.VIEW"
+                android:data="http://www.example.com" />
+        </Preference>
+        <!--
+        <ButtonPreference
+            android:key="pref_dummy2"
+            android:title="dummy2 settimng"
+            android:summary="dummy2 summary"/> -->
+    </PreferenceScreen>
+</PreferenceScreen>

@@ -29,6 +29,7 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.preference.PreferenceManager;
 import android.support.v17.leanback.app.BrowseFragment;
 import android.support.v17.leanback.database.CursorMapper;
 import android.support.v17.leanback.widget.ArrayObjectAdapter;
@@ -135,6 +136,8 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         //FIXME - remember to add a force sync button to settings page
         if (Utils.isRunningForFirstTime(getActivity())) {
             GCESync.startActionUpdateLocal(getActivity(), null, null);
+            //and init the preferences
+            PreferenceManager.setDefaultValues(getActivity(), R.xml.preferences, false);
         } else {
             //Note an optimization we made. We block processing of the notify callback from CP until the sync adapter
             //has had a chance to complete on the initial run. The sync service will send a message if this is first run.
@@ -444,6 +447,11 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                 if (((String) item).indexOf(getString(R.string.error_fragment)) >= 0) {
                     Intent intent = new Intent(getActivity(), BrowseErrorActivity.class);
                     startActivity(intent);
+                } else if (item.equals(getResources().getString(R.string.personal_settings))) {
+                    // Display the settings fragment
+                    getFragmentManager().beginTransaction()
+                            .replace(R.id.main_browse_fragment, new SettingsFragment())
+                            .commit();
                 } else {
                     Toast.makeText(getActivity(), ((String) item), Toast.LENGTH_SHORT)
                             .show();
