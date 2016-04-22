@@ -105,7 +105,7 @@ public class SyncUtils {
                 app.ver = info.versionName;
                 app.installDate = info.lastUpdateTime;
             } catch (PackageManager.NameNotFoundException e) {
-                Log.v(TAG, "Can't find package on initial loop");
+                Log.e(TAG, "Can't find package on initial loop");
             }
 
             //Have we already added this?

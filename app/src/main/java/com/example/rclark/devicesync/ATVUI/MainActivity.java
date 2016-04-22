@@ -50,8 +50,10 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.util.Log;
 
 import com.example.rclark.devicesync.R;
+import com.example.rclark.devicesync.sync.GCESync;
 
 /*
  * MainActivity class that loads MainFragment
@@ -60,10 +62,12 @@ public class MainActivity extends Activity {
     /**
      * Called when the activity is first created.
      */
+    private static final String TAG = "MainActivity";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
     }
+
 }

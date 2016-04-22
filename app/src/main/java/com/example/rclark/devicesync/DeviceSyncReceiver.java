@@ -56,12 +56,12 @@ public class DeviceSyncReceiver extends BroadcastReceiver {
                 (intent.getAction() == Intent.ACTION_PACKAGE_CHANGED) ||
                 (intent.getAction() == Intent.ACTION_PACKAGE_REPLACED)) {
             //install
-            Log.v(TAG, "Got install/update intent");
+            Log.d(TAG, "Got install/update intent");
             bInstall = true;
         } else if ((intent.getAction() == Intent.ACTION_PACKAGE_REMOVED) ||
                 (intent.getAction() == Intent.ACTION_PACKAGE_FULLY_REMOVED)) {
             //removed
-            Log.v(TAG, "Got remove intent");
+            Log.d(TAG, "Got remove intent");
             bInstall = false;
         }
 
@@ -114,7 +114,7 @@ public class DeviceSyncReceiver extends BroadcastReceiver {
             //FIXME - if package available in play store, null out above
 
         } catch (PackageManager.NameNotFoundException e) {
-            Log.v(TAG, "Can't find package err!!!");
+            Log.e(TAG, "Can't find package err!!!");
         }
 
         //Okay - we have an app object... Put it into CP

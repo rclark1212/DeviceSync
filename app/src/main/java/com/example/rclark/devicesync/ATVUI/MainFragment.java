@@ -31,6 +31,7 @@ import android.Manifest;
 import android.app.Activity;
 import android.app.LoaderManager;
 import android.content.BroadcastReceiver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.CursorLoader;
 import android.content.Intent;
@@ -38,8 +39,10 @@ import android.content.IntentFilter;
 import android.content.Loader;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.database.DatabaseUtils;
 import android.graphics.Color;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
@@ -81,8 +84,9 @@ import java.util.ArrayList;
 
 
 public class MainFragment extends BrowseFragment implements LoaderManager.LoaderCallbacks<Cursor>,
-        ContentObserverCallback {
+        ContentObserverCallback, ActivityCompat.OnRequestPermissionsResultCallback {
     private static final String TAG = "MainFragment";
+    private static final int MY_PERMISSIONS_REQUEST_LOCATION = 1;
 
     private static final int GRID_ITEM_WIDTH = 200;
     private static final int GRID_ITEM_HEIGHT = 200;
@@ -127,12 +131,30 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         }
     };
 
+    /**
+     * Okay - on first install, need to ask for permission for location. By that time, CP already updated.
+     * Fix that here by adding location to the device's record...
+     */
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (MY_PERMISSIONS_REQUEST_LOCATION == requestCode) {
+            // Is there a result array? (should be if okay chosen)
+            if ((grantResults.length > 0)
+                    && (grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
+                // Yay! We get location. Go ahead an update the device record...
+                Log.d(TAG, "location priviledge granted. Updating CP");
+                GCESync.localDeviceUpdate(getActivity(), null, null);
+            } else {
+                Log.d(TAG, "location priviledge DENIED. Grr...");
+            }
+        }
+    }
+
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         Log.i(TAG, "onCreate");
         super.onActivityCreated(savedInstanceState);
-
-        setupUIElements();
 
         //Make sure we have location permissions at start
         // Assume thisActivity is the current activity
@@ -142,9 +164,11 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
             if (!ActivityCompat.shouldShowRequestPermissionRationale(getActivity(), Manifest.permission.ACCESS_COARSE_LOCATION)) {
                 String[] permissions = {Manifest.permission.ACCESS_COARSE_LOCATION};
-                ActivityCompat.requestPermissions(getActivity(), permissions, 0);
+                requestPermissions(permissions, MY_PERMISSIONS_REQUEST_LOCATION);
             }
         }
+
+        setupUIElements();
 
         //Update the local content provider if running for first time...
         //FIXME - remember to add a force sync button to settings page

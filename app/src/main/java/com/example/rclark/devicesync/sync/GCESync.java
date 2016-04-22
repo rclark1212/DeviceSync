@@ -24,6 +24,7 @@ import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.graphics.Bitmap;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.RemoteException;
 import android.support.v4.content.LocalBroadcastManager;
@@ -64,6 +65,7 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
     private static final String ACTION_UPDATE_LOCAL_DB = "com.example.rclark.devicesync.sync.action.Update";
     private static final String ACTION_PUSH_REMOTE_DB = "com.example.rclark.devicesync.sync.action.Push";
     private static final String ACTION_FETCH_REMOTE_DB = "com.example.rclark.devicesync.sync.action.Fetch";
+    private static final String ACTION_UPDATE_LOCAL_DEVICE = "com.example.rclark.devicesync.sync.action.DeviceUpdate";
 
     // TODO: Rename parameters
     private static final String EXTRA_PARAM1 = "com.example.rclark.devicesync.sync.extra.PARAM1";
@@ -90,7 +92,7 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
     @Override
     public void onConnected(Bundle bundle) {
         // Display the connection status
-        Log.v(TAG, "Success - google GMS services connect");
+        Log.d(TAG, "Success - google GMS services connect");
     }
 
     @Override
@@ -113,6 +115,20 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
         Intent intent = new Intent(context, GCESync.class);
         intent.setAction(ACTION_UPDATE_LOCAL_DB);
         //intent.putExtra(EXTRA_PARAM1, param1);
+        //intent.putExtra(EXTRA_PARAM2, param2);
+        context.startService(intent);
+    }
+
+    /**
+     * Starts this service to perform action Foo with the given parameters. If
+     * the service is already performing a task this action will be queued.
+     *
+     * @see IntentService
+     */
+    public static void localDeviceUpdate(Context context, String deviceSN, String param2) {
+        Intent intent = new Intent(context, GCESync.class);
+        intent.setAction(ACTION_UPDATE_LOCAL_DEVICE);
+        //intent.putExtra(EXTRA_PARAM1, deviceSN);
         //intent.putExtra(EXTRA_PARAM2, param2);
         context.startService(intent);
     }
@@ -172,6 +188,9 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
                 //final String param1 = intent.getStringExtra(EXTRA_PARAM1);
                 //final String param2 = intent.getStringExtra(EXTRA_PARAM2);
                 handleActionPush();
+            } else if (ACTION_UPDATE_LOCAL_DEVICE.equals(action)) {
+                //update the device...
+                handleActionLocalDeviceUpdate();
             } else if (ACTION_FETCH_REMOTE_DB.equals(action)) {
                 handleActionFetch();
             }
@@ -179,12 +198,10 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
     }
 
     /**
-     * Routine below will update local CP with local device data.
+     * Updates the local device...
+     * Specifically, captures device info and updates the CP with it.
      */
-    private void handleActionUpdate() {
-        //grab current time first
-        long currentTime = System.currentTimeMillis();
-
+    private void handleActionLocalDeviceUpdate() {
         //Okay - first update the device database - serial number, nickname, date, model name, os_ver
         //Get an object with local device info...
         ObjectDetail device = SyncUtils.getLocalDeviceInfo(mCtx, mbUseLocation, mGoogleApiClient);
@@ -198,7 +215,7 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
         //Now, search for the device (is it in DB yet?) - search by serial
         Uri deviceSearchUri = deviceDB.buildUpon().appendPath(device.serial).build();
 
-        Log.v(TAG, "device query - uri:" + deviceSearchUri.toString());
+        //Log.d(TAG, "device query - uri:" + deviceSearchUri.toString());
         Cursor c = getApplicationContext().getContentResolver().query(deviceSearchUri, null, null, null, null);
 
         if (c.getCount() > 0) {
@@ -228,9 +245,23 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
 
         c.close();
 
+    }
+
+    /**
+     * Routine below will update local CP with local device data.
+     */
+    private void handleActionUpdate() {
+        //grab current time first
+        long currentTime = System.currentTimeMillis();
+
+        //Update the local device...
+        handleActionLocalDeviceUpdate();
+
         /**
          * Okay - device database should be updated. Now time to do same for apps...
          */
+        //create the buffer
+        ContentValues contentValues = new ContentValues();
 
         //Get the device DB reference...
         Uri appDB = AppContract.AppEntry.CONTENT_URI;
@@ -248,16 +279,16 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
             long flags = 0;
 
             //Remember, device.pkg contains the serial number... (unique)
-            Uri appSearchUri = appDB.buildUpon().appendPath(device.serial).appendPath(app.pkg).build();
+            Uri appSearchUri = appDB.buildUpon().appendPath(Build.SERIAL).appendPath(app.pkg).build();
 
             //Build an insert URI to trigger notifications...
-            Uri insertUri = appDB.buildUpon().appendPath(device.serial).build();
+            Uri insertUri = appDB.buildUpon().appendPath(Build.SERIAL).build();
 
             //clear contentValues...
             contentValues.clear();
 
-            Log.v(TAG, "app query - uri:" + appSearchUri.toString());
-            c = getApplicationContext().getContentResolver().query(appSearchUri, null, null, null, null);
+            //Log.d(TAG, "app query - uri:" + appSearchUri.toString());
+            Cursor c = getApplicationContext().getContentResolver().query(appSearchUri, null, null, null, null);
 
             if (c.getCount() > 0) {
                 //device exists...
@@ -282,7 +313,7 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
             //flags = flags | AppContract.AppEntry.FLAG_APP_LOCAL; - nope - SSN matching = local
             app.type = mbIsATV ? AppContract.TYPE_ATV : AppContract.TYPE_TABLET;
             app.flags = flags;
-            app.serial = device.serial;
+            app.serial = Build.SERIAL;
 
             //bind app to the contentValues
             DBUtils.bindAppToContentValues(app, contentValues, mCtx);
@@ -308,13 +339,13 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
 
         //Step 4 - apply the content operation batch
         try {
-            Log.v(TAG, "Starting batch CP application");
+            //Log.d(TAG, "Starting batch CP application");
             getApplicationContext().getContentResolver().applyBatch(AppContract.CONTENT_AUTHORITY, ops);
-            Log.v(TAG, "Complete batch CP application");
+            //Log.d(TAG, "Complete batch CP application");
         } catch (RemoteException e) {
-            Log.v(TAG, "Batch - remoteException err");
+            Log.e(TAG, "Batch - remoteException err");
         } catch (OperationApplicationException e) {
-            Log.v(TAG, "Batch - OperationApplicationException err");
+            Log.e(TAG, "Batch - OperationApplicationException err");
         }
 
         /**
@@ -329,7 +360,7 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
 
         //manually create the selection/search string - delete apps with matching devices but a timestamp less than entry time
         String selection = AppContract.AppEntry.COLUMN_APP_DEVSSN + " = ? AND " + AppContract.AppEntry.COLUMN_APP_TIMEUPDATED + " < ?";
-        String[] selectionArgs = new String[]{device.serial, Long.toString(currentTime)};
+        String[] selectionArgs = new String[]{Build.SERIAL, Long.toString(currentTime)};
 
         //Delete only those elements with the old timestamp
         getApplicationContext().getContentResolver().delete(AppContract.AppEntry.CONTENT_URI, selection, selectionArgs);

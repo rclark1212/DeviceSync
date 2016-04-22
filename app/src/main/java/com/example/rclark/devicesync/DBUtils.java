@@ -247,7 +247,7 @@ public class DBUtils {
             //FIXME - if package available in play store, null out above
 
         } catch (PackageManager.NameNotFoundException e) {
-            Log.v(TAG, "Can't find package err!!!");
+            Log.e(TAG, "Can't find package err!!!");
         }
 
         //Okay - we have an app object... Put it into CP
@@ -364,7 +364,7 @@ public class DBUtils {
         //Okay - first update the device database - serial number, nickname, date, model name, os_ver
         //Get an object with local device info...
         //Get the device DB reference...
-        Log.v(TAG, "Starting fake update population");
+        Log.d(TAG, "Starting fake update population");
 
         ArrayList<String> fakedevice = new ArrayList<String>();
 
@@ -390,7 +390,7 @@ public class DBUtils {
             //Now, search for the device (is it in DB yet?) - search by serial
             Uri deviceSearchUri = deviceDB.buildUpon().appendPath(serialfake).build();
 
-            Log.v(TAG, "device query - uri:" + deviceSearchUri.toString());
+            //Log.d(TAG, "device query - uri:" + deviceSearchUri.toString());
             Cursor c = ctx.getContentResolver().query(deviceSearchUri, null, null, null, null);
 
             if (c.getCount() > 0) {
@@ -545,7 +545,7 @@ public class DBUtils {
             }
             c.close();
         }
-        Log.v(TAG, "Complete fake update population");
+        Log.d(TAG, "Complete fake update population");
 
     }
 
