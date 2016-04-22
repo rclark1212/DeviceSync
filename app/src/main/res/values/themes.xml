@@ -1,6 +1,6 @@
 <resources>
 
-    <style name="Theme.AppCompat.DeviceSync" parent="Theme.AppCompat">
+    <style name="Theme.AppCompat.DeviceSync" parent="Theme.AppCompat.Light">
     </style>
 
 </resources>

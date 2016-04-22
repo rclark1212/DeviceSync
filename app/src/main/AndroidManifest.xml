@@ -37,8 +37,8 @@
             </intent-filter>
         </activity>
         <activity android:name=".ATVUI.DetailsActivity" />
-        <!-- <activity android:name=".PlaybackOverlayActivity" /> -->
         <activity android:name=".ATVUI.BrowseErrorActivity" />
+        <activity android:name=".ATVUI.SettingsActivity" />
 
         <service
             android:name=".sync.GCESync"

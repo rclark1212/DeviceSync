@@ -46,6 +46,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.v7.preference.PreferenceScreen;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -449,9 +450,9 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                     startActivity(intent);
                 } else if (item.equals(getResources().getString(R.string.personal_settings))) {
                     // Display the settings fragment
-                    getFragmentManager().beginTransaction()
-                            .replace(R.id.main_browse_fragment, new SettingsFragment())
-                            .commit();
+                    Intent intent = new Intent();
+                    intent.setClass(getActivity(), SettingsActivity.class);
+                    startActivity(intent);
                 } else {
                     Toast.makeText(getActivity(), ((String) item), Toast.LENGTH_SHORT)
                             .show();
@@ -459,7 +460,6 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
             }
         }
     }
-
 
     private class GridItemPresenter extends Presenter {
         @Override

@@ -1,5 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory
+        android:title="dummy cat1">
+
+        <SwitchPreference
+            android:key="checkbox_preference"
+            android:title="test checkbox"
+            android:persistent="true"
+            android:summary="test summary" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="dummy cat2">
+
     <CheckBoxPreference
         android:key="pref_use_network_for_images"
         android:title="@string/pref_use_network_for_images"
@@ -18,23 +32,5 @@
         android:entries="@array/header_names"
         android:entryValues="@array/header_function"
         android:defaultValue="@string/pref_disable_rows_list_default" /> -->
-    <PreferenceScreen
-        android:key="prefs_account_setting_key"
-        android:title="@string/pref_account_settings"
-        android:persistent="false">
-        <CheckBoxPreference
-            android:key="pref_dummy"
-            android:title="dummy setting"
-            android:summary="dummy summary"
-            android:defaultValue="false" />
-        <Preference android:title="dummy web page load" >
-            <intent android:action="android.intent.action.VIEW"
-                android:data="http://www.example.com" />
-        </Preference>
-        <!--
-        <ButtonPreference
-            android:key="pref_dummy2"
-            android:title="dummy2 settimng"
-            android:summary="dummy2 summary"/> -->
-    </PreferenceScreen>
+    </PreferenceCategory>
 </PreferenceScreen>
