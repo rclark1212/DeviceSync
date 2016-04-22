@@ -144,7 +144,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                     && (grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
                 // Yay! We get location. Go ahead an update the device record...
                 Log.d(TAG, "location priviledge granted. Updating CP");
-                GCESync.localDeviceUpdate(getActivity(), null, null);
+                GCESync.startActionLocalDeviceUpdate(getActivity(), null, null);
             } else {
                 Log.d(TAG, "location priviledge DENIED. Grr...");
             }
@@ -164,7 +164,10 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
             if (!ActivityCompat.shouldShowRequestPermissionRationale(getActivity(), Manifest.permission.ACCESS_COARSE_LOCATION)) {
                 String[] permissions = {Manifest.permission.ACCESS_COARSE_LOCATION};
-                requestPermissions(permissions, MY_PERMISSIONS_REQUEST_LOCATION);
+                //and only need to do this for SDK23...
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    requestPermissions(permissions, MY_PERMISSIONS_REQUEST_LOCATION);
+                }
             }
         }
 

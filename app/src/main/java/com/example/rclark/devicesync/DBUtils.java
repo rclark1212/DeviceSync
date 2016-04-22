@@ -211,48 +211,6 @@ public class DBUtils {
         }
     }
 
-    public static void processInstallApp(Context ctx, String packageName) {
-
-        //Construct the Uri...
-        Uri appDB = AppContract.AppEntry.CONTENT_URI;
-        //build up the local device query
-        appDB = appDB.buildUpon().appendPath(Build.SERIAL).appendPath(packageName).build();
-
-        //Create an object
-        ObjectDetail app = new ObjectDetail();
-
-        //install the app. Get the app info.
-        PackageManager manager = ctx.getPackageManager();
-
-        //FIXME - if package available in play store, null out above
-        app.bIsDevice = false;
-        //set the right type...
-        app.type = Utils.bIsThisATV(ctx) ? AppContract.TYPE_ATV : AppContract.TYPE_TABLET;
-
-        try {
-            PackageInfo info = manager.getPackageInfo(packageName, 0);
-            app.ver = info.versionName;
-            app.installDate = info.lastUpdateTime;
-            app.label = info.applicationInfo.loadLabel(manager).toString();
-            app.pkg = packageName;
-            app.serial = Build.SERIAL;  //this serial number
-            app.flags = AppContract.AppEntry.FLAG_NO_ACTION;
-
-
-            app.name = info.applicationInfo.name;
-            app.banner = info.applicationInfo.loadBanner(manager);
-            if (app.banner == null) {
-                info.applicationInfo.loadIcon(manager);
-            }
-            //FIXME - if package available in play store, null out above
-
-        } catch (PackageManager.NameNotFoundException e) {
-            Log.e(TAG, "Can't find package err!!!");
-        }
-
-        //Okay - we have an app object... Put it into CP
-        DBUtils.saveAppToCP(ctx, appDB, app);
-    }
 
     /**
      * Check to see if the passed in object is local or remote

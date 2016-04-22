@@ -20,6 +20,8 @@ import android.content.ContentValues;
 import android.content.Intent;
 import android.content.Context;
 import android.content.OperationApplicationException;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.graphics.Bitmap;
@@ -40,6 +42,8 @@ import com.google.android.gms.location.LocationServices;
 
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -66,6 +70,7 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
     private static final String ACTION_PUSH_REMOTE_DB = "com.example.rclark.devicesync.sync.action.Push";
     private static final String ACTION_FETCH_REMOTE_DB = "com.example.rclark.devicesync.sync.action.Fetch";
     private static final String ACTION_UPDATE_LOCAL_DEVICE = "com.example.rclark.devicesync.sync.action.DeviceUpdate";
+    private static final String ACTION_UPDATE_LOCAL_APP = "com.example.rclark.devicesync.sync.action.AppUpdate";
 
     // TODO: Rename parameters
     private static final String EXTRA_PARAM1 = "com.example.rclark.devicesync.sync.extra.PARAM1";
@@ -125,11 +130,30 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
      *
      * @see IntentService
      */
-    public static void localDeviceUpdate(Context context, String deviceSN, String param2) {
+    public static void startActionLocalDeviceUpdate(Context context, String deviceSN, String param2) {
         Intent intent = new Intent(context, GCESync.class);
         intent.setAction(ACTION_UPDATE_LOCAL_DEVICE);
         //intent.putExtra(EXTRA_PARAM1, deviceSN);
         //intent.putExtra(EXTRA_PARAM2, param2);
+        context.startService(intent);
+    }
+
+    /**
+     * Starts this service to perform action Foo with the given parameters. If
+     * the service is already performing a task this action will be queued.
+     * Note that the second param here is very special. Indicates a delay to insert on processing
+     * the action (in ms). Used for broadcast intent actions where app package manager not quite
+     * ready for us to capture data at time we are called.
+     * Note that this routine here runs in context of broadcast receiver - so we really want to delay
+     * once we are inside the intentservice...
+     *
+     * @see IntentService
+     */
+    public static void startActionLocalAppUpdate(Context context, String pkgname, String delayExecutionInMS) {
+        Intent intent = new Intent(context, GCESync.class);
+        intent.setAction(ACTION_UPDATE_LOCAL_APP);
+        intent.putExtra(EXTRA_PARAM1, pkgname);
+        intent.putExtra(EXTRA_PARAM2, delayExecutionInMS);
         context.startService(intent);
     }
 
@@ -191,6 +215,34 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
             } else if (ACTION_UPDATE_LOCAL_DEVICE.equals(action)) {
                 //update the device...
                 handleActionLocalDeviceUpdate();
+            } else if (ACTION_UPDATE_LOCAL_APP.equals(action)) {
+                //update the app...
+                final String pkgname = intent.getStringExtra(EXTRA_PARAM1);
+                final String msDelayStr = intent.getStringExtra(EXTRA_PARAM2);
+                int msDelay = 0;
+                //has a delay been sent to us? Grab it first...
+                if (msDelayStr != null) {
+                    try {
+                        msDelay = Integer.parseInt(msDelayStr);
+                    } catch (NumberFormatException e) {
+                        Log.e(TAG, "Bad delay string passed in to ACTION_UPDATE_LOCAL_APP");
+                    }
+                }
+                if (msDelay > 0) {
+                    //run the action on a timer thread
+                    Timer timer = new Timer();
+                    Log.d(TAG, "Scheduling app (" + pkgname + ") CP update in " + msDelay + "ms");
+                    timer.schedule(new TimerTask() {
+                        @Override
+                        public void run() {
+                            //run your service
+                            handleActionLocalAppUpdate(pkgname);
+                        }
+                    }, msDelay);
+                } else {
+                    //call immediately
+                    handleActionLocalAppUpdate(pkgname);
+                }
             } else if (ACTION_FETCH_REMOTE_DB.equals(action)) {
                 handleActionFetch();
             }
@@ -216,7 +268,7 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
         Uri deviceSearchUri = deviceDB.buildUpon().appendPath(device.serial).build();
 
         //Log.d(TAG, "device query - uri:" + deviceSearchUri.toString());
-        Cursor c = getApplicationContext().getContentResolver().query(deviceSearchUri, null, null, null, null);
+        Cursor c = mCtx.getContentResolver().query(deviceSearchUri, null, null, null, null);
 
         if (c.getCount() > 0) {
             //device exists...
@@ -237,10 +289,10 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
 
         if (c.getCount() > 0) {
             //replace
-            getApplicationContext().getContentResolver().update(deviceSearchUri, contentValues, null, null);
+            mCtx.getContentResolver().update(deviceSearchUri, contentValues, null, null);
         } else {
             //add
-            getApplicationContext().getContentResolver().insert(AppContract.DevicesEntry.CONTENT_URI, contentValues);
+            mCtx.getContentResolver().insert(AppContract.DevicesEntry.CONTENT_URI, contentValues);
         }
 
         c.close();
@@ -267,7 +319,7 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
         Uri appDB = AppContract.AppEntry.CONTENT_URI;
 
         //Step 1 - get a copy of the apps...
-        ArrayList<ObjectDetail> apps = SyncUtils.loadApps(getApplicationContext());
+        ArrayList<ObjectDetail> apps = SyncUtils.loadApps(mCtx);
 
         //Step 2 - use a ContentProviderOperation for better perf...
         ArrayList<ContentProviderOperation> ops = new ArrayList<ContentProviderOperation>();
@@ -288,7 +340,7 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
             contentValues.clear();
 
             //Log.d(TAG, "app query - uri:" + appSearchUri.toString());
-            Cursor c = getApplicationContext().getContentResolver().query(appSearchUri, null, null, null, null);
+            Cursor c = mCtx.getContentResolver().query(appSearchUri, null, null, null, null);
 
             if (c.getCount() > 0) {
                 //device exists...
@@ -340,7 +392,7 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
         //Step 4 - apply the content operation batch
         try {
             //Log.d(TAG, "Starting batch CP application");
-            getApplicationContext().getContentResolver().applyBatch(AppContract.CONTENT_AUTHORITY, ops);
+            mCtx.getContentResolver().applyBatch(AppContract.CONTENT_AUTHORITY, ops);
             //Log.d(TAG, "Complete batch CP application");
         } catch (RemoteException e) {
             Log.e(TAG, "Batch - remoteException err");
@@ -363,7 +415,7 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
         String[] selectionArgs = new String[]{Build.SERIAL, Long.toString(currentTime)};
 
         //Delete only those elements with the old timestamp
-        getApplicationContext().getContentResolver().delete(AppContract.AppEntry.CONTENT_URI, selection, selectionArgs);
+        mCtx.getContentResolver().delete(AppContract.AppEntry.CONTENT_URI, selection, selectionArgs);
 
         //And finally, send a message back to indicate that we are all done with the local work
         Intent localIntent = new Intent(BROADCAST_ACTION).putExtra(EXTENDED_DATA_STATUS, EXTENDED_DATA_STATUS_LOCALUPDATECOMPLETE);
@@ -372,6 +424,54 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
 
     }
 
+
+    /**
+     * Update the app package which is passed in (get the app info and update CP). Triggered by new installs of apps (amongst others)
+     * from broadcast receiver.
+     * @param packageName
+     */
+    private void handleActionLocalAppUpdate(String packageName) {
+        Log.d(TAG, "Starting local app update for " + packageName);
+        //Construct the Uri...
+        Uri appDB = AppContract.AppEntry.CONTENT_URI;
+        //build up the local device query
+        appDB = appDB.buildUpon().appendPath(Build.SERIAL).appendPath(packageName).build();
+
+        //Create an object
+        ObjectDetail app = new ObjectDetail();
+
+        //install the app. Get the app info.
+        PackageManager manager = mCtx.getPackageManager();
+
+        //FIXME - if package available in play store, null out above
+        app.bIsDevice = false;
+        //set the right type...
+        app.type = Utils.bIsThisATV(mCtx) ? AppContract.TYPE_ATV : AppContract.TYPE_TABLET;
+
+        try {
+            PackageInfo info = manager.getPackageInfo(packageName, 0);
+            app.ver = info.versionName;
+            app.installDate = info.lastUpdateTime;
+            app.label = info.applicationInfo.loadLabel(manager).toString();
+            app.pkg = packageName;
+            app.serial = Build.SERIAL;  //this serial number
+            app.flags = AppContract.AppEntry.FLAG_NO_ACTION;
+
+
+            app.name = info.applicationInfo.name;
+            app.banner = info.applicationInfo.loadBanner(manager);
+            if (app.banner == null) {
+                info.applicationInfo.loadIcon(manager);
+            }
+            //FIXME - if package available in play store, null out above
+
+        } catch (PackageManager.NameNotFoundException e) {
+            Log.e(TAG, "Can't find package err!!!");
+        }
+
+        //Okay - we have an app object... Put it into CP
+        DBUtils.saveAppToCP(mCtx, appDB, app);
+    }
 
     /**
      * Handle action Baz in the provided background thread with the provided
