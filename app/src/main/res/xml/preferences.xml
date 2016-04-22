@@ -1,36 +1,56 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
     <PreferenceCategory
-        android:title="dummy cat1">
+        android:title="@string/pref_app_capture_settings">
 
-        <SwitchPreference
-            android:key="checkbox_preference"
-            android:title="test checkbox"
-            android:persistent="true"
-            android:summary="test summary" />
+        <CheckBoxPreference
+            android:key="pref_get_data_from_net"
+            android:title="@string/pref_use_network_for_images"
+            android:summary="@string/pref_use_network_for_images_summ"
+            android:defaultValue="true" />
+
+        <CheckBoxPreference
+            android:key="pref_ignore_system_apps"
+            android:title="@string/pref_ignore_system_apps"
+            android:summary="@string/pref_ignore_system_apps_summ"
+            android:defaultValue="true" />
 
     </PreferenceCategory>
 
-    <PreferenceCategory
-        android:title="dummy cat2">
+    <Preference android:title="@string/pref_account_settings" >
+        <intent android:action="android.intent.action.VIEW"
+            android:data="http://www.example.com" />
+    </Preference>
 
-    <CheckBoxPreference
-        android:key="pref_use_network_for_images"
-        android:title="@string/pref_use_network_for_images"
-        android:summary="@string/pref_use_network_for_images_summ"
-        android:defaultValue="true" />
-    <CheckBoxPreference
-        android:key="pref_disable_rows"
-        android:title="@string/pref_disable_rows"
-        android:summary="@string/pref_disable_rows_summ"
-        android:defaultValue="false" />
-    <!-- <ListPreference
-        android:dependency="pref_disable_rows"
-        android:key="pref_disable_rows_list"
-        android:title="@string/pref_disable_rows_list"
-        android:dialogTitle="@string/pref_disable_rows_list"
-        android:entries="@array/header_names"
-        android:entryValues="@array/header_function"
-        android:defaultValue="@string/pref_disable_rows_list_default" /> -->
+    <PreferenceCategory
+        android:title="@string/notifications">
+
+        <CheckBoxPreference
+            android:key="pref_enable_notifications"
+            android:title="@string/pref_enable_notifications"
+            android:summary="@string/pref_enable_notifications_summ"
+            android:defaultValue="true" />
+
+        <MultiSelectListPreference
+            android:key="pref_notification_type"
+            android:dependency="pref_enable_notifications"
+            android:title="@string/notification_settings"
+            android:summary="@string/notification_settings_summ"
+            android:entries="@array/notification_option_names"
+            android:defaultValue="@array/empty_array"
+            android:entryValues="@array/notification_option_values" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/pref_disable_rows">
+
+        <MultiSelectListPreference
+            android:key="pref_disable_rows"
+            android:title="@string/pref_disable_rows"
+            android:summary="@string/pref_disable_rows_summ"
+            android:entries="@array/header_names"
+            android:defaultValue="@array/empty_array"
+            android:entryValues="@array/header_function_str" />
+
     </PreferenceCategory>
 </PreferenceScreen>

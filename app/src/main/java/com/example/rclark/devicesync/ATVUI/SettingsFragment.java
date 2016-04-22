@@ -1,3 +1,17 @@
+/*
+ * Copyright (C) 2016 Richard Clark
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ */
+
 package com.example.rclark.devicesync.ATVUI;
 
 import android.content.SharedPreferences;
@@ -14,28 +28,23 @@ import com.example.rclark.devicesync.R;
 /**
  * Created by rclark on 4/21/2016.
  */
-public class SettingsFragment extends LeanbackPreferenceFragment
+public class SettingsFragment extends PreferenceFragment
         implements SharedPreferences.OnSharedPreferenceChangeListener {
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        return super.onCreateView(inflater, container, savedInstanceState);
+        View v = super.onCreateView(inflater, container, savedInstanceState);
 
         // Load the preferences from an XML resource
-        //addPreferencesFromResource(R.xml.preferences);
+        addPreferencesFromResource(R.xml.preferences);
+
+        return v;
     }
 
     @Override
     public void onViewCreated (View view, Bundle savedInstanceState) {
 
     }
-
-
-    @Override
-    public void onCreatePreferences(Bundle savedInstanceState, String rootkey) {
-        // Load the preferences from an XML resource
-        addPreferencesFromResource(R.xml.preferences);
-    }
-
 
     //TODO - complete... See http://developer.android.com/intl/es/guide/topics/ui/settings.html
 
