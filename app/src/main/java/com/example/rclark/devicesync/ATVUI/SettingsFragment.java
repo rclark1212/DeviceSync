@@ -14,16 +14,19 @@
 
 package com.example.rclark.devicesync.ATVUI;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.PreferenceFragment;
 import android.support.v17.preference.LeanbackPreferenceFragment;
+import android.support.v4.content.LocalBroadcastManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import com.example.rclark.devicesync.R;
+import com.example.rclark.devicesync.sync.GCESync;
 
 /**
  * Created by rclark on 4/21/2016.
@@ -31,10 +34,16 @@ import com.example.rclark.devicesync.R;
 public class SettingsFragment extends LeanbackPreferenceFragment
         implements SharedPreferences.OnSharedPreferenceChangeListener {
 
+    //Two things can come out of settings - update the UI or update the CP. Track it here...
+    private boolean mbUpdateCP = false;
+    private boolean mbUpdateUI = false;
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View v = super.onCreateView(inflater, container, savedInstanceState);
 
+        mbUpdateCP = false;
+        mbUpdateUI = false;
         // Load the preferences from an XML resource
         //addPreferencesFromResource(R.xml.preferences);
         return v;
@@ -45,6 +54,37 @@ public class SettingsFragment extends LeanbackPreferenceFragment
         addPreferencesFromResource(R.xml.preferences);
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        //register listener
+        getPreferenceScreen().getSharedPreferences()
+                .registerOnSharedPreferenceChangeListener(this);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+
+        //unregister
+        getPreferenceScreen().getSharedPreferences()
+                .unregisterOnSharedPreferenceChangeListener(this);
+
+        //Send message back to process changes if required
+        if (mbUpdateUI) {
+            Intent localIntent = new Intent(GCESync.BROADCAST_ACTION).putExtra(GCESync.EXTENDED_DATA_STATUS, GCESync.EXTENDED_DATA_STATUS_UPDATE_UI);
+            //And broadcast the message
+            LocalBroadcastManager.getInstance(getActivity()).sendBroadcast(localIntent);
+        }
+
+        //Send message back to process changes if required
+        if (mbUpdateCP) {
+            Intent localIntent = new Intent(GCESync.BROADCAST_ACTION).putExtra(GCESync.EXTENDED_DATA_STATUS, GCESync.EXTENDED_DATA_STATUS_UPDATE_CP);
+            //And broadcast the message
+            LocalBroadcastManager.getInstance(getActivity()).sendBroadcast(localIntent);
+        }
+    }
 
     //TODO - complete... See http://developer.android.com/intl/es/guide/topics/ui/settings.html
 
@@ -55,6 +95,17 @@ public class SettingsFragment extends LeanbackPreferenceFragment
      * @param key
      */
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        //TODO - implement
+
+        //If we update the system apps, reset CP
+        if (key.equals(getResources().getString(R.string.key_pref_ignore_system_apps))) {
+            mbUpdateCP = true;
+        }
+
+        //If we update the hide rows, update the UI
+        if (key.equals(getResources().getString(R.string.key_pref_disable_rows))) {
+            mbUpdateUI = true;
+        }
     }
+
+
 }

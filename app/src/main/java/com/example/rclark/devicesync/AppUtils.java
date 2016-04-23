@@ -28,6 +28,7 @@ import com.example.rclark.devicesync.data.AppContract;
 
 /**
  * Created by rclark on 4/22/16.
+ * Set of static routines to deal with local app data (really just gets the app info on the device)
  */
 public class AppUtils {
     private static final String TAG = "DS_AppUtils";

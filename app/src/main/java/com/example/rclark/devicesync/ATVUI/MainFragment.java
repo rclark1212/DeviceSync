@@ -126,6 +126,15 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
                 //And force an update
                 updateFromCP(null);
+            } else if (status == GCESync.EXTENDED_DATA_STATUS_UPDATE_CP) {
+                //update CP
+                //TODO - FIXME - WON'T WORK. RECEIVER UNREGISTERED WHEN WE PAUSE TO GO TO SETTINGS!!!
+                Log.d(TAG, "receiver - update CP");
+            } else if (status == GCESync.EXTENDED_DATA_STATUS_UPDATE_UI) {
+                //update UI
+                //TODO - FIXME - WON'T WORK. RECEIVER UNREGISTERED WHEN WE PAUSE TO GO TO SETTINGS!!!
+                //TODO
+                Log.d(TAG, "receiver - update UI");
             }
             Log.d("DS_mainfrag_receiver", "Got status: " + status);
         }

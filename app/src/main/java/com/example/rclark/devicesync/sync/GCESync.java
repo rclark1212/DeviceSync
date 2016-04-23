@@ -79,10 +79,14 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
     private static final String EXTRA_PARAM2 = "com.example.rclark.devicesync.sync.extra.PARAM2";
 
     // Message defines for communicating back to calling activity
-    public static final String BROADCAST_ACTION = "com.example.rclark.devicesync.gcesync.BROADCAST";
+    // Used by settings panel as well...
+    public static final String BROADCAST_ACTION = "com.example.rclark.devicesync.BROADCAST";
     public static final String EXTENDED_DATA_STATUS = "com.example.rclark.devicesync.gcesync.STATUS";
+
     public static final int EXTENDED_DATA_STATUS_NULL = 0;
     public static final int EXTENDED_DATA_STATUS_LOCALUPDATECOMPLETE = 1;
+    public static final int EXTENDED_DATA_STATUS_UPDATE_UI = 2;
+    public static final int EXTENDED_DATA_STATUS_UPDATE_CP = 2;
 
     private static Context mCtx;
     private static boolean mbIsATV;
