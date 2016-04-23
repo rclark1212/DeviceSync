@@ -184,6 +184,8 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
             //has had a chance to complete on the initial run. The sync service will send a message if this is first run.
             //If it is not first run, enable updates here
             mbAllowUpdates = true;
+            //and note that we always want to update the local device (pick up new location and pick up any BT name changes)
+            GCESync.startActionLocalDeviceUpdate(getActivity(), null, null);
         }
 
         //Load the UI structure
@@ -493,6 +495,11 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                     Intent intent = new Intent();
                     intent.setClass(getActivity(), SettingsActivity.class);
                     startActivity(intent);
+                } else if (item.equals(getResources().getString(R.string.sync_now))) {
+                    //Kick off a sync...
+                    //but disable updates until it completes
+                    mbAllowUpdates = false;
+                    GCESync.startActionUpdateLocal(getActivity(), null, null);
                 } else {
                     Toast.makeText(getActivity(), ((String) item), Toast.LENGTH_SHORT)
                             .show();

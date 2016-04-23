@@ -31,6 +31,8 @@ import android.app.UiModeManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.database.Cursor;
@@ -41,6 +43,7 @@ import android.graphics.Point;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.Build;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.telecom.ConnectionRequest;
@@ -64,6 +67,7 @@ public class Utils {
     private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
     private static final String TAG = "DS_Utils";
     private static final String PREFS_HAS_RUN_ALREADY = "prefs_has_run_already";
+
     /*
      * Making sure public utility methods remain static
      */
@@ -261,4 +265,5 @@ public class Utils {
         }
         ctx.startActivity(i);
     }
+
 }

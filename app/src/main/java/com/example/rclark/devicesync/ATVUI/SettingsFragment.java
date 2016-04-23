@@ -28,7 +28,7 @@ import com.example.rclark.devicesync.R;
 /**
  * Created by rclark on 4/21/2016.
  */
-public class SettingsFragment extends PreferenceFragment
+public class SettingsFragment extends LeanbackPreferenceFragment
         implements SharedPreferences.OnSharedPreferenceChangeListener {
 
     @Override
@@ -36,15 +36,15 @@ public class SettingsFragment extends PreferenceFragment
         View v = super.onCreateView(inflater, container, savedInstanceState);
 
         // Load the preferences from an XML resource
-        addPreferencesFromResource(R.xml.preferences);
-
+        //addPreferencesFromResource(R.xml.preferences);
         return v;
     }
 
     @Override
-    public void onViewCreated (View view, Bundle savedInstanceState) {
-
+    public void onCreatePreferences(Bundle savedInstanceState, String rootkey) {
+        addPreferencesFromResource(R.xml.preferences);
     }
+
 
     //TODO - complete... See http://developer.android.com/intl/es/guide/topics/ui/settings.html
 

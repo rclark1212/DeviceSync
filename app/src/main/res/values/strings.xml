@@ -23,6 +23,7 @@
 
     <string name="google_app_id">com.example.rclark.devicesync</string>
 
+    <!-- pref UI elements -->
     <string name="pref_app_capture_settings">Application Data</string>
     <string name="pref_use_network_for_images">Try to get app icons from the cloud</string>
     <string name="pref_use_network_for_images_summ">If checked, will try to find app icons on network (and not store in database). When unchecked, will grab local icon and store in database"</string>
@@ -45,6 +46,14 @@
     <string name="pref_disable_row_superset">Local Apps</string>
     <string name="pref_disable_row_remotes">Local Apps</string>
     <string-array name="empty_array"/>
+
+    <!-- pref keys (used in persist storage) -->
+    <string name="key_pref_get_data_from_net">pref_get_data_from_net</string>
+    <string name="key_pref_ignore_system_apps">pref_ignore_system_apps</string>
+    <string name="key_pref_enable_notifications">pref_enable_notifications</string>
+    <string name="key_pref_notification_type">pref_notification_type</string>
+    <string name="key_pref_disable_rows">pref_disable_rows</string>
+
 
     <string name="preferences">Preferences</string>
     <string name="sync_now">Force Sync</string>

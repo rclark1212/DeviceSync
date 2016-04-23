@@ -40,6 +40,8 @@ import java.util.ArrayList;
  * This is a static lib utility file for DB/CP functions
  *
  */
+
+
 public class DBUtils {
     private static final String TAG = "DS_DBUtils";
 
@@ -78,6 +80,7 @@ public class DBUtils {
             c.moveToFirst();
             returnObject = new ObjectDetail();
         } else {
+            c.close();
             return null;
         }
 

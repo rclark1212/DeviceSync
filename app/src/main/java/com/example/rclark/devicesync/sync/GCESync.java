@@ -32,6 +32,7 @@ import android.os.RemoteException;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
+import com.example.rclark.devicesync.AppUtils;
 import com.example.rclark.devicesync.DBUtils;
 import com.example.rclark.devicesync.ObjectDetail;
 import com.example.rclark.devicesync.Utils;
@@ -62,6 +63,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class GCESync extends IntentService  implements GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener {
+
     private static final String TAG = "GCESync";
 
     // TODO: Rename actions, choose action names that describe tasks that this
@@ -438,39 +440,12 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
         appDB = appDB.buildUpon().appendPath(Build.SERIAL).appendPath(packageName).build();
 
         //Create an object
-        ObjectDetail app = new ObjectDetail();
+        ObjectDetail app = AppUtils.getLocalAppDetails(mCtx, packageName);
 
-        //install the app. Get the app info.
-        PackageManager manager = mCtx.getPackageManager();
-
-        //FIXME - if package available in play store, null out above
-        app.bIsDevice = false;
-        //set the right type...
-        app.type = Utils.bIsThisATV(mCtx) ? AppContract.TYPE_ATV : AppContract.TYPE_TABLET;
-
-        try {
-            PackageInfo info = manager.getPackageInfo(packageName, 0);
-            app.ver = info.versionName;
-            app.installDate = info.lastUpdateTime;
-            app.label = info.applicationInfo.loadLabel(manager).toString();
-            app.pkg = packageName;
-            app.serial = Build.SERIAL;  //this serial number
-            app.flags = AppContract.AppEntry.FLAG_NO_ACTION;
-
-
-            app.name = info.applicationInfo.name;
-            app.banner = info.applicationInfo.loadBanner(manager);
-            if (app.banner == null) {
-                info.applicationInfo.loadIcon(manager);
-            }
-            //FIXME - if package available in play store, null out above
-
-        } catch (PackageManager.NameNotFoundException e) {
-            Log.e(TAG, "Can't find package err!!!");
+        if (app != null) {
+            //Okay - we have an app object... Put it into CP
+            DBUtils.saveAppToCP(mCtx, appDB, app);
         }
-
-        //Okay - we have an app object... Put it into CP
-        DBUtils.saveAppToCP(mCtx, appDB, app);
     }
 
     /**

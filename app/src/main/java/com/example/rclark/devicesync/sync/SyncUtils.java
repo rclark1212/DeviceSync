@@ -35,6 +35,7 @@ import android.support.v4.content.ContextCompat;
 import android.text.format.Time;
 import android.util.Log;
 
+import com.example.rclark.devicesync.AppUtils;
 import com.example.rclark.devicesync.ObjectDetail;
 import com.example.rclark.devicesync.R;
 import com.example.rclark.devicesync.Utils;
@@ -89,62 +90,26 @@ public class SyncUtils {
         for (int j = 0; j < availableActivities.size(); j++) {
             ResolveInfo ri = availableActivities.get(j);
 
-            ObjectDetail app = new ObjectDetail();
-            app.label = ri.loadLabel(manager).toString();
-            app.pkg = ri.activityInfo.packageName;
-            app.name = ri.activityInfo.name;
-            app.banner = ri.activityInfo.loadBanner(manager);
+            ObjectDetail app = AppUtils.getLocalAppDetails(ctx, ri.activityInfo.packageName);
 
-            //FIXME - if package available in play store, null out above
-            app.bIsDevice = false;
-            //set the right type...
-            app.type = bATV ? AppContract.TYPE_ATV : AppContract.TYPE_TABLET;
+            if (app != null) {
+                //Have we already added this?
+                if (pkgs.contains(app.pkg.toString())) {
+                    //punt...
+                    continue;
+                }
 
-            try {
-                PackageInfo info = manager.getPackageInfo(app.pkg, 0);
-                app.ver = info.versionName;
-                app.installDate = info.lastUpdateTime;
-            } catch (PackageManager.NameNotFoundException e) {
-                Log.e(TAG, "Can't find package on initial loop");
+                apps.add(app);
+                pkgs.add(app.pkg.toString());
             }
-
-            //Have we already added this?
-            if (pkgs.contains(app.pkg.toString())) {
-                //punt...
-                continue;
-            }
-
-            //hmm - for some apps, this not getting us data... (well, tablet apps of course)
-            if (app.banner == null) {
-                //use the icon...
-                app.banner = ri.activityInfo.loadIcon(manager);
-            }
-
-            if (app.label.equals("LeanbackLauncher")) {
-                //also punt
-                //FIXME - need to filter out a lot more apps than just leanback launcher - both tablet and ATV
-                continue;
-            }
-
-            try {
-                app.ai = manager.getApplicationInfo(app.name.toString(), PackageManager.GET_META_DATA);
-                app.res = manager.getResourcesForApplication(ri.activityInfo.packageName);
-
-            } catch (PackageManager.NameNotFoundException e) {
-
-            }
-
-            apps.add(app);
-            pkgs.add(app.pkg.toString());
-
         }
 
         return apps;
     }
 
     /*
-    Populates an object with local device info
- */
+    Populates an object with local device info (including location)
+    */
     public static ObjectDetail getLocalDeviceInfo(Context ctx, boolean useLocation, GoogleApiClient mClient) {
         ObjectDetail device = new ObjectDetail();
 
