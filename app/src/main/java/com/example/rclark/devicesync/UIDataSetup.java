@@ -16,18 +16,21 @@ package com.example.rclark.devicesync;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
+import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 
 import com.example.rclark.devicesync.data.AppContract;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created by rclark on 3/27/2016.
@@ -41,7 +44,7 @@ public class UIDataSetup {
     private int[] mFunction;                //function per header
     private ArrayList<String> mRemotes;     //Remotes can be variable size - this supplements above - this is the serial number of remote
     private ArrayList<String> mRemotesName; //This goes with array above - this is the friendly name (label) of the remote
-    private boolean[] mHide;                //do we hide the row? (user config) - TODO
+    private boolean[] mHide;                //do we hide the row? (user config)
     private Context mCtx;
     private boolean mbIsATV;                //cache a copy of whether we are ATV...
     public ArrayList<ObjectDetail> mUnique;     //array list of unique apps on this device
@@ -90,11 +93,38 @@ public class UIDataSetup {
         mHeaders = mCtx.getResources().getStringArray(R.array.header_names);
         if (mHide == null) {
             mHide = new boolean[mFunction.length];      //TODO - not used/loaded anywhere. Fix  this
+            loadRowEnables();   //populates array
         }
 
         decorateRowHeaders();
 
         loadRemotes();
+    }
+
+    /**
+     * Populates mHide array from preferences
+     */
+    public void loadRowEnables() {
+
+        //First, init row hiding to false...
+        for (int i=0; i < mHide.length; i++) {
+            mHide[i] = false;
+        }
+
+        //Next, get the pref string set
+        SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(mCtx);
+        Set<String> selections = pref.getStringSet(mCtx.getResources().getString(R.string.key_pref_disable_rows), null);
+
+        //Does key exist?
+        if (selections != null) {
+            //Okay - now loop through functions to see if any are in the selection set...
+            for (int i=0; i < mFunction.length; i++) {
+                if (selections.contains(String.valueOf(mFunction[i]))) {
+                    //this header was disabled...
+                    mHide[i] = true;
+                }
+            }
+        }
     }
 
     /**
@@ -159,6 +189,22 @@ public class UIDataSetup {
     public int getNumberOfHeaders() {
         //TODO - fix up for REMOTES (hide ATV issue here?)
         return mHeaders.length + mRemotes.size();
+    }
+
+    /**
+     * Indicates if header row should be visible based on the preference setting
+     * @return
+     */
+    public boolean isHeaderRowVisible(int row) {
+        boolean bret = true;
+        if (row >= mHide.length) {
+            //Row is a remote...
+            bret = !mHide[REMOTESTART_ROW];
+        } else {
+            bret = !mHide[row];
+        }
+
+        return bret;
     }
 
     /**

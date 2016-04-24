@@ -15,12 +15,17 @@
 package com.example.rclark.devicesync.ATVUI;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 
 /**
  * Created by rclark on 4/21/16.
  */
 public class SettingsActivity extends Activity {
+
+    //Two things can come out of settings - update the UI or update the CP. Track it here...
+    public static boolean mbUpdateCP = false;
+    public static boolean mbUpdateUI = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,5 +34,26 @@ public class SettingsActivity extends Activity {
 
         getFragmentManager().beginTransaction().replace(android.R.id.content,
                 new SettingsFragment()).commit();
+    }
+
+    @Override
+    public void finishAfterTransition() {
+        //Save off what we should do...
+        Intent data = new Intent();
+        int retflags = MainFragment.PREF_DO_NOTHING;
+
+        if (mbUpdateCP) {
+            retflags |= MainFragment.PREF_UPDATE_CP_FLAG;
+        }
+
+        if (mbUpdateUI) {
+            retflags |= MainFragment.PREF_UPDATE_UI_FLAG;
+        }
+
+        //shove the flags into return intent...
+        data.putExtra(MainFragment.PREF_RESULT_KEY, retflags);
+        setResult(RESULT_OK, data);
+
+        super.finishAfterTransition();
     }
 }

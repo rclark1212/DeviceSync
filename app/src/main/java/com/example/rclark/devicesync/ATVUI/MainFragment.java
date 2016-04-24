@@ -81,6 +81,7 @@ import com.example.rclark.devicesync.data.AppContract;
 import com.example.rclark.devicesync.sync.GCESync;
 
 import java.util.ArrayList;
+import java.util.List;
 
 
 public class MainFragment extends BrowseFragment implements LoaderManager.LoaderCallbacks<Cursor>,
@@ -88,11 +89,19 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
     private static final String TAG = "MainFragment";
     private static final int MY_PERMISSIONS_REQUEST_LOCATION = 1;
 
+    private static final int PREFERENCE_REQUEST_CODE = 1;
+    public static final String PREF_RESULT_KEY = "prefResult";
+    public static final int PREF_DO_NOTHING = 0;
+    public static final int PREF_UPDATE_UI_FLAG = 1;
+    public static final int PREF_UPDATE_CP_FLAG = 2;
+
     private static final int GRID_ITEM_WIDTH = 200;
     private static final int GRID_ITEM_HEIGHT = 200;
 
     private final Handler mHandler = new Handler();
     private ArrayObjectAdapter mRowsAdapter;
+    private ArrayList<ListRow> mBackingListRows;
+
     private AppObserver mAppObserver;
     private boolean mbAllowUpdates = false;         //semaphore used to block updates from the initial CP flurry of loads...
 
@@ -126,16 +135,8 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
                 //And force an update
                 updateFromCP(null);
-            } else if (status == GCESync.EXTENDED_DATA_STATUS_UPDATE_CP) {
-                //update CP
-                //TODO - FIXME - WON'T WORK. RECEIVER UNREGISTERED WHEN WE PAUSE TO GO TO SETTINGS!!!
-                Log.d(TAG, "receiver - update CP");
-            } else if (status == GCESync.EXTENDED_DATA_STATUS_UPDATE_UI) {
-                //update UI
-                //TODO - FIXME - WON'T WORK. RECEIVER UNREGISTERED WHEN WE PAUSE TO GO TO SETTINGS!!!
-                //TODO
-                Log.d(TAG, "receiver - update UI");
             }
+
             Log.d("DS_mainfrag_receiver", "Got status: " + status);
         }
     };
@@ -240,6 +241,36 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
 
     @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        int prefResult = 0;
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == PREFERENCE_REQUEST_CODE) {
+            //So don't really care about result code - cancel or OK, user may have modified settings
+            //Instead, look at the data...
+            if (data != null) {
+                prefResult = data.getIntExtra(PREF_RESULT_KEY, PREF_DO_NOTHING);
+
+                //And now process...
+                if ((prefResult & PREF_UPDATE_UI_FLAG) != 0) {
+                    Log.d(TAG, "PreferenceRet - update UI");
+                    //New strat. And a smoother UI experience.
+                    //Simply save off hidden rows and restore them as necessary to the mRowAdapter object.
+                    //Don't deallocate or anything (as browsefragment doesn't deal with deallocation well).
+                    mUIDataSetup.loadRowEnables();
+                    updateRowVisibility();
+                }
+
+                if ((prefResult & PREF_UPDATE_CP_FLAG) != 0) {
+                    Log.d(TAG, "PreferenceRet - update CP");
+                    //And kick off a CP update. Turn off the processing flag for UI until done...
+                    mbAllowUpdates = false;
+                    GCESync.startActionUpdateLocal(getActivity(), null, null);
+                }
+            }
+        }
+    }
+
+
     public void updateFromCP(Uri uri) {
         //called when CP changes underneath us
         if (mbAllowUpdates) {
@@ -317,7 +348,16 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
     private void loadRows() {
         int i;
 
-        mRowsAdapter = new ArrayObjectAdapter(new ListRowPresenter());
+        //If adapter is null, initialize
+        if (mRowsAdapter == null) {
+            mRowsAdapter = new ArrayObjectAdapter(new ListRowPresenter());
+        }
+
+        //If backing list rows null, initialize
+        if (mBackingListRows == null) {
+            mBackingListRows = new ArrayList<ListRow>();
+        }
+
         CardPresenter cardPresenter = new CardPresenter();
 
         /*
@@ -348,7 +388,12 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                         listRowAdapter.add(objectArray.get(j));
                     }
                 }
-                mRowsAdapter.add(new ListRow(header, listRowAdapter));
+                //Create the list row and save off both to the row adapter and a backing store
+                ListRow lr = new ListRow(header, listRowAdapter);
+                mBackingListRows.add(lr);
+                if (mUIDataSetup.isHeaderRowVisible(i)) {
+                    mRowsAdapter.add(lr);
+                }
             } else {
                 CursorObjectAdapter listRowAdapter = new CursorObjectAdapter(cardPresenter);
 
@@ -362,7 +407,12 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                 }
                 //set up the cursorobjectadapter - note, we reference cursor loader by row and set up cursor there...
                 //set it
-                mRowsAdapter.add(new ListRow(header, listRowAdapter));
+                //Create the list row and save off both to the row adapter and a backing store
+                ListRow lr = new ListRow(header, listRowAdapter);
+                mBackingListRows.add(lr);
+                if (mUIDataSetup.isHeaderRowVisible(i)) {
+                    mRowsAdapter.add(lr);
+                }
             }
         }
 
@@ -389,6 +439,49 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
     }
 
     /**
+     * Updates the visibility of the rows (removes rows that are now not visible, adds rows that are)
+     */
+    private void updateRowVisibility() {
+        //loop through all the possible rows...
+        int rowIndex = 0;
+        for (int i = 0; i < mUIDataSetup.getNumberOfHeaders(); i++) {
+            if (mUIDataSetup.isHeaderRowVisible(i)) {
+                //this row should be visible...
+                if (!isHeaderIdInRowAdapter((long)i)) {
+                    //doesn't exist in the row adapter... so add it..
+                    mRowsAdapter.add(rowIndex, mBackingListRows.get(i));
+                }
+                rowIndex++;
+            } else {
+                //this row should be hidden...
+                if (isHeaderIdInRowAdapter((long)i)) {
+                    //it does exist in row adapter... So remove it...
+                    mRowsAdapter.remove( mBackingListRows.get(i));
+                }
+            }
+        }
+    }
+
+    /**
+     * Returns true if mRowsAdapter contains a header which has the passed in ID
+     * @param headerid
+     * @return
+     */
+    private boolean isHeaderIdInRowAdapter(long headerid) {
+        boolean bret = false;
+
+        for (int i=0; i < mRowsAdapter.size(); i++) {
+            ListRow lr = (ListRow) mRowsAdapter.get(i);
+
+            if (lr.getHeaderItem().getId() == headerid) {
+                bret = true;
+                break;
+            }
+        }
+        return bret;
+    }
+
+    /**
      *  Cursor loader for app object provider
      *  multiple loaders -
      *      We store the loaders by row (row is the loader id)
@@ -411,7 +504,8 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
-        ListRow row = (ListRow) getAdapter().get(loader.getId());
+        //ListRow row = (ListRow) getAdapter().get(loader.getId()); - use backing store
+        ListRow row = (ListRow) mBackingListRows.get(loader.getId());
         if (row.getAdapter() instanceof CursorObjectAdapter) {
             CursorObjectAdapter rowAdapter = (CursorObjectAdapter) row.getAdapter();
             rowAdapter.swapCursor(cursor);
@@ -425,7 +519,8 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
-        ListRow row = (ListRow) getAdapter().get(loader.getId());
+        //ListRow row = (ListRow) getAdapter().get(loader.getId()); - use backing store instead
+        ListRow row = (ListRow) mBackingListRows.get(loader.getId());
         if (row.getAdapter() instanceof CursorObjectAdapter) {
             CursorObjectAdapter rowAdapter = (CursorObjectAdapter) row.getAdapter();
             rowAdapter.swapCursor(null);
@@ -503,7 +598,8 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                     // Display the settings fragment
                     Intent intent = new Intent();
                     intent.setClass(getActivity(), SettingsActivity.class);
-                    startActivity(intent);
+                    //and start for a result so that we can take care of any UI elements that we have to do when we get back...
+                    startActivityForResult(intent, PREFERENCE_REQUEST_CODE);
                 } else if (item.equals(getResources().getString(R.string.sync_now))) {
                     //Kick off a sync...
                     //but disable updates until it completes
