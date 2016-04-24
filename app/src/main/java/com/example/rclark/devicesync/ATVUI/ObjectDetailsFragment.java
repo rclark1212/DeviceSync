@@ -222,8 +222,10 @@ public class ObjectDetailsFragment extends DetailsFragment {
             public void onActionClicked(Action action) {
                 switch ((int) action.getId()) {
                     case ACTION_SHOWAPPS:
-                        //TODO - go to app row...
-                        Toast.makeText(getActivity(), action.toString(), Toast.LENGTH_SHORT).show();
+                        //Go to app row. To do this, set some activity globals and return them on activity finish
+                        DetailsActivity.mOpenSerial = mSelectedObject.serial;
+                        DetailsActivity.mbOpenRow = true;
+                        getActivity().onBackPressed();
                         break;
                     case ACTION_INSTALL:
                         InstallUtil.installAPK(getActivity(), mSelectedObject.pkg);

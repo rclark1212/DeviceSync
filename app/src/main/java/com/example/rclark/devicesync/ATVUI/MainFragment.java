@@ -95,6 +95,9 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
     public static final int PREF_UPDATE_UI_FLAG = 1;
     public static final int PREF_UPDATE_CP_FLAG = 2;
 
+    private static final int DETAILS_REQUEST_CODE = 2;
+    public static final String DETAILS_RESULT_KEY = "detailsResult";
+
     private static final int GRID_ITEM_WIDTH = 200;
     private static final int GRID_ITEM_HEIGHT = 200;
 
@@ -265,6 +268,29 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                     //And kick off a CP update. Turn off the processing flag for UI until done...
                     mbAllowUpdates = false;
                     GCESync.startActionUpdateLocal(getActivity(), null, null);
+                }
+            }
+        } else if (DETAILS_REQUEST_CODE == requestCode) {
+            //came back from details screen
+            if (data != null) {
+                String serial = data.getStringExtra(DETAILS_RESULT_KEY);
+                //find the row with this serial number...
+                //and select it...
+                if (serial != null) {
+                    Log.d(TAG, "DetailRet - select pos");
+
+                    //get the id...
+                    int id = mUIDataSetup.getSerialRow(serial);
+
+                    //and figure out which row...
+                    for (int i=0; i < mRowsAdapter.size(); i++) {
+                        ListRow lr = (ListRow) mRowsAdapter.get(i);
+                        if (lr.getHeaderItem().getId() == (long) id) {
+                            //found it...
+                            setSelectedPosition(i);
+                            break;
+                        }
+                    }
                 }
             }
         }
@@ -589,7 +615,9 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                         getActivity(),
                         ((ImageCardView) itemViewHolder.view).getMainImageView(),
                         DetailsActivity.SHARED_ELEMENT_NAME).toBundle();
-                getActivity().startActivity(intent, bundle);
+                //getActivity().startActivityForResult(intent, DETAILS_REQUEST_CODE, bundle);
+                //Start activity from fragment so we get result back...
+                startActivityForResult(intent, DETAILS_REQUEST_CODE, bundle);
             } else if (item instanceof String) {
                 if (((String) item).indexOf(getString(R.string.error_fragment)) >= 0) {
                     Intent intent = new Intent(getActivity(), BrowseErrorActivity.class);

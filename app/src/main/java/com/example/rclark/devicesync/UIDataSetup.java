@@ -275,6 +275,31 @@ public class UIDataSetup {
         return i;
     }
 
+    /**
+     * Get row for the passed in serial number
+     */
+    public int getSerialRow(String serial) {
+        int iret = -1;
+        //two possibilities - it is a local or remote...
+        if (Build.SERIAL.equals(serial)) {
+            //find the local row...
+            for (int i=0; i < mFunction.length; i++) {
+                if (mFunction[i] == LOCALAPPS_ROW) {
+                    iret = i;
+                    break;
+                }
+            }
+        } else {
+            //remotes row...
+            iret = mRemotes.indexOf(serial);
+            if (iret >= 0) {
+                iret += mFunction.length;       //and if we found serial number, have to adjust by offset of pre-remote rows
+            }
+        }
+
+        return iret;
+    }
+
 
     /**
      *  Return back an array of unique apps for the device
