@@ -20,11 +20,8 @@ import android.content.ContentValues;
 import android.content.Intent;
 import android.content.Context;
 import android.content.OperationApplicationException;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
-import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -37,11 +34,18 @@ import com.example.rclark.devicesync.DBUtils;
 import com.example.rclark.devicesync.ObjectDetail;
 import com.example.rclark.devicesync.Utils;
 import com.example.rclark.devicesync.data.AppContract;
+import com.google.android.gms.auth.api.Auth;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.auth.api.signin.GoogleSignInResult;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.OptionalPendingResult;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.plus.Plus;
 
-import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -61,7 +65,7 @@ import java.util.concurrent.TimeUnit;
  * (4) Do the local scan of apps/devices
  *
  */
-public class GCESync extends IntentService  implements GoogleApiClient.ConnectionCallbacks,
+public class GCESync extends IntentService implements GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener {
 
     private static final String TAG = "GCESync";
@@ -81,8 +85,8 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
     // Message defines for communicating back to calling activity
     // Used by settings panel as well...
     public static final String BROADCAST_ACTION = "com.example.rclark.devicesync.BROADCAST";
-    public static final String EXTENDED_DATA_STATUS = "com.example.rclark.devicesync.gcesync.STATUS";
 
+    public static final String EXTENDED_DATA_STATUS = "com.example.rclark.devicesync.gcesync.STATUS";
     public static final int EXTENDED_DATA_STATUS_NULL = 0;
     public static final int EXTENDED_DATA_STATUS_LOCALUPDATECOMPLETE = 1;
 
@@ -106,12 +110,16 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
 
     @Override
     public void onConnectionFailed(ConnectionResult result) {
-        Log.e(TAG, "Failed google GMS services connect");
+        Log.e(TAG, "Failed google GMS services connect - result:" + result);
+        //We are not connected
     };
 
     @Override
     public void onConnectionSuspended(int i) {
-        Log.e(TAG, "Suspended google GMS services connect");
+        Log.d(TAG, "Suspended google GMS services connect - cause:" + i);
+        //We are not connected
+        //Try to connect again
+        mGoogleApiClient.connect();
     }
 
     /**
@@ -161,6 +169,7 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
         context.startService(intent);
     }
 
+
     /**
      * Starts this service to perform action Baz with the given parameters. If
      * the service is already performing a task this action will be queued.
@@ -184,6 +193,17 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
     }
 
     @Override
+    public void onDestroy() {
+        if (mGoogleApiClient != null) {
+            if (mGoogleApiClient.isConnected()) {
+                mGoogleApiClient.disconnect();
+                mGoogleApiClient = null;
+            }
+        }
+        super.onDestroy();
+    }
+
+    @Override
     protected void onHandleIntent(Intent intent) {
         //first, do we have context saved off?
         if (mCtx == null) {
@@ -193,6 +213,7 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
         }
 
         //next attach to GMS if not yet attached...
+        //try to get all the services here...
         if (mGoogleApiClient == null) {
             mGoogleApiClient = new GoogleApiClient.Builder(this)
                     .addConnectionCallbacks(this)
@@ -252,6 +273,7 @@ public class GCESync extends IntentService  implements GoogleApiClient.Connectio
             }
         }
     }
+
 
     /**
      * Updates the local device...

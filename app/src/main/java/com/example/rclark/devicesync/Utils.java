@@ -67,6 +67,7 @@ public class Utils {
     private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
     private static final String TAG = "DS_Utils";
     private static final String PREFS_HAS_RUN_ALREADY = "prefs_has_run_already";
+    private static final String USER_IS_LOGGED_IN = "prefs_user_logged_in";
 
     /*
      * Making sure public utility methods remain static
@@ -240,7 +241,7 @@ public class Utils {
      *  Return null if not available.
      *  Return a uri if available.
      */
-    public static Uri getAppImageUriOnNextwork(String pkgname, Context ctx) {
+    public static Uri getAppImageUriOnNetwork(String pkgname, Context ctx) {
         return null;
         //FIXME - fix this stub
     }
@@ -265,5 +266,29 @@ public class Utils {
         }
         ctx.startActivity(i);
     }
+
+    /**
+     * Tells us if user should be logged in or not
+     * @param ctx
+     * @return
+     */
+    public static boolean isUserLoggedIn(Context ctx) {
+        SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(ctx);
+        boolean bret = pref.getBoolean(USER_IS_LOGGED_IN, false);
+        return bret;
+    }
+
+    /**
+     * Set whether user should be logged in or not
+     * @param ctx
+     * @return
+     */
+    public static void setUserLoggedIn(Context ctx, boolean bLoggedIn) {
+        SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(ctx);
+        SharedPreferences.Editor edit = pref.edit();
+        edit.putBoolean(USER_IS_LOGGED_IN, bLoggedIn);
+        edit.commit();
+    }
+
 
 }

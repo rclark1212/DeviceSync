@@ -29,11 +29,13 @@ package com.example.rclark.devicesync.ATVUI;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.LoaderManager;
 import android.content.BroadcastReceiver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.CursorLoader;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.Loader;
@@ -79,13 +81,38 @@ import com.example.rclark.devicesync.R;
 import com.example.rclark.devicesync.Utils;
 import com.example.rclark.devicesync.data.AppContract;
 import com.example.rclark.devicesync.sync.GCESync;
+import com.google.android.gms.auth.api.Auth;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.auth.api.signin.GoogleSignInResult;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.OptionalPendingResult;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.LocationServices;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+/*
+    psuedo-logic
+
+    on start, if user logged in, try to log in.
+    always try to log in, out via service (with silent login). Call boot_login...
+    in service, always check to see if we are already logged in/out... send message for UI regardless of action
+    if service fails to log in, send broadcast message back to main
+        if fail message, kick off activity login. If success, send login request to service again. Call it activity_login... (different from before to not get into loop)
+    service always to broadcast success/fail back to activity
+    activity to update prefs and UI based on the message back
+
+ */
 
 
 public class MainFragment extends BrowseFragment implements LoaderManager.LoaderCallbacks<Cursor>,
-        ContentObserverCallback, ActivityCompat.OnRequestPermissionsResultCallback {
+        ContentObserverCallback, ActivityCompat.OnRequestPermissionsResultCallback, GoogleApiClient.ConnectionCallbacks,
+        GoogleApiClient.OnConnectionFailedListener {
     private static final String TAG = "MainFragment";
     private static final int MY_PERMISSIONS_REQUEST_LOCATION = 1;
 
@@ -98,15 +125,28 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
     private static final int DETAILS_REQUEST_CODE = 2;
     public static final String DETAILS_RESULT_KEY = "detailsResult";
 
+    private static final int LOGIN_REQUEST_CODE = 3;
+
     private static final int GRID_ITEM_WIDTH = 200;
     private static final int GRID_ITEM_HEIGHT = 200;
 
     private final Handler mHandler = new Handler();
     private ArrayObjectAdapter mRowsAdapter;
     private ArrayList<ListRow> mBackingListRows;
+    private ArrayObjectAdapter mGridRowAdapter;     //make class global for easy access to signin control...
 
     private AppObserver mAppObserver;
     private boolean mbAllowUpdates = false;         //semaphore used to block updates from the initial CP flurry of loads...
+
+    //sigh - can't use service for signing in when we have an intent for result...
+    //But service needs google api client as well.
+    //So use two google api clients. One for service. One for handling single signin with dialogs...
+    private static GoogleSignInOptions mActivityGSO = null;
+    private GoogleApiClient mActivityGoogleApiClient = null;
+    private GoogleSignInAccount mAccount = null;
+    private final int GOOGLE_SIGNOUT = 0;
+    private final int GOOGLE_SIGNIN_EXPLICIT = 1;
+    private final int GOOGLE_SIGNING_SILENT = 2;
 
     private UIDataSetup mUIDataSetup;
 
@@ -115,6 +155,8 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
     private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
+
+            //check for any load complete messages
             // Get extra data included in the Intent
             int status = intent.getIntExtra(GCESync.EXTENDED_DATA_STATUS, GCESync.EXTENDED_DATA_STATUS_NULL);
             if (status == GCESync.EXTENDED_DATA_STATUS_LOCALUPDATECOMPLETE) {
@@ -130,6 +172,8 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
                     loadRows();
 
+                    //Try to sign in - TODO
+
                     setupEventListeners();
                 }
 
@@ -143,6 +187,30 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
             Log.d("DS_mainfrag_receiver", "Got status: " + status);
         }
     };
+
+
+    /*
+    Callbacks for google services
+    */
+    @Override
+    public void onConnected(Bundle bundle) {
+        // Display the connection status
+        Log.d(TAG, "Success - MainFragment google GMS services connect");
+    }
+
+    @Override
+    public void onConnectionFailed(ConnectionResult result) {
+        Log.e(TAG, "MainFragment Failed google GMS services connect - result:" + result);
+        //We are not connected
+    };
+
+    @Override
+    public void onConnectionSuspended(int i) {
+        Log.d(TAG, "MainFragment Suspended google GMS services connect - cause:" + i);
+        //We are not connected
+        //Try to connect again
+        mActivityGoogleApiClient.connect();
+    }
 
     /**
      * Okay - on first install, need to ask for permission for location. By that time, CP already updated.
@@ -168,6 +236,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
     public void onActivityCreated(Bundle savedInstanceState) {
         Log.i(TAG, "onCreate");
         super.onActivityCreated(savedInstanceState);
+        boolean bFirstTime = false;
 
         //Make sure we have location permissions at start
         // Assume thisActivity is the current activity
@@ -187,8 +256,8 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         setupUIElements();
 
         //Update the local content provider if running for first time...
-        //FIXME - remember to add a force sync button to settings page
-        if (Utils.isRunningForFirstTime(getActivity())) {
+        bFirstTime = Utils.isRunningForFirstTime(getActivity());
+        if (bFirstTime) {
             GCESync.startActionUpdateLocal(getActivity(), null, null);
             //and init the preferences
             PreferenceManager.setDefaultValues(getActivity(), R.xml.preferences, false);
@@ -213,6 +282,14 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         String title = String.format(titleformat, DBUtils.countDevices(getActivity()), DBUtils.countApp(getActivity(), null));
 
         setTitle(title);
+
+        //Finally, if this is the first time we are running... Or if we are supposed to be logged in... Log in.
+        if (bFirstTime) {
+            signInToGoogle(GOOGLE_SIGNIN_EXPLICIT);
+        } else if (Utils.isUserLoggedIn(getActivity())) {
+            //try to log in silently...
+            signInToGoogle(GOOGLE_SIGNING_SILENT);
+        }
     }
 
     @Override
@@ -293,9 +370,12 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                     }
                 }
             }
+        } else if (LOGIN_REQUEST_CODE == requestCode) {
+            //Result back from request to login (only called from activity)...
+            GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
+            handleSignInResult(result);
         }
     }
-
 
     public void updateFromCP(Uri uri) {
         //called when CP changes underneath us
@@ -445,11 +525,14 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         HeaderItem gridHeader = new HeaderItem(i, getResources().getString(R.string.preferences));
 
         GridItemPresenter mGridPresenter = new GridItemPresenter();
-        ArrayObjectAdapter gridRowAdapter = new ArrayObjectAdapter(mGridPresenter);
-        gridRowAdapter.add(getResources().getString(R.string.sync_now));
-        gridRowAdapter.add(getString(R.string.error_fragment));
-        gridRowAdapter.add(getResources().getString(R.string.personal_settings));
-        mRowsAdapter.add(new ListRow(gridHeader, gridRowAdapter));
+        if (mGridRowAdapter == null) {
+            mGridRowAdapter = new ArrayObjectAdapter(mGridPresenter);
+        }
+        mGridRowAdapter.add(getResources().getString(R.string.sync_now));
+        mGridRowAdapter.add(getResources().getString(R.string.signin_button_text));
+        mGridRowAdapter.add(getString(R.string.error_fragment));
+        mGridRowAdapter.add(getResources().getString(R.string.personal_settings));
+        mRowsAdapter.add(new ListRow(gridHeader, mGridRowAdapter));
 
         setAdapter(mRowsAdapter);
 
@@ -588,6 +671,9 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
     }
 
 
+    /**
+     * And the item click listener for the browse fragment
+     */
     private final class ItemViewClickedListener implements OnItemViewClickedListener {
         @Override
         public void onItemClicked(Presenter.ViewHolder itemViewHolder, Object item,
@@ -622,6 +708,11 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                 if (((String) item).indexOf(getString(R.string.error_fragment)) >= 0) {
                     Intent intent = new Intent(getActivity(), BrowseErrorActivity.class);
                     startActivity(intent);
+                } else if (item.equals(getResources().getString(R.string.signin_button_text))) {
+                    signInToGoogle(GOOGLE_SIGNIN_EXPLICIT);
+                } else if (item.equals(getResources().getString(R.string.signout_button_text))) {
+                    //log us out (both activity and service)
+                    signInToGoogle(GOOGLE_SIGNOUT);
                 } else if (item.equals(getResources().getString(R.string.personal_settings))) {
                     // Display the settings fragment
                     Intent intent = new Intent();
@@ -661,6 +752,111 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
         @Override
         public void onUnbindViewHolder(ViewHolder viewHolder) {
+        }
+    }
+
+    /**
+     * GOOGLE GMS Service API routines follow (for single sign-in)
+     */
+
+    private void handleSignInResult(GoogleSignInResult result) {
+        Log.d(TAG, "handle sign in result:" + result.isSuccess());
+        if (result.isSuccess()) {
+            mAccount = result.getSignInAccount();
+            updateLoginUI(true);
+            Utils.setUserLoggedIn(getActivity(), true);
+        } else {
+            mAccount = null;
+            updateLoginUI(false);
+            Utils.setUserLoggedIn(getActivity(),false);
+        }
+    }
+
+
+    /**
+     * Sign in or out of your google account (note - will set up service to do silent signin)
+     * @param bSignIn
+     */
+    private void signInToGoogle(int type) {
+        //First this signin only for activity. So just return if the api objects are null and we are signing out
+        if ((type == GOOGLE_SIGNOUT) && ((mActivityGSO == null) || (mActivityGoogleApiClient == null))) {
+            return;
+        }
+
+        //Next, connect...
+        //Create the signin option...
+        if (mActivityGSO == null) {
+            mActivityGSO = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                    .requestEmail()
+                    .build();
+        }
+
+        //next attach to GMS if not yet attached...
+        //try to get all the services here...
+        if (mActivityGoogleApiClient == null) {
+            mActivityGoogleApiClient = new GoogleApiClient.Builder(getActivity())
+                    .addConnectionCallbacks(this)
+                    .addOnConnectionFailedListener(this)
+                    .addApi(Auth.GOOGLE_SIGN_IN_API, mActivityGSO)
+                    .build();
+
+            mActivityGoogleApiClient.connect();
+        }
+
+        //Okay - we should have a local copy of the client...
+        if (type == GOOGLE_SIGNIN_EXPLICIT) {
+            if (mActivityGoogleApiClient != null) {
+                Intent signInIntent = Auth.GoogleSignInApi.getSignInIntent(mActivityGoogleApiClient);
+                startActivityForResult(signInIntent, LOGIN_REQUEST_CODE);
+            }
+        } else if (type == GOOGLE_SIGNING_SILENT) {
+            OptionalPendingResult<GoogleSignInResult> optPenRes = Auth.GoogleSignInApi.silentSignIn(mActivityGoogleApiClient);
+            if (optPenRes.isDone()) {
+                Log.d(TAG, "Signed into google account");
+                GoogleSignInResult result = optPenRes.get();
+                handleSignInResult(result);
+            } else {
+                optPenRes.setResultCallback(new ResultCallback<GoogleSignInResult>() {
+                    @Override
+                    public void onResult(GoogleSignInResult googleSignInResult) {
+                        handleSignInResult(googleSignInResult);
+                    }
+                });
+            }
+        } else if (type == GOOGLE_SIGNOUT) {
+            if (mActivityGoogleApiClient != null) {
+                Auth.GoogleSignInApi.signOut(mActivityGoogleApiClient).setResultCallback(
+                        new ResultCallback<Status>() {
+                            @Override
+                            public void onResult(Status status) {
+                                //don't really need to do anything here (service signout triggers all the actions)
+                                mAccount = null;
+                                updateLoginUI(false);
+                                Utils.setUserLoggedIn(getActivity(), false);
+                            }
+                        }
+                );
+            }
+        }
+    }
+
+    /**
+     * Updates UI for login button properly...
+     * @param bLoggedIn
+     */
+    private void updateLoginUI(boolean bLoggedIn) {
+        if (bLoggedIn) {
+            int index = mGridRowAdapter.indexOf(getResources().getString(R.string.signin_button_text));
+            if (index >= 0) {
+                //and replace with button for signout
+                mGridRowAdapter.replace(index, getResources().getString(R.string.signout_button_text));
+            }
+        } else {
+            int index = mGridRowAdapter.indexOf(getResources().getString(R.string.signout_button_text));
+            if (index >= 0) {
+                //and replace with button for signout
+                mGridRowAdapter.replace(index, getResources().getString(R.string.signin_button_text));
+            }
         }
     }
 

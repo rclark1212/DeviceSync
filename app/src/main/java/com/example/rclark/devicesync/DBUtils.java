@@ -16,8 +16,6 @@ package com.example.rclark.devicesync;
 
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.graphics.Bitmap;
@@ -25,11 +23,8 @@ import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.util.Log;
-import android.widget.ProgressBar;
 
 import com.example.rclark.devicesync.data.AppContract;
-import com.example.rclark.devicesync.data.AppProvider;
-import com.example.rclark.devicesync.sync.SyncUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
@@ -199,7 +194,7 @@ public class DBUtils {
 
         //now blob... - COLUMN_APP_BANNER
         //First, is this image available on network?
-        if (Utils.getAppImageUriOnNextwork(app.pkg, ctx) == null) {
+        if (Utils.getAppImageUriOnNetwork(app.pkg, ctx) == null) {
             //nope - not available. So save off
 
             //convert drawable to bytestream
@@ -446,7 +441,7 @@ public class DBUtils {
 
                     //now blob... - COLUMN_APP_BANNER
                     //First, is this image available on network?
-                    if (Utils.getAppImageUriOnNextwork(app.pkg, ctx) == null) {
+                    if (Utils.getAppImageUriOnNetwork(app.pkg, ctx) == null) {
                         //nope - not available. So save off
 
                         //convert drawable to bytestream
