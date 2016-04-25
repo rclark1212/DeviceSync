@@ -27,6 +27,7 @@
 
 package com.example.rclark.devicesync;
 
+import android.Manifest;
 import android.app.UiModeManager;
 import android.content.Context;
 import android.content.Intent;
@@ -42,9 +43,13 @@ import android.graphics.Canvas;
 import android.graphics.Point;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.location.Address;
+import android.location.Geocoder;
+import android.location.Location;
 import android.net.Uri;
 import android.os.Build;
 import android.preference.PreferenceManager;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.telecom.ConnectionRequest;
 import android.text.format.Time;
@@ -56,8 +61,12 @@ import android.widget.Toast;
 import com.example.rclark.devicesync.data.AppContract;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationServices;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.List;
 
 /**
  * A collection of utility methods, all static.
@@ -68,6 +77,7 @@ public class Utils {
     private static final String TAG = "DS_Utils";
     private static final String PREFS_HAS_RUN_ALREADY = "prefs_has_run_already";
     private static final String USER_IS_LOGGED_IN = "prefs_user_logged_in";
+    private static final String CACHED_LOCATION = "prefs_last_location";
 
     /*
      * Making sure public utility methods remain static
@@ -290,5 +300,79 @@ public class Utils {
         edit.commit();
     }
 
+    /**
+     *  Routine to store off location discovered in onCreate to preferences. Used by service/other routines
+     *  later...
+     */
+    public static void setCachedLocation(Context ctx, String location) {
+        SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(ctx);
+        SharedPreferences.Editor edit = pref.edit();
+        if (location != null) {
+            edit.putString(CACHED_LOCATION, location);
+            edit.commit();
+        } else {
+            edit.remove(CACHED_LOCATION);
+            edit.commit();
+        }
+    }
+
+    /**
+     *  Routine to store off location discovered in onCreate to preferences. Used by service/other routines
+     *  later...
+     */
+    public static String getCachedLocation(Context ctx) {
+        SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(ctx);
+        String location = pref.getString(CACHED_LOCATION, null);
+        return location;
+    }
+
+    /*
+    gets location of device
+    */
+    public static String getLocation(Context ctx, GoogleApiClient mClient) {
+        String ret = ctx.getResources().getString(R.string.unknown);
+        Location location = null;
+
+        //Double check permissions (should have been asked for at startup)
+        int permissionCheck = ContextCompat.checkSelfPermission(ctx,
+                Manifest.permission.ACCESS_COARSE_LOCATION);
+
+        if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
+            //its okay to get last location here - don't need accuracy of realtime ping for location
+            location = LocationServices.FusedLocationApi.getLastLocation(mClient);
+            Log.d(TAG, "Grabbing location...");
+        }
+
+        //above may fail (no cached location or user may deny privileges)
+        if (location != null) {
+            Geocoder geo = new Geocoder(ctx);
+
+            List<Address> addresses = null;
+
+            if (geo != null) {
+                try {
+                    addresses = geo.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
+                } catch (IOException e) {
+                    Log.e(TAG, "Error getting address on geolocation");
+                } catch (IllegalArgumentException illegalArgumentException) {
+                    Log.e(TAG, "Bad lat and long");
+                }
+            }
+
+            if ((addresses != null) && (addresses.size() > 0)) {
+                //We got an address!!!
+                if (Utils.bIsThisATV(ctx)) {
+                    ret = String.format(ctx.getResources().getString(R.string.atv_location), addresses.get(0).getLocality(), addresses.get(0).getAdminArea());
+                } else {
+                    ret = String.format(ctx.getResources().getString(R.string.phone_location),
+                            addresses.get(0).getAddressLine(0), addresses.get(0).getLocality(), addresses.get(0).getAdminArea());
+                }
+            } else {
+                ret = String.format(ctx.getResources().getString(R.string.latlong_location), addresses.get(0).getLatitude(), addresses.get(0).getLongitude());
+            }
+        }
+
+        return ret;
+    }
 
 }

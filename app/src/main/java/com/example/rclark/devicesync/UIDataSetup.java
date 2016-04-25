@@ -497,14 +497,14 @@ public class UIDataSetup {
                 retUri = appDB.buildUpon().appendPath(AppContract.AppEntry.COLUMN_APP_PKG).build();
             } else if (mFunction[row] == MISSINGAPPS_ROW) {
                 //Need a groupbyquery. Do the fuglyness in the uri here...
-                Uri appDB = AppContract.AppEntry.GROUPBY_URI;
+                //Uri appDB = AppContract.AppEntry.GROUPBY_URI;
                 //embedd the group by column here...
-                retUri = appDB.buildUpon().appendPath(AppContract.AppEntry.COLUMN_APP_PKG).build();
+                //retUri = appDB.buildUpon().appendPath(AppContract.AppEntry.COLUMN_APP_PKG).build();
             } else if (mFunction[row] == UNIQUEAPPS_ROW) {
                 //Need a groupbyquery. Do the fuglyness in the uri here...
-                Uri appDB = AppContract.AppEntry.GROUPBY_URI;
+                //Uri appDB = AppContract.AppEntry.GROUPBY_URI;
                 //embedd the group by column here...
-                retUri = appDB.buildUpon().appendPath(AppContract.AppEntry.COLUMN_APP_PKG).build();
+                //retUri = appDB.buildUpon().appendPath(AppContract.AppEntry.COLUMN_APP_PKG).build();
             } else if (mFunction[row] == SUPERSET_ROW) {
                 //Need a groupbyquery. Do the fuglyness in the uri here...
                 Uri appDB = AppContract.AppEntry.GROUPBY_URI;

@@ -65,8 +65,7 @@ import java.util.concurrent.TimeUnit;
  * (4) Do the local scan of apps/devices
  *
  */
-public class GCESync extends IntentService implements GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener {
+public class GCESync extends IntentService {
 
     private static final String TAG = "GCESync";
 
@@ -92,34 +91,9 @@ public class GCESync extends IntentService implements GoogleApiClient.Connection
 
     private static Context mCtx;
     private static boolean mbIsATV;
-    private static boolean mbUseLocation = false;
-    private static GoogleApiClient mGoogleApiClient = null;
 
     public GCESync() {
         super("GCESync");
-    }
-
-    /*
-        Callbacks for google services
-     */
-    @Override
-    public void onConnected(Bundle bundle) {
-        // Display the connection status
-        Log.d(TAG, "Success - google GMS services connect");
-    }
-
-    @Override
-    public void onConnectionFailed(ConnectionResult result) {
-        Log.e(TAG, "Failed google GMS services connect - result:" + result);
-        //We are not connected
-    };
-
-    @Override
-    public void onConnectionSuspended(int i) {
-        Log.d(TAG, "Suspended google GMS services connect - cause:" + i);
-        //We are not connected
-        //Try to connect again
-        mGoogleApiClient.connect();
     }
 
     /**
@@ -142,11 +116,9 @@ public class GCESync extends IntentService implements GoogleApiClient.Connection
      *
      * @see IntentService
      */
-    public static void startActionLocalDeviceUpdate(Context context, String deviceSN, String param2) {
+    public static void startActionLocalDeviceUpdate(Context context, String param1, String param2) {
         Intent intent = new Intent(context, GCESync.class);
         intent.setAction(ACTION_UPDATE_LOCAL_DEVICE);
-        //intent.putExtra(EXTRA_PARAM1, deviceSN);
-        //intent.putExtra(EXTRA_PARAM2, param2);
         context.startService(intent);
     }
 
@@ -193,17 +165,6 @@ public class GCESync extends IntentService implements GoogleApiClient.Connection
     }
 
     @Override
-    public void onDestroy() {
-        if (mGoogleApiClient != null) {
-            if (mGoogleApiClient.isConnected()) {
-                mGoogleApiClient.disconnect();
-                mGoogleApiClient = null;
-            }
-        }
-        super.onDestroy();
-    }
-
-    @Override
     protected void onHandleIntent(Intent intent) {
         //first, do we have context saved off?
         if (mCtx == null) {
@@ -213,19 +174,7 @@ public class GCESync extends IntentService implements GoogleApiClient.Connection
         }
 
         //next attach to GMS if not yet attached...
-        //try to get all the services here...
-        if (mGoogleApiClient == null) {
-            mGoogleApiClient = new GoogleApiClient.Builder(this)
-                    .addConnectionCallbacks(this)
-                    .addOnConnectionFailedListener(this)
-                    .addApi(LocationServices.API)
-                    .build();
-
-            ConnectionResult connectionResult = mGoogleApiClient.blockingConnect(30, TimeUnit.SECONDS);
-
-            //Just check if we are connected
-            mbUseLocation = mGoogleApiClient.isConnected();
-        }
+        //NO - MOVED all GMS processing to the primary activity
 
         if (intent != null) {
             final String action = intent.getAction();
@@ -282,7 +231,7 @@ public class GCESync extends IntentService implements GoogleApiClient.Connection
     private void handleActionLocalDeviceUpdate() {
         //Okay - first update the device database - serial number, nickname, date, model name, os_ver
         //Get an object with local device info...
-        ObjectDetail device = SyncUtils.getLocalDeviceInfo(mCtx, mbUseLocation, mGoogleApiClient);
+        ObjectDetail device = SyncUtils.getLocalDeviceInfo(mCtx);
 
         //Get the device DB reference...
         Uri deviceDB = AppContract.DevicesEntry.CONTENT_URI;
@@ -322,7 +271,6 @@ public class GCESync extends IntentService implements GoogleApiClient.Connection
         }
 
         c.close();
-
     }
 
     /**

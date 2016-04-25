@@ -110,7 +110,7 @@ public class SyncUtils {
     /*
     Populates an object with local device info (including location)
     */
-    public static ObjectDetail getLocalDeviceInfo(Context ctx, boolean useLocation, GoogleApiClient mClient) {
+    public static ObjectDetail getLocalDeviceInfo(Context ctx) {
         ObjectDetail device = new ObjectDetail();
 
         //Set up local device into object
@@ -125,62 +125,12 @@ public class SyncUtils {
         Time time = new Time();
         time.setToNow();
         device.installDate = time.toMillis(true);
-        if (useLocation) {
-            device.location = getLocation(ctx, mClient);
-        } else {
+        device.location = Utils.getCachedLocation(ctx);
+        if (device.location == null) {
             device.location = ctx.getResources().getString(R.string.unknown);
         }
 
         return device;
-    }
-
-
-    /*
-    gets location of device
-    */
-    public static String getLocation(Context ctx, GoogleApiClient mClient) {
-        String ret = ctx.getResources().getString(R.string.unknown);
-        Location location = null;
-
-        //Double check permissions (should have been asked for at startup)
-        int permissionCheck = ContextCompat.checkSelfPermission(ctx,
-                Manifest.permission.ACCESS_COARSE_LOCATION);
-
-        if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
-            //its okay to get last location here - don't need accuracy of realtime ping for location
-            location = LocationServices.FusedLocationApi.getLastLocation(mClient);
-        }
-
-        //above may fail (no cached location or user may deny privileges)
-        if (location != null) {
-            Geocoder geo = new Geocoder(ctx);
-
-            List<Address> addresses = null;
-
-            if (geo != null) {
-                try {
-                    addresses = geo.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
-                } catch (IOException e) {
-                    Log.e(TAG, "Error getting address on geolocation");
-                } catch (IllegalArgumentException illegalArgumentException) {
-                    Log.e(TAG, "Bad lat and long");
-                }
-            }
-
-            if ((addresses != null) && (addresses.size() > 0)) {
-                //We got an address!!!
-                if (Utils.bIsThisATV(ctx)) {
-                    ret = String.format(ctx.getResources().getString(R.string.atv_location), addresses.get(0).getLocality(), addresses.get(0).getAdminArea());
-                } else {
-                    ret = String.format(ctx.getResources().getString(R.string.phone_location),
-                            addresses.get(0).getAddressLine(0), addresses.get(0).getLocality(), addresses.get(0).getAdminArea());
-                }
-            } else {
-                ret = String.format(ctx.getResources().getString(R.string.latlong_location), addresses.get(0).getLatitude(), addresses.get(0).getLongitude());
-            }
-        }
-
-        return ret;
     }
 
 }

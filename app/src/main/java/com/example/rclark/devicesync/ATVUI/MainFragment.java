@@ -29,19 +29,15 @@ package com.example.rclark.devicesync.ATVUI;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.LoaderManager;
 import android.content.BroadcastReceiver;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.CursorLoader;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.Loader;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
-import android.database.DatabaseUtils;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
@@ -64,13 +60,10 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
-import android.support.v7.preference.PreferenceScreen;
 import android.util.Log;
 import android.view.Gravity;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -86,6 +79,8 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.auth.api.signin.GoogleSignInResult;
 import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GoogleApiAvailability;
+import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.OptionalPendingResult;
 import com.google.android.gms.common.api.ResultCallback;
@@ -93,8 +88,6 @@ import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.LocationServices;
 
 import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /*
     psuedo-logic
@@ -114,18 +107,20 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         ContentObserverCallback, ActivityCompat.OnRequestPermissionsResultCallback, GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener {
     private static final String TAG = "MainFragment";
+
     private static final int MY_PERMISSIONS_REQUEST_LOCATION = 1;
 
-    private static final int PREFERENCE_REQUEST_CODE = 1;
+    private static final int PREFERENCE_REQUEST_CODE = 1971;
     public static final String PREF_RESULT_KEY = "prefResult";
     public static final int PREF_DO_NOTHING = 0;
     public static final int PREF_UPDATE_UI_FLAG = 1;
     public static final int PREF_UPDATE_CP_FLAG = 2;
 
-    private static final int DETAILS_REQUEST_CODE = 2;
+    private static final int DETAILS_REQUEST_CODE = 1974;
     public static final String DETAILS_RESULT_KEY = "detailsResult";
 
-    private static final int LOGIN_REQUEST_CODE = 3;
+    private static final int LOGIN_REQUEST_CODE = 1973;
+    public static final int REQUEST_GOOGLE_PLAY_SERVICES = 1972;
 
     private static final int GRID_ITEM_WIDTH = 200;
     private static final int GRID_ITEM_HEIGHT = 200;
@@ -146,7 +141,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
     private GoogleSignInAccount mAccount = null;
     private final int GOOGLE_SIGNOUT = 0;
     private final int GOOGLE_SIGNIN_EXPLICIT = 1;
-    private final int GOOGLE_SIGNING_SILENT = 2;
+    private final int GOOGLE_SIGNIN_SILENT = 2;
 
     private UIDataSetup mUIDataSetup;
 
@@ -196,12 +191,14 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
     public void onConnected(Bundle bundle) {
         // Display the connection status
         Log.d(TAG, "Success - MainFragment google GMS services connect");
+        processStartUpAfterGMSConnect();
     }
 
     @Override
     public void onConnectionFailed(ConnectionResult result) {
         Log.e(TAG, "MainFragment Failed google GMS services connect - result:" + result);
         //We are not connected
+        finishIt();
     };
 
     @Override
@@ -225,7 +222,15 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                     && (grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
                 // Yay! We get location. Go ahead an update the device record...
                 Log.d(TAG, "location priviledge granted. Updating CP");
-                GCESync.startActionLocalDeviceUpdate(getActivity(), null, null);
+                mbAllowUpdates = true;
+                //Now get the location
+                String location = Utils.getLocation(getActivity(), mActivityGoogleApiClient);
+                //set this cached value...
+                Utils.setCachedLocation(getActivity(), location);
+                GCESync.startActionLocalDeviceUpdate(getActivity(), location, null);
+                //and because we may have been paused and not seen the broadcast receiver message, force an update
+                //FIXME - need to touch an app as well... (test - erase data and run for first time)
+                updateFromCP(null);
             } else {
                 Log.d(TAG, "location priviledge DENIED. Grr...");
             }
@@ -236,10 +241,20 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
     public void onActivityCreated(Bundle savedInstanceState) {
         Log.i(TAG, "onCreate");
         super.onActivityCreated(savedInstanceState);
-        boolean bFirstTime = false;
 
+        //Setup google GMS services
+        setupGMS();
+
+        //We complete the setup after we have connected to GMS (see onConnect callback)
+    }
+
+    /**
+     * We require GMS to run. So do the bulk of the initialization after GMS has connected.
+     * This is done in this routine.
+     */
+    private void processStartUpAfterGMSConnect() {
+        boolean bFirstTime = false;
         //Make sure we have location permissions at start
-        // Assume thisActivity is the current activity
         int permissionCheck = ContextCompat.checkSelfPermission(getActivity(),
                 Manifest.permission.ACCESS_COARSE_LOCATION);
 
@@ -250,6 +265,13 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     requestPermissions(permissions, MY_PERMISSIONS_REQUEST_LOCATION);
                 }
+            }
+        } else {
+            //we have permission - get location at start...
+            String location = Utils.getLocation(getActivity(), mActivityGoogleApiClient);
+            //set this cached value...
+            if (location != null) {
+                Utils.setCachedLocation(getActivity(), location);
             }
         }
 
@@ -285,12 +307,22 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
         //Finally, if this is the first time we are running... Or if we are supposed to be logged in... Log in.
         if (bFirstTime) {
-            signInToGoogle(GOOGLE_SIGNIN_EXPLICIT);
-        } else if (Utils.isUserLoggedIn(getActivity())) {
-            //try to log in silently...
-            signInToGoogle(GOOGLE_SIGNING_SILENT);
+            //TODO - add a dialog here which makes it less abrupt
+            //signInToGoogle(GOOGLE_SIGNIN_EXPLICIT);
         }
     }
+
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        //sign in if we are already logged in
+        if (Utils.isUserLoggedIn(getActivity())) {
+            //try to log in silently...
+            signInToGoogle(GOOGLE_SIGNIN_SILENT);
+        }
+    }
+
 
     @Override
     public void onResume() {
@@ -318,7 +350,6 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         //Unregister receiver
         LocalBroadcastManager.getInstance(this.getActivity()).unregisterReceiver(mMessageReceiver);
     }
-
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -374,6 +405,11 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
             //Result back from request to login (only called from activity)...
             GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
             handleSignInResult(result);
+        } else if (REQUEST_GOOGLE_PLAY_SERVICES == requestCode) {
+            if (resultCode == Activity.RESULT_OK) {
+                //Try logging into gms again
+                setupGMS();
+            }
         }
     }
 
@@ -613,7 +649,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
-        //ListRow row = (ListRow) getAdapter().get(loader.getId()); - use backing store
+        //ListRow row = (ListRow) getAdapter().get(loader.getId()); //- use backing store
         ListRow row = (ListRow) mBackingListRows.get(loader.getId());
         if (row.getAdapter() instanceof CursorObjectAdapter) {
             CursorObjectAdapter rowAdapter = (CursorObjectAdapter) row.getAdapter();
@@ -628,7 +664,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
-        //ListRow row = (ListRow) getAdapter().get(loader.getId()); - use backing store instead
+        //ListRow row = (ListRow) getAdapter().get(loader.getId()); //- use backing store instead
         ListRow row = (ListRow) mBackingListRows.get(loader.getId());
         if (row.getAdapter() instanceof CursorObjectAdapter) {
             CursorObjectAdapter rowAdapter = (CursorObjectAdapter) row.getAdapter();
@@ -636,6 +672,49 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         }
     }
 
+    private void finishIt() {
+        Toast.makeText(getActivity(), getResources().getString(R.string.exit_fail), Toast.LENGTH_LONG).show();
+        getActivity().finish();
+    }
+
+    /**
+     * Sets up GMS. And tries to tell user how to fix any errors
+     */
+    private void setupGMS() {
+        //Next, connect...
+
+        //Does service exist? If not, can user fix?
+        GoogleApiAvailability api = GoogleApiAvailability.getInstance();
+        int code = api.isGooglePlayServicesAvailable(getActivity());
+        if (code != ConnectionResult.SUCCESS) {
+            if (api.isUserResolvableError(code) &&
+                    api.showErrorDialogFragment(getActivity(), code, REQUEST_GOOGLE_PLAY_SERVICES)) {
+                //Will get this call in activity result...
+            } else {
+                finishIt();
+            }
+        }
+
+        //Create the signin option...
+        if (mActivityGSO == null) {
+            mActivityGSO = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                    .requestEmail()
+                    .build();
+        }
+
+        //next attach to GMS if not yet attached...
+        //try to get all the services here...
+        if (mActivityGoogleApiClient == null) {
+            mActivityGoogleApiClient = new GoogleApiClient.Builder(getActivity())
+                    .addConnectionCallbacks(this)
+                    .addOnConnectionFailedListener(this)
+                    .addApi(Auth.GOOGLE_SIGN_IN_API, mActivityGSO)
+                    .addApi(LocationServices.API)
+                    .build();
+
+            mActivityGoogleApiClient.connect();
+        }
+    }
 
     private void setupUIElements() {
         // setBadgeDrawable(getActivity().getResources().getDrawable(
@@ -778,29 +857,9 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
      * @param bSignIn
      */
     private void signInToGoogle(int type) {
-        //First this signin only for activity. So just return if the api objects are null and we are signing out
-        if ((type == GOOGLE_SIGNOUT) && ((mActivityGSO == null) || (mActivityGoogleApiClient == null))) {
+
+        if ((mActivityGSO == null) || (mActivityGoogleApiClient == null)) {
             return;
-        }
-
-        //Next, connect...
-        //Create the signin option...
-        if (mActivityGSO == null) {
-            mActivityGSO = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                    .requestEmail()
-                    .build();
-        }
-
-        //next attach to GMS if not yet attached...
-        //try to get all the services here...
-        if (mActivityGoogleApiClient == null) {
-            mActivityGoogleApiClient = new GoogleApiClient.Builder(getActivity())
-                    .addConnectionCallbacks(this)
-                    .addOnConnectionFailedListener(this)
-                    .addApi(Auth.GOOGLE_SIGN_IN_API, mActivityGSO)
-                    .build();
-
-            mActivityGoogleApiClient.connect();
         }
 
         //Okay - we should have a local copy of the client...
@@ -809,7 +868,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                 Intent signInIntent = Auth.GoogleSignInApi.getSignInIntent(mActivityGoogleApiClient);
                 startActivityForResult(signInIntent, LOGIN_REQUEST_CODE);
             }
-        } else if (type == GOOGLE_SIGNING_SILENT) {
+        } else if (type == GOOGLE_SIGNIN_SILENT) {
             OptionalPendingResult<GoogleSignInResult> optPenRes = Auth.GoogleSignInApi.silentSignIn(mActivityGoogleApiClient);
             if (optPenRes.isDone()) {
                 Log.d(TAG, "Signed into google account");
