@@ -13,7 +13,9 @@
         <servlet-class>com.google.api.server.spi.SystemServiceServlet</servlet-class>
         <init-param>
             <param-name>services</param-name>
-            <param-value>com.example.rclark.devicesync.backend.RegistrationEndpoint, com.example.rclark.devicesync.backend.MessagingEndpoint</param-value>
+            <param-value>com.example.rclark.devicesync.backend.RegistrationEndpoint,
+                com.example.rclark.devicesync.backend.MessagingEndpoint,
+com.example.rclark.devicesync.backend.MyEndpoint</param-value>
         </init-param>
     </servlet>
     <servlet-mapping>
