@@ -9,4 +9,6 @@
 gradle.properties
 appengine-web.xml
 /backend/build
+/backend/src/main/webapp/WEB-INF/appengine-web.xml
+
 
