@@ -7,3 +7,6 @@
 /build
 /captures
 gradle.properties
+appengine-web.xml
+/backend/build
+
