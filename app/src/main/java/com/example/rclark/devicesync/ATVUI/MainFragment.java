@@ -29,10 +29,12 @@ package com.example.rclark.devicesync.ATVUI;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.LoaderManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.CursorLoader;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.Loader;
@@ -110,22 +112,21 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
     private static final int MY_PERMISSIONS_REQUEST_LOCATION = 1;
 
-    private static final int PREFERENCE_REQUEST_CODE = 1971;
+    private static final int PREFERENCE_REQUEST_CODE = 1967;
     public static final String PREF_RESULT_KEY = "prefResult";
     public static final int PREF_DO_NOTHING = 0;
     public static final int PREF_UPDATE_UI_FLAG = 1;
     public static final int PREF_UPDATE_CP_FLAG = 2;
 
-    private static final int DETAILS_REQUEST_CODE = 1974;
+    private static final int DETAILS_REQUEST_CODE = 1968;
     public static final String DETAILS_RESULT_KEY = "detailsResult";
 
-    private static final int LOGIN_REQUEST_CODE = 1973;
-    public static final int REQUEST_GOOGLE_PLAY_SERVICES = 1972;
+    private static final int LOGIN_REQUEST_CODE = 1969;
+    public static final int REQUEST_GOOGLE_PLAY_SERVICES = 1970;
 
     private static final int GRID_ITEM_WIDTH = 200;
     private static final int GRID_ITEM_HEIGHT = 200;
 
-    private final Handler mHandler = new Handler();
     private ArrayObjectAdapter mRowsAdapter;
     private ArrayList<ListRow> mBackingListRows;
     private ArrayObjectAdapter mGridRowAdapter;     //make class global for easy access to signin control...
@@ -161,17 +162,6 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                 //NOTE - causes a delay at start
                 //DBUtils.loadFakeData(getActivity());
 
-                //And finish up the initialization we started in onActivityCreated (if we punt on initial setup in onActivityCreated)
-                if (mUIDataSetup == null) {
-                    mUIDataSetup = new UIDataSetup(getActivity());
-
-                    loadRows();
-
-                    //Try to sign in - TODO
-
-                    setupEventListeners();
-                }
-
                 //Enable updates once initial CP load complete
                 mbAllowUpdates = true;
 
@@ -191,13 +181,15 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
     public void onConnected(Bundle bundle) {
         // Display the connection status
         Log.d(TAG, "Success - MainFragment google GMS services connect");
+
+        // Note that we defer most of our initialization until after google GMS connects. Do that here...
         processStartUpAfterGMSConnect();
     }
 
     @Override
     public void onConnectionFailed(ConnectionResult result) {
         Log.e(TAG, "MainFragment Failed google GMS services connect - result:" + result);
-        //We are not connected
+        //We are not connected - exit
         finishIt();
     };
 
@@ -222,18 +214,23 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                     && (grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
                 // Yay! We get location. Go ahead an update the device record...
                 Log.d(TAG, "location priviledge granted. Updating CP");
-                mbAllowUpdates = true;
                 //Now get the location
                 String location = Utils.getLocation(getActivity(), mActivityGoogleApiClient);
                 //set this cached value...
                 Utils.setCachedLocation(getActivity(), location);
-                GCESync.startActionLocalDeviceUpdate(getActivity(), location, null);
-                //and because we may have been paused and not seen the broadcast receiver message, force an update
-                //FIXME - need to touch an app as well... (test - erase data and run for first time)
-                updateFromCP(null);
             } else {
                 Log.d(TAG, "location priviledge DENIED. Grr...");
+                Utils.setCachedLocation(getActivity(), null);
             }
+
+            //let array updates go through on CP changes
+            mbAllowUpdates = true;
+            GCESync.startActionLocalDeviceUpdate(getActivity(), null, null);
+            //and because we may have been paused and not seen the broadcast receiver message, force an update
+            updateFromCP(null);
+
+            //And initialize the loaders *after* we get back from the activity paused state
+            initializeLoaders();
         }
     }
 
@@ -253,7 +250,9 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
      * This is done in this routine.
      */
     private void processStartUpAfterGMSConnect() {
-        boolean bFirstTime = false;
+        boolean bFirstTime = false;         //indicates first time we have ever run
+        boolean bRequestLocationPermission = false;
+
         //Make sure we have location permissions at start
         int permissionCheck = ContextCompat.checkSelfPermission(getActivity(),
                 Manifest.permission.ACCESS_COARSE_LOCATION);
@@ -263,11 +262,13 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                 String[] permissions = {Manifest.permission.ACCESS_COARSE_LOCATION};
                 //and only need to do this for SDK23...
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    bRequestLocationPermission = true;
+                    //below line will cause dialog to come up and pause/resume this activity...
                     requestPermissions(permissions, MY_PERMISSIONS_REQUEST_LOCATION);
                 }
             }
         } else {
-            //we have permission - get location at start...
+            //we have permission - get location...
             String location = Utils.getLocation(getActivity(), mActivityGoogleApiClient);
             //set this cached value...
             if (location != null) {
@@ -292,7 +293,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
             GCESync.startActionLocalDeviceUpdate(getActivity(), null, null);
         }
 
-        //Load the UI structure
+        //Load the UI data structure
         mUIDataSetup = new UIDataSetup(getActivity());
 
         loadRows();
@@ -305,10 +306,17 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
         setTitle(title);
 
-        //Finally, if this is the first time we are running... Or if we are supposed to be logged in... Log in.
+        //Next, if this is the first time we are running... Or if we are supposed to be logged in... Log in.
         if (bFirstTime) {
             //TODO - add a dialog here which makes it less abrupt
             //signInToGoogle(GOOGLE_SIGNIN_EXPLICIT);
+        }
+
+        //finally, initialize the loaders if we did not ask for location services...
+        //otherwise initialize after dialog answered... (activity being paused while CP is busily updating on async thread leads
+        //to cursor adapters not updating UI)...
+        if (!bRequestLocationPermission) {
+            initializeLoaders();
         }
     }
 
@@ -356,6 +364,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         int prefResult = 0;
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == PREFERENCE_REQUEST_CODE) {
+            //Back from preference screen
             //So don't really care about result code - cancel or OK, user may have modified settings
             //Instead, look at the data...
             if (data != null) {
@@ -380,6 +389,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
             }
         } else if (DETAILS_REQUEST_CODE == requestCode) {
             //came back from details screen
+            //check to see if detail screen selection was to show apps for a device...
             if (data != null) {
                 String serial = data.getStringExtra(DETAILS_RESULT_KEY);
                 //find the row with this serial number...
@@ -402,17 +412,26 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                 }
             }
         } else if (LOGIN_REQUEST_CODE == requestCode) {
-            //Result back from request to login (only called from activity)...
+            //Result back from request to explicitly login (only called from activity)...
             GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
+            //and deal with result...
             handleSignInResult(result);
         } else if (REQUEST_GOOGLE_PLAY_SERVICES == requestCode) {
             if (resultCode == Activity.RESULT_OK) {
+                //Called when user asked to do something to make GMS work...
                 //Try logging into gms again
                 setupGMS();
             }
         }
     }
 
+
+    /**
+     * We use both CP cursor adapters as well as array adapters for our UI.
+     * The cursor adapters update automaticaly. The array adapters do not. We need to regenerate when the
+     * CP data changes underneath them. This function does that. Is a registered observer to CP database.
+     * @param uri
+     */
     public void updateFromCP(Uri uri) {
         //called when CP changes underneath us
         if (mbAllowUpdates) {
@@ -486,6 +505,8 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
     /**
      *  Loads the browse rows (headers and data).
+     *  Sets up the adapters.
+     *  Does *not* initialize the loaders.
      */
     private void loadRows() {
         int i;
@@ -558,6 +579,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
             }
         }
 
+        //And construct last row of utilities/settings
         HeaderItem gridHeader = new HeaderItem(i, getResources().getString(R.string.preferences));
 
         GridItemPresenter mGridPresenter = new GridItemPresenter();
@@ -572,10 +594,18 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
         setAdapter(mRowsAdapter);
 
+        //initializeLoaders();
+        //Nope - initialize the loaders after either location services permissions requested or in the create call.
+    }
+
+    /**
+     * Initializes all the loaders
+     */
+    private void initializeLoaders() {
         LoaderManager loaderManager = getLoaderManager();
 
         //loop through the uris and set up loaders (and yes, could use a bundle to the loader and a local variable instead of global).
-        for (i = 0; i < mUIDataSetup.getNumberOfHeaders(); i++) {
+        for (int i = 0; i < mUIDataSetup.getNumberOfHeaders(); i++) {
             //if uri that comes back is null, don't init a cursor (blank row)
             if (mUIDataSetup.getRowUri(i) != null) {
                 loaderManager.initLoader(i, null, this);
@@ -672,9 +702,28 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         }
     }
 
+    /**
+     * Used to exit app when there is an error. Really GMS services the only error that will cause controlled exit :)
+     */
     private void finishIt() {
-        Toast.makeText(getActivity(), getResources().getString(R.string.exit_fail), Toast.LENGTH_LONG).show();
-        getActivity().finish();
+
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(getActivity());
+
+        alertDialogBuilder.setTitle(getResources().getString(R.string.app_err_title));
+
+        alertDialogBuilder
+                .setMessage(getResources().getString(R.string.gms_missing_msg))
+                .setCancelable(false)
+                .setNeutralButton(getResources().getString(R.string.ok), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                        getActivity().finish();
+                    }
+                });
+
+        AlertDialog alertDialog = alertDialogBuilder.create();
+        alertDialog.show();
     }
 
     /**
@@ -854,7 +903,9 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
     /**
      * Sign in or out of your google account (note - will set up service to do silent signin)
-     * @param bSignIn
+     * Can be explicit (ask for your account name), implicit (silent), or logout.
+     * We always ask explicitly if user had manually logged out before.
+     * @param type
      */
     private void signInToGoogle(int type) {
 

@@ -31,6 +31,7 @@ import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -40,11 +41,14 @@ import android.support.v7.app.AppCompatActivity;
 
 import com.example.rclark.devicesync.ObjectDetail;
 import com.example.rclark.devicesync.R;
+import com.example.rclark.devicesync.UIDataSetup;
 import com.example.rclark.devicesync.data.AppContract;
 import com.example.rclark.devicesync.sync.GCESync;
 
 public class MainPhoneActivity extends AppCompatActivity
         implements NavigationDrawerFragment.NavigationDrawerCallbacks {
+
+    private static final String TAG = "MainPhone";
 
     /**
      * Fragment managing the behaviors, interactions and presentation of the navigation drawer.
@@ -56,19 +60,37 @@ public class MainPhoneActivity extends AppCompatActivity
      */
     private CharSequence mTitle;
 
+    //Our data helper
+    private UIDataSetup mUIDataSetup;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        String[] headers;
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main_phone);
+
+        //Set up the data helper
+        //Load the UI data structure
+        if (mUIDataSetup == null) {
+            mUIDataSetup = new UIDataSetup(getApplicationContext());
+        }
 
         mNavigationDrawerFragment = (NavigationDrawerFragment)
                 getFragmentManager().findFragmentById(R.id.navigation_drawer);
         mTitle = getTitle();
 
+        //update nav drawer with the headers we want to use...
+        headers = new String[mUIDataSetup.getNumberOfHeaders()];
+        for (int i = 0; i < mUIDataSetup.getNumberOfHeaders(); i++) {
+            headers[i] = mUIDataSetup.getRowHeader(i);
+        }
+
         // Set up the drawer.
         mNavigationDrawerFragment.setUp(
                 R.id.navigation_drawer,
-                (DrawerLayout) findViewById(R.id.drawer_layout));
+                (DrawerLayout) findViewById(R.id.drawer_layout),
+                headers);
 
         //Start up sync service
         //And update the local content provider...
@@ -78,24 +100,25 @@ public class MainPhoneActivity extends AppCompatActivity
     @Override
     public void onNavigationDrawerItemSelected(int position) {
         // update the main content by replacing fragments
+        //Set up the data helper
+        //Load the UI data structure
+        if (mUIDataSetup == null) {
+            mUIDataSetup = new UIDataSetup(getApplicationContext());
+        }
+
         FragmentManager fragmentManager = getFragmentManager();
         fragmentManager.beginTransaction()
-                .replace(R.id.container, PlaceholderFragment.newInstance(position + 1))
+                .replace(R.id.container, PlaceholderFragment.newInstance(position,
+                        mUIDataSetup.getRowUri(position),
+                        mUIDataSetup.getRowSelection(position),
+                        mUIDataSetup.getRowSelectionArgs(position)))
                 .commit();
     }
 
     public void onSectionAttached(int number) {
-        switch (number) {
-            case 1:
-                mTitle = getString(R.string.title_section1);
-                break;
-            case 2:
-                mTitle = getString(R.string.title_section2);
-                break;
-            case 3:
-                mTitle = getString(R.string.title_section3);
-                break;
-        }
+        mTitle = "AppSyncr - " + mUIDataSetup.getRowHeader(number);
+
+        restoreActionBar();
     }
 
     public void restoreActionBar() {
@@ -110,7 +133,7 @@ public class MainPhoneActivity extends AppCompatActivity
      */
     public static class PlaceholderFragment extends Fragment {
         private RecyclerView mRecyclerView;
-        private RecyclerView.Adapter mAdapter;
+        private ListObjectAdapter mAdapter;
         private RecyclerView.LayoutManager mLayoutManager;
 
         /**
@@ -118,6 +141,9 @@ public class MainPhoneActivity extends AppCompatActivity
          * fragment.
          */
         private static final String ARG_SECTION_NUMBER = "section_number";
+        private static final String ARG_URI = "section_uri";
+        private static final String ARG_SELECTION = "section_selection";
+        private static final String ARG_SELECTION_ARGS = "section_selection_args";
 
         public PlaceholderFragment() {
         }
@@ -126,10 +152,14 @@ public class MainPhoneActivity extends AppCompatActivity
          * Returns a new instance of this fragment for the given section
          * number.
          */
-        public static PlaceholderFragment newInstance(int sectionNumber) {
+        public static PlaceholderFragment newInstance(int sectionNumber, Uri uri, String selection, String[] selectionArgs) {
             PlaceholderFragment fragment = new PlaceholderFragment();
             Bundle args = new Bundle();
             args.putInt(ARG_SECTION_NUMBER, sectionNumber);
+            args.putString(ARG_URI, uri.toString());
+            args.putString(ARG_SELECTION, selection);
+            args.putStringArray(ARG_SELECTION_ARGS, selectionArgs);
+
             fragment.setArguments(args);
             return fragment;
         }
@@ -139,30 +169,33 @@ public class MainPhoneActivity extends AppCompatActivity
                                  Bundle savedInstanceState) {
             View rootView = inflater.inflate(R.layout.fragment_phone, container, false);
 
-            mRecyclerView = (RecyclerView) rootView.findViewById(R.id.recycler_view);
+            //Only initialize this once...
+            if (mRecyclerView == null) {
+                Log.d(TAG, "Init recycler view");
+                mRecyclerView = (RecyclerView) rootView.findViewById(R.id.recycler_view);
 
-            // not changing the size of recyclerview
-            mRecyclerView.setHasFixedSize(true);
+                // not changing the size of recyclerview
+                mRecyclerView.setHasFixedSize(true);
 
-            //how many columns can we get? Should be width of screen / width of grid element
-            DisplayMetrics displaymetrics = new DisplayMetrics();
-            getActivity().getWindowManager().getDefaultDisplay().getMetrics(displaymetrics);
-            int width = displaymetrics.widthPixels;
+                //how many columns can we get? Should be width of screen / width of grid element
+                DisplayMetrics displaymetrics = new DisplayMetrics();
+                getActivity().getWindowManager().getDefaultDisplay().getMetrics(displaymetrics);
+                int width = displaymetrics.widthPixels;
 
-            // use GridLayoutManager
-            mLayoutManager = new GridLayoutManager(getActivity(), (width/300));
-            mRecyclerView.setLayoutManager(mLayoutManager);
+                // use GridLayoutManager
+                mLayoutManager = new GridLayoutManager(getActivity(), (width / 300));
+                mRecyclerView.setLayoutManager(mLayoutManager);
 
-            // get a cursor for this view...
-            //Get the device DB reference...
-            Uri appDB = AppContract.AppEntry.CONTENT_URI;
+                // get a cursor for this view...
+                //Get the device DB reference...
+                //Log.d(TAG, "Grab cursor");
+                //Uri appDB = AppContract.AppEntry.CONTENT_URI;
 
-            //grab the cursor
-            Cursor c = getActivity().getContentResolver().query(appDB, null, null, null, null);
+                //grab the cursor
+                //Cursor c = getActivity().getContentResolver().query(appDB, null, null, null, null);
 
-            // and set the adapter
-            mAdapter = new ListObjectAdapter(getActivity(), c);
-            mRecyclerView.setAdapter(mAdapter);
+                mRecyclerView.setAdapter(mAdapter);
+            }
 
             return rootView;
         }
@@ -170,8 +203,27 @@ public class MainPhoneActivity extends AppCompatActivity
         @Override
         public void onAttach(Context ctx) {
             super.onAttach(ctx);
-            ((MainPhoneActivity) ctx).onSectionAttached(
-                    getArguments().getInt(ARG_SECTION_NUMBER));
+            int position = getArguments().getInt(ARG_SECTION_NUMBER);
+            String uri_string = getArguments().getString(ARG_URI);
+            Uri uri = Uri.parse(uri_string);
+            String selection = getArguments().getString(ARG_SELECTION);
+            String[] selection_args = getArguments().getStringArray(ARG_SELECTION_ARGS);
+
+            //update the title...
+            ((MainPhoneActivity) ctx).onSectionAttached(position);
+
+            //create a cursor from all this...
+            Log.d(TAG, "Grab cursor");
+            Cursor c = getActivity().getContentResolver().query(uri, null, selection, selection_args, null);
+
+            int type = (position == 0) ? 1 : 0;
+
+            if (mAdapter == null) {
+                // and set the adapter with a null cursor
+                mAdapter = new ListObjectAdapter(getActivity(), c, type);
+            } else {
+                mAdapter.changeCursorAndType(c, type);
+            }
         }
     }
 

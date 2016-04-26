@@ -120,6 +120,8 @@ public class NavigationDrawerFragment extends Fragment {
         //get the action bar
         mActionBar = ((AppCompatActivity)getActivity()).getSupportActionBar();
 
+        /*
+        set up the adapter in the setup routine - not here
         mDrawerListView.setAdapter(new ArrayAdapter<String>(
                 mActionBar.getThemedContext(),
                 android.R.layout.simple_list_item_activated_1,
@@ -129,7 +131,7 @@ public class NavigationDrawerFragment extends Fragment {
                         getString(R.string.title_section2),
                         getString(R.string.title_section3),
                 }));
-        mDrawerListView.setItemChecked(mCurrentSelectedPosition, true);
+        mDrawerListView.setItemChecked(mCurrentSelectedPosition, true); */
         return mDrawerListView;
     }
 
@@ -143,9 +145,18 @@ public class NavigationDrawerFragment extends Fragment {
      * @param fragmentId   The android:id of this fragment in its activity's layout.
      * @param drawerLayout The DrawerLayout containing this fragment's UI.
      */
-    public void setUp(int fragmentId, DrawerLayout drawerLayout) {
+    public void setUp(int fragmentId, DrawerLayout drawerLayout, String[] headers) {
         mFragmentContainerView = getActivity().findViewById(fragmentId);
         mDrawerLayout = drawerLayout;
+
+        //Update the mDrawerListView...
+        mDrawerListView.setAdapter(new ArrayAdapter<String>(
+                mActionBar.getThemedContext(),
+                android.R.layout.simple_list_item_activated_1,
+                android.R.id.text1,
+                headers));
+        mDrawerListView.setItemChecked(mCurrentSelectedPosition, true);
+
 
         // set a custom shadow that overlays the main content when the drawer opens
         mDrawerLayout.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);

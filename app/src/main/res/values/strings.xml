@@ -60,6 +60,10 @@
     <string name="signout_dialog_message">Sign out or Revoke access?</string>
     <string name="signout_dialog_revoke">Revoke</string>
 
+    <string name="app_err_title">Application Error</string>
+    <string name="gms_missing_msg">AppSyncr requires Google Play Services. Cannot access the services. Exiting.</string>
+    <string name="ok">OK</string>
+
     <string name="exit_fail">Exiting - You need google Play Services to use this app.</string>
     <string name="preferences">Preferences</string>
     <string name="sync_now">Force Sync</string>

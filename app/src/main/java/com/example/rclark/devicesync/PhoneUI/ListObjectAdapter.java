@@ -39,10 +39,12 @@ public class ListObjectAdapter extends RecyclerView.Adapter <ListObjectAdapter.V
     //TODO - make this into the CP recycler view adapter for phone/tablet UI
     private CursorAdapter mCursorAdapter;
     private Context mCtx;
+    private int mType;
 
     // Provide a constructor
-    public ListObjectAdapter(Context ctx, Cursor c) {
+    public ListObjectAdapter(Context ctx, Cursor c, int type) {
         mCtx = ctx;
+        mType = type;
         mCursorAdapter = new CursorAdapter(mCtx, c, 0) {
             @Override
             public View newView(Context context, Cursor cursor, ViewGroup parent) {
@@ -64,11 +66,17 @@ public class ListObjectAdapter extends RecyclerView.Adapter <ListObjectAdapter.V
                 TextView subtitleView = (TextView) view.findViewById(R.id.grid_subtitle);
 
                 // FIXME - only binding app for now... (and depending on app cursor being passed in)
-                titleView.setText(cursor.getString(cursor.getColumnIndex(AppContract.AppEntry.COLUMN_APP_LABEL)));
-                subtitleView.setText(cursor.getString(cursor.getColumnIndex(AppContract.AppEntry.COLUMN_APP_PKG)));
-
+                byte[] blob;
+                if (mType == 0) {
+                    titleView.setText(cursor.getString(cursor.getColumnIndex(AppContract.AppEntry.COLUMN_APP_LABEL)));
+                    subtitleView.setText(cursor.getString(cursor.getColumnIndex(AppContract.AppEntry.COLUMN_APP_PKG)));
+                    blob = cursor.getBlob(cursor.getColumnIndex(AppContract.AppEntry.COLUMN_APP_BANNER));
+                } else {
+                    titleView.setText(cursor.getString(cursor.getColumnIndex(AppContract.DevicesEntry.COLUMN_DEVICE_NAME)));
+                    subtitleView.setText(cursor.getString(cursor.getColumnIndex(AppContract.DevicesEntry.COLUMN_DEVICES_SSN)));
+                    blob = null;
+                }
                 //deal with bitmap...
-                byte[] blob = cursor.getBlob(cursor.getColumnIndex(AppContract.AppEntry.COLUMN_APP_BANNER));
                 if (blob != null) {
                     //Leave this null if package available on play store and download... Use glide or picassa
                     iconView.setImageDrawable(new BitmapDrawable(Utils.convertByteArrayToBitmap(blob)));
@@ -76,6 +84,14 @@ public class ListObjectAdapter extends RecyclerView.Adapter <ListObjectAdapter.V
 
             }
         };
+    }
+
+    /**
+     * Implements change cursor on underlying cursor adapter...
+     */
+    public void changeCursorAndType(Cursor c, int type) {
+        mType = type;
+        mCursorAdapter.changeCursor(c);
     }
 
     /**
