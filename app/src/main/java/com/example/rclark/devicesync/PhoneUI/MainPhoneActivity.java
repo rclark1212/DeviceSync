@@ -32,7 +32,6 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -44,7 +43,6 @@ import com.example.rclark.devicesync.ObjectDetail;
 import com.example.rclark.devicesync.R;
 import com.example.rclark.devicesync.UIDataSetup;
 import com.example.rclark.devicesync.data.AppContract;
-import com.example.rclark.devicesync.sync.EndpointsTesting;
 import com.example.rclark.devicesync.sync.GCESync;
 
 public class MainPhoneActivity extends AppCompatActivity
@@ -97,7 +95,6 @@ public class MainPhoneActivity extends AppCompatActivity
         //Start up sync service
         //And update the local content provider...
         GCESync.startActionUpdateLocal(getApplicationContext(), null, null);
-        //TODO - make a full set of API tests... new EndpointsTesting().execute(new Pair<Context, String>(this, "Manfred"));
     }
 
     @Override
