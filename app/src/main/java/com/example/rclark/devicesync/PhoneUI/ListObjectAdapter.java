@@ -36,15 +36,14 @@ import com.example.rclark.devicesync.data.AppContract;
  *
  */
 public class ListObjectAdapter extends RecyclerView.Adapter <ListObjectAdapter.ViewHolder> {
-    //TODO - make this into the CP recycler view adapter for phone/tablet UI
     private CursorAdapter mCursorAdapter;
     private Context mCtx;
-    private int mType;
+    private boolean mbIsDevice;
 
     // Provide a constructor
-    public ListObjectAdapter(Context ctx, Cursor c, int type) {
+    public ListObjectAdapter(Context ctx, Cursor c, boolean isDevice) {
         mCtx = ctx;
-        mType = type;
+        mbIsDevice = isDevice;
         mCursorAdapter = new CursorAdapter(mCtx, c, 0) {
             @Override
             public View newView(Context context, Cursor cursor, ViewGroup parent) {
@@ -67,7 +66,7 @@ public class ListObjectAdapter extends RecyclerView.Adapter <ListObjectAdapter.V
 
                 // FIXME - only binding app for now... (and depending on app cursor being passed in)
                 byte[] blob;
-                if (mType == 0) {
+                if (!mbIsDevice) {
                     titleView.setText(cursor.getString(cursor.getColumnIndex(AppContract.AppEntry.COLUMN_APP_LABEL)));
                     subtitleView.setText(cursor.getString(cursor.getColumnIndex(AppContract.AppEntry.COLUMN_APP_PKG)));
                     blob = cursor.getBlob(cursor.getColumnIndex(AppContract.AppEntry.COLUMN_APP_BANNER));
@@ -86,13 +85,6 @@ public class ListObjectAdapter extends RecyclerView.Adapter <ListObjectAdapter.V
         };
     }
 
-    /**
-     * Implements change cursor on underlying cursor adapter...
-     */
-    public void changeCursorAndType(Cursor c, int type) {
-        mType = type;
-        mCursorAdapter.changeCursor(c);
-    }
 
     /**
      * Cache of child views for a listobject list item
