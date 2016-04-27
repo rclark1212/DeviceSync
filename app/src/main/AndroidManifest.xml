@@ -41,6 +41,7 @@
         <activity android:name=".ATVUI.DetailsActivity" />
         <activity android:name=".ATVUI.BrowseErrorActivity" />
         <activity android:name=".ATVUI.SettingsActivity" />
+        <activity android:name=".PhoneUI.PhoneSettingsActivity" />
 
         <service
             android:name=".sync.GCESync"
