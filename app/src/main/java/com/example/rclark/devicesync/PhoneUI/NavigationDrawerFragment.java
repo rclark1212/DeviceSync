@@ -23,6 +23,7 @@ import android.content.res.Configuration;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v7.app.ActionBarActivity;
+import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -39,6 +40,7 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 
 import com.example.rclark.devicesync.R;
+import com.example.rclark.devicesync.sync.EndpointsTesting;
 
 /**
  * Fragment used for managing interactions for and presentation of a navigation drawer.
@@ -284,6 +286,8 @@ public class NavigationDrawerFragment extends Fragment {
         if (item.getItemId() == R.id.action_example) {
             Toast.makeText(getActivity(), "Example action.", Toast.LENGTH_SHORT).show();
             return true;
+        } else if (item.getItemId() == R.id.action_settings) {
+            //Show settings/preferences
         }
 
         return super.onOptionsItemSelected(item);

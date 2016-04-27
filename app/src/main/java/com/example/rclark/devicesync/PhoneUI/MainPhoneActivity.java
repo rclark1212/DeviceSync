@@ -45,6 +45,8 @@ import com.example.rclark.devicesync.UIDataSetup;
 import com.example.rclark.devicesync.data.AppContract;
 import com.example.rclark.devicesync.sync.GCESync;
 
+import java.util.ArrayList;
+
 public class MainPhoneActivity extends AppCompatActivity
         implements NavigationDrawerFragment.NavigationDrawerCallbacks {
 
@@ -60,8 +62,8 @@ public class MainPhoneActivity extends AppCompatActivity
      */
     private CharSequence mTitle;
 
-    //Our data helper
-    private UIDataSetup mUIDataSetup;
+    //Our data helper - only keep a single instance shared by all
+    public static UIDataSetup mUIDataSetup;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -108,10 +110,7 @@ public class MainPhoneActivity extends AppCompatActivity
 
         FragmentManager fragmentManager = getFragmentManager();
         fragmentManager.beginTransaction()
-                .replace(R.id.container, PlaceholderFragment.newInstance(position,
-                        mUIDataSetup.getRowUri(position),
-                        mUIDataSetup.getRowSelection(position),
-                        mUIDataSetup.getRowSelectionArgs(position)))
+                .replace(R.id.container, PlaceholderFragment.newInstance(position))
                 .commit();
     }
 
@@ -134,16 +133,15 @@ public class MainPhoneActivity extends AppCompatActivity
     public static class PlaceholderFragment extends Fragment {
         private RecyclerView mRecyclerView;
         private ListObjectAdapter mAdapter;
+        private ArrayList<ObjectDetail> mArray;
         private RecyclerView.LayoutManager mLayoutManager;
+        private int mPosition;
 
         /**
          * The fragment argument representing the section number for this
          * fragment.
          */
         private static final String ARG_SECTION_NUMBER = "section_number";
-        private static final String ARG_URI = "section_uri";
-        private static final String ARG_SELECTION = "section_selection";
-        private static final String ARG_SELECTION_ARGS = "section_selection_args";
 
         public PlaceholderFragment() {
         }
@@ -152,13 +150,10 @@ public class MainPhoneActivity extends AppCompatActivity
          * Returns a new instance of this fragment for the given section
          * number.
          */
-        public static PlaceholderFragment newInstance(int sectionNumber, Uri uri, String selection, String[] selectionArgs) {
+        public static PlaceholderFragment newInstance(int sectionNumber) {
             PlaceholderFragment fragment = new PlaceholderFragment();
             Bundle args = new Bundle();
             args.putInt(ARG_SECTION_NUMBER, sectionNumber);
-            args.putString(ARG_URI, uri.toString());
-            args.putString(ARG_SELECTION, selection);
-            args.putStringArray(ARG_SELECTION_ARGS, selectionArgs);
 
             fragment.setArguments(args);
             return fragment;
@@ -186,15 +181,12 @@ public class MainPhoneActivity extends AppCompatActivity
                 mLayoutManager = new GridLayoutManager(getActivity(), (width / 300));
                 mRecyclerView.setLayoutManager(mLayoutManager);
 
-                // get a cursor for this view...
-                //Get the device DB reference...
-                //Log.d(TAG, "Grab cursor");
-                //Uri appDB = AppContract.AppEntry.CONTENT_URI;
-
-                //grab the cursor
-                //Cursor c = getActivity().getContentResolver().query(appDB, null, null, null, null);
-
-                mRecyclerView.setAdapter(mAdapter);
+                //attach the adapter for this instance
+                if (mAdapter != null) {
+                    mRecyclerView.setAdapter(mAdapter);
+                } else {
+                    Log.d(TAG, "error creating adapter");
+                }
             }
 
             return rootView;
@@ -203,26 +195,53 @@ public class MainPhoneActivity extends AppCompatActivity
         @Override
         public void onAttach(Context ctx) {
             super.onAttach(ctx);
-            int position = getArguments().getInt(ARG_SECTION_NUMBER);
-            String uri_string = getArguments().getString(ARG_URI);
-            Uri uri = Uri.parse(uri_string);
-            String selection = getArguments().getString(ARG_SELECTION);
-            String[] selection_args = getArguments().getStringArray(ARG_SELECTION_ARGS);
+
+            mPosition = getArguments().getInt(ARG_SECTION_NUMBER);
 
             //update the title...
-            ((MainPhoneActivity) ctx).onSectionAttached(position);
+            ((MainPhoneActivity) ctx).onSectionAttached(mPosition);
 
-            //create a cursor from all this...
-            Log.d(TAG, "Grab cursor");
-            Cursor c = getActivity().getContentResolver().query(uri, null, selection, selection_args, null);
+            //create the adapter for the view...
+            if (MainPhoneActivity.mUIDataSetup != null) {
+                if (mUIDataSetup.useArrayAdapter(mPosition)) {
+                    //okay - use an array object...
+                    if (mAdapter == null) {
+                        //create the array...
+                        Log.d(TAG, "Create adapter/array");
+                        if (mArray == null) {
+                            mArray = mUIDataSetup.getArrayAdapter(mPosition);
+                        }
 
-            int type = (position == 0) ? 1 : 0;
+                        //and create the adapter - TODO
+                        //mAdapter = array object
+                    }
+                } else {
+                    //use a cursor object
+                    if (mAdapter == null) {
+                        Uri uri = MainPhoneActivity.mUIDataSetup.getRowUri(mPosition);
+                        String selection = MainPhoneActivity.mUIDataSetup.getRowSelection(mPosition);
+                        String[] selection_args = MainPhoneActivity.mUIDataSetup.getRowSelectionArgs(mPosition);
 
-            if (mAdapter == null) {
-                // and set the adapter with a null cursor
-                mAdapter = new ListObjectAdapter(getActivity(), c, type);
+                        Log.d(TAG, "Create adapter/grab cursor - uri:" + uri.toString());
+
+                        Cursor c = getActivity().getContentResolver().query(uri, null, selection, selection_args, null);
+
+                        // and set the adapter with a null cursor
+                        mAdapter = new ListObjectAdapter(getActivity(), c, mUIDataSetup.isDeviceRow(mPosition));
+                    }
+                }
             } else {
-                mAdapter.changeCursorAndType(c, type);
+                Log.d(TAG, "yikes! mUIDataSetup not initialized in onAttach!");
+            }
+        }
+
+        /**
+         * Call when underlying CP changes. Update the array (if it exists) and notify the adapter.
+         */
+        public void updateArray() {
+            if (mArray != null) {
+                mArray = mUIDataSetup.getArrayAdapter(mPosition);
+                mAdapter.notifyDataSetChanged();
             }
         }
     }
