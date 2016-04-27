@@ -28,7 +28,6 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -42,7 +41,6 @@ import android.support.v7.app.AppCompatActivity;
 import com.example.rclark.devicesync.ObjectDetail;
 import com.example.rclark.devicesync.R;
 import com.example.rclark.devicesync.UIDataSetup;
-import com.example.rclark.devicesync.data.AppContract;
 import com.example.rclark.devicesync.sync.GCESync;
 
 import java.util.ArrayList;
@@ -132,7 +130,8 @@ public class MainPhoneActivity extends AppCompatActivity
      */
     public static class PlaceholderFragment extends Fragment {
         private RecyclerView mRecyclerView;
-        private ListObjectAdapter mAdapter;
+        private ListCursorObjectAdapter mCAdapter;
+        private ListArrayObjectAdapter mAAdapter;
         private ArrayList<ObjectDetail> mArray;
         private RecyclerView.LayoutManager mLayoutManager;
         private int mPosition;
@@ -182,8 +181,10 @@ public class MainPhoneActivity extends AppCompatActivity
                 mRecyclerView.setLayoutManager(mLayoutManager);
 
                 //attach the adapter for this instance
-                if (mAdapter != null) {
-                    mRecyclerView.setAdapter(mAdapter);
+                if (mCAdapter != null) {
+                    mRecyclerView.setAdapter(mCAdapter);
+                } else if (mAAdapter != null) {
+                    mRecyclerView.setAdapter(mAAdapter);
                 } else {
                     Log.d(TAG, "error creating adapter");
                 }
@@ -205,19 +206,18 @@ public class MainPhoneActivity extends AppCompatActivity
             if (MainPhoneActivity.mUIDataSetup != null) {
                 if (mUIDataSetup.useArrayAdapter(mPosition)) {
                     //okay - use an array object...
-                    if (mAdapter == null) {
+                    if (mAAdapter == null) {
                         //create the array...
                         Log.d(TAG, "Create adapter/array");
                         if (mArray == null) {
                             mArray = mUIDataSetup.getArrayAdapter(mPosition);
                         }
 
-                        //and create the adapter - TODO
-                        //mAdapter = array object
+                        mAAdapter = new ListArrayObjectAdapter(getActivity(), mArray);
                     }
                 } else {
                     //use a cursor object
-                    if (mAdapter == null) {
+                    if (mCAdapter == null) {
                         Uri uri = MainPhoneActivity.mUIDataSetup.getRowUri(mPosition);
                         String selection = MainPhoneActivity.mUIDataSetup.getRowSelection(mPosition);
                         String[] selection_args = MainPhoneActivity.mUIDataSetup.getRowSelectionArgs(mPosition);
@@ -227,7 +227,7 @@ public class MainPhoneActivity extends AppCompatActivity
                         Cursor c = getActivity().getContentResolver().query(uri, null, selection, selection_args, null);
 
                         // and set the adapter with a null cursor
-                        mAdapter = new ListObjectAdapter(getActivity(), c, mUIDataSetup.isDeviceRow(mPosition));
+                        mCAdapter = new ListCursorObjectAdapter(getActivity(), c, mUIDataSetup.isDeviceRow(mPosition));
                     }
                 }
             } else {
@@ -241,7 +241,7 @@ public class MainPhoneActivity extends AppCompatActivity
         public void updateArray() {
             if (mArray != null) {
                 mArray = mUIDataSetup.getArrayAdapter(mPosition);
-                mAdapter.notifyDataSetChanged();
+                mAAdapter.notifyDataSetChanged();
             }
         }
     }

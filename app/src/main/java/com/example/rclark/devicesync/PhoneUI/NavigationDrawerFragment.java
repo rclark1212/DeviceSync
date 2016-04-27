@@ -40,7 +40,6 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 
 import com.example.rclark.devicesync.R;
-import com.example.rclark.devicesync.sync.EndpointsTesting;
 
 /**
  * Fragment used for managing interactions for and presentation of a navigation drawer.

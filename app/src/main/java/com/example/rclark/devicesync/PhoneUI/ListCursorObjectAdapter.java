@@ -35,13 +35,13 @@ import com.example.rclark.devicesync.data.AppContract;
  * http://stackoverflow.com/questions/26517855/using-the-recyclerview-with-a-database
  *
  */
-public class ListObjectAdapter extends RecyclerView.Adapter <ListObjectAdapter.ViewHolder> {
+public class ListCursorObjectAdapter extends RecyclerView.Adapter <ListCursorObjectAdapter.ViewHolder> {
     private CursorAdapter mCursorAdapter;
     private Context mCtx;
     private boolean mbIsDevice;
 
     // Provide a constructor
-    public ListObjectAdapter(Context ctx, Cursor c, boolean isDevice) {
+    public ListCursorObjectAdapter(Context ctx, Cursor c, boolean isDevice) {
         mCtx = ctx;
         mbIsDevice = isDevice;
         mCursorAdapter = new CursorAdapter(mCtx, c, 0) {
