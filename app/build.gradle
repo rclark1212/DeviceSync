@@ -18,15 +18,15 @@ android {
     signingConfigs {
         release {
             //Define the 4 variables below in gradle.properties
-            println("keystore:"+KEYSTORE_PATH +"\nAlias:"+SIGNKEY_ALIAS + "\nKSPW:" + KEYSTORE_PW + "\nKPM:" + KEY_PW)
-            storeFile file(KEYSTORE_PATH)
-            keyAlias SIGNKEY_ALIAS
+            //println("keystore:"+KEYSTORE_PATH +"\nAlias:"+SIGNKEY_ALIAS + "\nKSPW:" + KEYSTORE_PW + "\nKPM:" + KEY_PW)
+            //storeFile file(KEYSTORE_PATH)
+            //keyAlias SIGNKEY_ALIAS
 
             // These two lines make gradle believe that the signingConfigs
             // section is complete. Without them, tasks like installRelease
             // will not be available!
-            storePassword KEYSTORE_PW
-            keyPassword KEY_PW
+            //storePassword KEYSTORE_PW
+            //keyPassword KEY_PW
         }
     }
 
