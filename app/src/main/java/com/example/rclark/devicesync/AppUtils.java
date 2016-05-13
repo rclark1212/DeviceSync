@@ -20,6 +20,7 @@ import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -100,6 +101,30 @@ public class AppUtils {
             app.name = info.applicationInfo.name;
             app.banner = info.applicationInfo.loadBanner(manager);
             if (app.banner == null) {
+                Drawable testdraw = manager.getApplicationBanner(pkgName);
+                if (testdraw != null) {
+                    //is this approx right aspect ratio? (at least 3:2)
+                    if (2*testdraw.getIntrinsicWidth() > (3*testdraw.getIntrinsicHeight())) {
+                        //looks like a good banner...
+                        app.banner = testdraw;
+
+                    } else {
+
+                    }
+                }
+
+                testdraw = manager.getApplicationLogo(pkgName);
+                if (testdraw != null) {
+                    //is this approx right aspect ratio? (at least 3:2)
+                    if (2*testdraw.getIntrinsicWidth() > (3*testdraw.getIntrinsicHeight())) {
+                        //looks like a good banner...
+                        app.banner = testdraw;
+                        //early return
+                        return app;
+                    }
+                }
+
+                //okay - we give up
                 app.banner = info.applicationInfo.loadIcon(manager);
             }
             //FIXME - if package available in play store, null out above

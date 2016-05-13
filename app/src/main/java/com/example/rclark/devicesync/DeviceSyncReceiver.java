@@ -16,6 +16,7 @@ package com.example.rclark.devicesync;
 
 import android.app.AlarmManager;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
@@ -25,9 +26,12 @@ import android.net.Uri;
 import android.os.Build;
 import android.util.Log;
 
+import com.example.rclark.devicesync.ATVUI.MainActivity;
+import com.example.rclark.devicesync.PhoneUI.MainPhoneActivity;
 import com.example.rclark.devicesync.data.AppContract;
 import com.example.rclark.devicesync.sync.GCESync;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
@@ -39,6 +43,7 @@ import java.util.logging.LogRecord;
 public class DeviceSyncReceiver extends BroadcastReceiver {
 
     private static final String TAG = "DS_Receive";
+    public static ArrayList<String> mInstallIntents;
 
     @Override
     public void onReceive(Context ctx, Intent intent) {
@@ -72,6 +77,7 @@ public class DeviceSyncReceiver extends BroadcastReceiver {
             //Update - really should use service to update (and get out of broadcast receiver asap). Doing this below. Latency of service probably
             //will fix this issue. If not, can add a slight delay to the service on starting processing...
             //Have intent sync service do this work...
+            Log.d(TAG, "Adding app to CP " + packageName);
             GCESync.startActionLocalAppUpdate(ctx, packageName, "1000");    //add a 1 second delay...
         } else {
             //okay - easy one.
@@ -82,7 +88,35 @@ public class DeviceSyncReceiver extends BroadcastReceiver {
             //build up the local device query
             appDB = appDB.buildUpon().appendPath(Build.SERIAL).appendPath(packageName).build();
             ctx.getContentResolver().delete(appDB, null, null);
+
+            //And note that if we have set up a list of intents to uninstall, process them here
         }
+
+        //And note that if we have set up a list of intents to install, process them here
+        if (mInstallIntents != null) {
+            //Last package just got installed. Go ahead and kick off next package intent...
+            if (mInstallIntents.size() > 0) {
+                String install = mInstallIntents.get(0);
+                Log.d(TAG, "Installing/Uninstalling " + install);
+                mInstallIntents.remove(0);
+                Intent goToMarket = new Intent(Intent.ACTION_VIEW).setData(Uri.parse(install));
+                //make sure activity not on history stack...
+                goToMarket.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                ctx.startActivity(goToMarket);
+            } else {
+                Intent i = new Intent();
+                i.setAction(Intent.ACTION_MAIN);
+                i.addCategory(Intent.CATEGORY_LAUNCHER);
+                i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                if (Utils.bIsThisATV(ctx)) {
+                    i.setComponent(new ComponentName(ctx.getPackageName(), MainActivity.class.getName()));
+                } else {
+                    i.setComponent(new ComponentName(ctx.getPackageName(), MainPhoneActivity.class.getName()));
+                }
+                ctx.startActivity(i);
+            }
+        }
+
         //Note that the main activity UI will auto-refresh from the CP changing...
     }
 
