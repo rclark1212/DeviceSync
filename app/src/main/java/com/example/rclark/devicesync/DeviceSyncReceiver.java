@@ -57,14 +57,14 @@ public class DeviceSyncReceiver extends BroadcastReceiver {
         String packageName=intent.getData().getEncodedSchemeSpecificPart();
 
         //Install or remove?
-        if ((intent.getAction() == Intent.ACTION_PACKAGE_ADDED) ||
-                (intent.getAction() == Intent.ACTION_PACKAGE_CHANGED) ||
-                (intent.getAction() == Intent.ACTION_PACKAGE_REPLACED)) {
+        if ((intent.getAction().equals(Intent.ACTION_PACKAGE_ADDED)) ||
+                (intent.getAction().equals(Intent.ACTION_PACKAGE_CHANGED)) ||
+                (intent.getAction().equals(Intent.ACTION_PACKAGE_REPLACED))) {
             //install
             Log.d(TAG, "Got install/update intent for " + packageName);
             bInstall = true;
-        } else if ((intent.getAction() == Intent.ACTION_PACKAGE_REMOVED) ||
-                (intent.getAction() == Intent.ACTION_PACKAGE_FULLY_REMOVED)) {
+        } else if ((intent.getAction().equals(Intent.ACTION_PACKAGE_REMOVED)) ||
+                (intent.getAction().equals(Intent.ACTION_PACKAGE_FULLY_REMOVED))) {
             //removed
             Log.d(TAG, "Got remove intent for " + packageName);
             bInstall = false;

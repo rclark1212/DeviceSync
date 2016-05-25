@@ -16,6 +16,7 @@
 package com.example.rclark.devicesync;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
@@ -35,7 +36,7 @@ public class AppUtils {
     private static final String TAG = "DS_AppUtils";
 
     //This is a hardcoded list to reject known package names (on my devices at least) that I don't care about
-    private static String[] rejectApps = {  "com.google.android.gms",
+    private static String[] rejectApps = {"com.google.android.gms",
             "com.google.android.leanbacklauncher",
             "com.android.settings",
             "com.google.android.launcher",
@@ -100,31 +101,63 @@ public class AppUtils {
 
             app.name = info.applicationInfo.name;
             app.banner = info.applicationInfo.loadBanner(manager);
+
+            try {
+                app.ai = manager.getApplicationInfo(pkgName, PackageManager.GET_META_DATA);
+                app.res = manager.getResourcesForApplication(pkgName);
+
+            } catch (PackageManager.NameNotFoundException e) {
+                //don't punt on a failure here - don't really use this info
+            }
+
             if (app.banner == null) {
+                //see if app banner gives a different result (doubt it - think this aliases to the last method)
                 Drawable testdraw = manager.getApplicationBanner(pkgName);
-                if (testdraw != null) {
-                    //is this approx right aspect ratio? (at least 3:2)
-                    if (2*testdraw.getIntrinsicWidth() > (3*testdraw.getIntrinsicHeight())) {
-                        //looks like a good banner...
-                        app.banner = testdraw;
-
-                    } else {
-
-                    }
+                if (isWide(testdraw)) {
+                    //looks like a good banner...
+                    app.banner = testdraw;
+                    //early return
+                    return app;
                 }
 
+                Intent intent = manager.getLeanbackLaunchIntentForPackage(pkgName);
+                //try banner first
+                testdraw = manager.getActivityBanner(intent);
+                if (isWide(testdraw)) {
+                    //looks like a good banner...
+                    app.banner = testdraw;
+                    //early return
+                    return app;
+                }
+
+                //then logo
+                testdraw = manager.getActivityLogo(intent);
+                if (isWide(testdraw)) {
+                    //looks like a good banner...
+                    app.banner = testdraw;
+                    //early return
+                    return app;
+                }
+
+                //then icon
+                testdraw = manager.getActivityIcon(intent);
+                if (isWide(testdraw)) {
+                    //looks like a good banner...
+                    app.banner = testdraw;
+                    //early return
+                    return app;
+                }
+
+                //some apps store banner as the logo. check here
                 testdraw = manager.getApplicationLogo(pkgName);
-                if (testdraw != null) {
-                    //is this approx right aspect ratio? (at least 3:2)
-                    if (2*testdraw.getIntrinsicWidth() > (3*testdraw.getIntrinsicHeight())) {
-                        //looks like a good banner...
-                        app.banner = testdraw;
-                        //early return
-                        return app;
-                    }
+                if (isWide(testdraw)) {
+                    //looks like a good banner...
+                    app.banner = testdraw;
+                    //early return
+                    return app;
                 }
 
-                //okay - we give up
+                //okay - we give up - just use icon - ugg
                 app.banner = info.applicationInfo.loadIcon(manager);
             }
             //FIXME - if package available in play store, null out above
@@ -133,16 +166,25 @@ public class AppUtils {
             Log.e(TAG, "Can't find package err!!!");
             return null;
         }
-
-        try {
-            app.ai = manager.getApplicationInfo(pkgName, PackageManager.GET_META_DATA);
-            app.res = manager.getResourcesForApplication(pkgName);
-
-        } catch (PackageManager.NameNotFoundException e) {
-            //don't punt on a failure here - don't really use this info
-        }
-
-
         return app;
     }
+
+
+    /**
+     * Checks for a wide aspect ratio indicating this is a banner resource (as opposed to icon)
+     *
+     * @param testdraw
+     * @return
+     */
+    private static boolean isWide(Drawable testdraw) {
+        if (testdraw != null) {
+            //is this approx right aspect ratio? (at least 3:2)
+            if (2 * testdraw.getIntrinsicWidth() > (3 * testdraw.getIntrinsicHeight())) {
+                //looks like a good banner...
+                return true;
+            }
+        }
+        return false;
+    }
+
 }
