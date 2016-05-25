@@ -8,7 +8,7 @@
         xmlns:tools="http://schemas.android.com/tools"
         android:id="@+id/main_browse_fragment"
         android:tag="mainbrowse"
-        android:name="com.example.rclark.devicesync.ATVUI.MainFragment"
+        android:name="com.prod.rclark.devicesync.ATVUI.MainFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         tools:context=".ATVUI.MainActivity"

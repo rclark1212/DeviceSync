@@ -21,7 +21,7 @@
     <string name="show_apps">Show Apps</string>
     <string name="run_app">Launch App</string>
 
-    <string name="google_app_id">com.example.rclark.devicesync</string>
+    <string name="google_app_id">com.prod.rclark.devicesync</string>
 
     <!-- pref UI elements -->
     <string name="pref_app_capture_settings">Application Data</string>
