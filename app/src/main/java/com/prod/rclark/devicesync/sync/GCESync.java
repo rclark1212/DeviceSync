@@ -73,8 +73,15 @@ public class GCESync extends IntentService {
     public static final String BROADCAST_ACTION = "com.prod.rclark.devicesync.BROADCAST";
 
     public static final String EXTENDED_DATA_STATUS = "com.prod.rclark.devicesync.gcesync.STATUS";
+    public static final String EXTENDED_DATA_MSG = "com.prod.rclark.devicesync.gcesync.MSG";
+
     public static final int EXTENDED_DATA_STATUS_NULL = 0;
     public static final int EXTENDED_DATA_STATUS_LOCALUPDATECOMPLETE = 1;
+    public static final int EXTENDED_DATA_STATUS_PUSHCOMPLETE = 2;
+    public static final int MAINACTIVITY_SHOW_NETWORKBUSY = 8;
+    public static final int MAINACTIVITY_SHOW_NETWORKFREE = 9;
+    public static final int EXTENDED_DATA_STATUS_PHOTO_COMPLETE = 10;
+
 
     private static Context mCtx;
     private static boolean mbIsATV;
@@ -220,6 +227,8 @@ public class GCESync extends IntentService {
         //Get an object with local device info...
         ObjectDetail device = SyncUtils.getLocalDeviceInfo(mCtx);
 
+        device.timestamp = System.currentTimeMillis();
+
         //Get the device DB reference...
         Uri deviceDB = AppContract.DevicesEntry.CONTENT_URI;
 
@@ -248,6 +257,7 @@ public class GCESync extends IntentService {
         contentValues.put(AppContract.DevicesEntry.COLUMN_DATE, device.installDate);
         contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICE_TYPE, type);
         contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICE_LOCATION, device.location);
+        contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICE_TIMEUPDATED, device.timestamp);
 
         if (c.getCount() > 0) {
             //replace
@@ -327,6 +337,8 @@ public class GCESync extends IntentService {
             app.type = mbIsATV ? AppContract.TYPE_ATV : AppContract.TYPE_TABLET;
             app.flags = flags;
             app.serial = Build.SERIAL;
+            //shove a timestamp in there.
+            app.timestamp = System.currentTimeMillis();
 
             //bind app to the contentValues
             DBUtils.bindAppToContentValues(app, contentValues, mCtx);

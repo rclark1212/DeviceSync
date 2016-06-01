@@ -21,8 +21,6 @@
     <string name="show_apps">Show Apps</string>
     <string name="run_app">Launch App</string>
 
-    <string name="google_app_id">com.prod.rclark.devicesync</string>
-
     <!-- pref UI elements -->
     <string name="pref_app_capture_settings">Application Data</string>
     <string name="pref_use_network_for_images">Try to get app icons from the cloud</string>

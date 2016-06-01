@@ -59,6 +59,8 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.List;
 
@@ -72,6 +74,7 @@ public class Utils {
     private static final String PREFS_HAS_RUN_ALREADY = "prefs_has_run_already";
     private static final String USER_IS_LOGGED_IN = "prefs_user_logged_in";
     private static final String CACHED_LOCATION = "prefs_last_location";
+    private static final String PREFS_USER_ID = "prefs_user_id";
 
     /*
      * Making sure public utility methods remain static
@@ -369,4 +372,36 @@ public class Utils {
         return ret;
     }
 
+    //Returns user ID we got from accounts (is a token)
+    public static String getUserId(Context ctx) {
+        //Get the pref bool flag...
+        SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(ctx);
+        String user = pref.getString(PREFS_USER_ID, null);
+
+        return user;
+    }
+
+    //Sets user ID we got from accounts
+    public static void setUserId(Context ctx, String user) {
+        //Get the pref bool flag...
+        SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(ctx);
+        SharedPreferences.Editor edit = pref.edit();
+        edit.putString(PREFS_USER_ID, user);
+        edit.commit();
+    }
+
+    /**
+     *  stripForFirebase
+     *  Silly but true - no periods, #, $, [ or ] in firebase strings
+     */
+    public static String stripForFirebase(String input) {
+
+        String output = input.replace('.', '_');
+
+        try {
+            return URLEncoder.encode(output, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            return null;
+        }
+    }
 }

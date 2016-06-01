@@ -101,13 +101,6 @@ public class AppUtils {
 
             app.name = info.applicationInfo.name;
 
-            try {
-                app.ai = manager.getApplicationInfo(pkgName, PackageManager.GET_META_DATA);
-                app.res = manager.getResourcesForApplication(pkgName);
-
-            } catch (PackageManager.NameNotFoundException e) {
-                //don't punt on a failure here - don't really use this info
-            }
             if (app.type == AppContract.TYPE_TABLET) {
                 app.banner = info.applicationInfo.loadIcon(manager);
             } else {

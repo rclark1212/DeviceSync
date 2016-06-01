@@ -88,6 +88,7 @@ public class DBUtils {
             int flagsIndex = c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_FLAGS);
             int bannerIndex = c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_BANNER);
             int typeIndex = c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_TYPE);
+            int timestampIndex = c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_TIMEUPDATED);
 
 
             returnObject.label = c.getString(labelIndex);
@@ -97,6 +98,7 @@ public class DBUtils {
             returnObject.installDate = c.getLong(dateIndex);
             returnObject.flags = c.getLong(flagsIndex);
             returnObject.type = c.getLong(typeIndex);
+            returnObject.timestamp = c.getLong(timestampIndex);
 
             //deal with bitmap...
             byte[] blob = c.getBlob(bannerIndex);
@@ -116,6 +118,7 @@ public class DBUtils {
             int dateIndex = c.getColumnIndex(AppContract.DevicesEntry.COLUMN_DATE);
             int typeIndex = c.getColumnIndex(AppContract.DevicesEntry.COLUMN_DEVICE_TYPE);
             int locationIndex = c.getColumnIndex(AppContract.DevicesEntry.COLUMN_DEVICE_LOCATION);
+            int timestampIndex = c.getColumnIndex(AppContract.DevicesEntry.COLUMN_DEVICE_TIMEUPDATED);
 
             returnObject.serial = c.getString(serialIndex);
             returnObject.label = c.getString(nameIndex);
@@ -123,6 +126,7 @@ public class DBUtils {
             returnObject.ver = c.getString(osverIndex);
             returnObject.location = c.getString(locationIndex);
 
+            returnObject.timestamp = c.getLong(timestampIndex);
             returnObject.installDate = c.getLong(dateIndex);
             returnObject.type = c.getLong(typeIndex);
 
@@ -163,6 +167,8 @@ public class DBUtils {
             bExists = true;
         }
 
+        app.timestamp = System.currentTimeMillis();
+
         bindAppToContentValues(app, contentValues, ctx);
 
         if (bExists) {
@@ -191,6 +197,7 @@ public class DBUtils {
         contentValues.put(AppContract.AppEntry.COLUMN_DATE, app.installDate);
         contentValues.put(AppContract.AppEntry.COLUMN_APP_TYPE, app.type);
         contentValues.put(AppContract.AppEntry.COLUMN_APP_FLAGS, app.flags);
+        contentValues.put(AppContract.AppEntry.COLUMN_APP_TIMEUPDATED, app.timestamp);
 
         //now blob... - COLUMN_APP_BANNER
         //First, is this image available on network?

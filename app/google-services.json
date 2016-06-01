@@ -1,0 +1,58 @@
+{
+  "project_info": {
+    "project_number": "878933902377",
+    "firebase_url": "https://project-4088008660350137649.firebaseio.com",
+    "project_id": "project-4088008660350137649",
+    "storage_bucket": "project-4088008660350137649.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:878933902377:android:03c391dbb4c4bc99",
+        "android_client_info": {
+          "package_name": "com.prod.rclark.devicesync"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "878933902377-6d2f3qbp8f5uijjbs8kbgtq9t2h99qpd.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.prod.rclark.devicesync",
+            "certificate_hash": "3D8D51A5141CA8143F1A5DDAB995E42DBB0C7907"
+          }
+        },
+        {
+          "client_id": "878933902377-31rf7crsrmb9ae7qtrl3ik54eeb6bunl.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.prod.rclark.devicesync",
+            "certificate_hash": "7134019FD8DA6379F92521EBD23F20DDA13C0B41"
+          }
+        },
+        {
+          "client_id": "878933902377-7timv2h5c1qqoaom78rgdtqa53kq6c8s.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCmJzy02abn0XC4AXDkLplDIgMXohOiqc8"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

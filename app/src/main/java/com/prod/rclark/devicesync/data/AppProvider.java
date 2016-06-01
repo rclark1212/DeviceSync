@@ -380,12 +380,14 @@ public class AppProvider extends ContentProvider {
      *  Updates timestamp field in the content values. We always timestamp to current system time in millis
      */
     private void updateTimeStamp(ContentValues values, boolean bApp) {
+        //Nope - do this in the structure itself so the app has access without having to do a query...
+        /*
         long currentTime = System.currentTimeMillis();
         if (bApp) {
             values.put(AppContract.AppEntry.COLUMN_APP_TIMEUPDATED, currentTime);
         } else {
             values.put(AppContract.DevicesEntry.COLUMN_DEVICE_TIMEUPDATED, currentTime);
-        }
+        } */
     }
 
 

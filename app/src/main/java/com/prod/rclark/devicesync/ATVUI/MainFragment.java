@@ -68,17 +68,17 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.firebase.ui.auth.AuthUI;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.auth.FirebaseAuth;
 import com.prod.rclark.devicesync.DBUtils;
 import com.prod.rclark.devicesync.UIDataSetup;
 import com.prod.rclark.devicesync.ObjectDetail;
 import com.prod.rclark.devicesync.R;
 import com.prod.rclark.devicesync.Utils;
+import com.prod.rclark.devicesync.cloud.Firebase;
 import com.prod.rclark.devicesync.data.AppContract;
 import com.prod.rclark.devicesync.sync.GCESync;
-import com.google.android.gms.auth.api.Auth;
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
-import com.google.android.gms.auth.api.signin.GoogleSignInResult;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -119,8 +119,8 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
     private static final int DETAILS_REQUEST_CODE = 1968;
     public static final String DETAILS_RESULT_KEY = "detailsResult";
 
-    private static final int LOGIN_REQUEST_CODE = 1969;
-    public static final int REQUEST_GOOGLE_PLAY_SERVICES = 1970;
+    private static final int REQUEST_GOOGLE_PLAY_SERVICES = 1970;
+    private final static int FIREBASE_SIGN_IN = 1975;
 
     private static final int GRID_ITEM_WIDTH = 200;
     private static final int GRID_ITEM_HEIGHT = 200;
@@ -135,14 +135,12 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
     //sigh - can't use service for signing in when we have an intent for result...
     //But service needs google api client as well.
     //So use two google api clients. One for service. One for handling single signin with dialogs...
-    private static GoogleSignInOptions mActivityGSO = null;
     private GoogleApiClient mActivityGoogleApiClient = null;
-    private GoogleSignInAccount mAccount = null;
-    private final int GOOGLE_SIGNOUT = 0;
-    private final int GOOGLE_SIGNIN_EXPLICIT = 1;
-    private final int GOOGLE_SIGNIN_SILENT = 2;
 
     private UIDataSetup mUIDataSetup;
+
+    private FirebaseApp mFirebaseApp;
+    public static Firebase mFirebase;
 
     //We use broadcast intents to message back from GCESync to the main activity.
     //Define our handler for this here.
@@ -181,7 +179,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         Log.d(TAG, "Success - MainFragment google GMS services connect");
 
         // Note that we defer most of our initialization until after google GMS connects. Do that here...
-        processStartUpAfterGMSConnect();
+        processStartUpAfterSignin();
     }
 
     @Override
@@ -237,17 +235,65 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         Log.i(TAG, "onCreate");
         super.onActivityCreated(savedInstanceState);
 
-        //Setup google GMS services
-        setupGMS();
+        //Set firebase
+        mFirebaseApp = FirebaseApp.getInstance();
+
+        //First, try to login...
+        firebaseSignIn();
+
+        //at conclusion of signin (required), we start GMS
+
+        //at conclusion of GMS, we finish our loading...
 
         //We complete the setup after we have connected to GMS (see onConnect callback)
+    }
+
+    private void setupFirebase() {
+        //Move setup out of onConnected and to here...
+        if (mFirebase != null) {
+            mFirebase.registerFirebaseDataListeners();
+        }
+    }
+
+    /**
+     * Sign in with firebase
+     */
+    private void firebaseSignIn() {
+        //Sign in with firebase...
+        FirebaseAuth auth = FirebaseAuth.getInstance();
+        if (auth.getCurrentUser() != null) {
+            // already signed in
+            //store in prefs
+            Log.d(TAG, "Firebase signed in with " + auth.getCurrentUser().getEmail());
+            String user = auth.getCurrentUser().getUid();
+            //does the user match what has been stored?
+            if (!user.equals(Utils.getUserId(getActivity()))) {
+                mFirebase = null;
+            }
+            if (mFirebase == null) {
+                mFirebase = new Firebase(getActivity(), user);
+                setupFirebase();
+            }
+            Utils.setUserId(getActivity(), user);
+            //finally, kick off GMS loading
+            setupGMS();
+        } else {
+            //not signed in
+            Log.d(TAG, "Firebase starting sign in activity");
+            startActivityForResult(
+                    AuthUI.getInstance(mFirebaseApp)
+                            .createSignInIntentBuilder()
+                            .setProviders(AuthUI.GOOGLE_PROVIDER)
+                            .build(),
+                    FIREBASE_SIGN_IN);
+        }
     }
 
     /**
      * We require GMS to run. So do the bulk of the initialization after GMS has connected.
      * This is done in this routine.
      */
-    private void processStartUpAfterGMSConnect() {
+    private void processStartUpAfterSignin() {
         boolean bFirstTime = false;         //indicates first time we have ever run
         boolean bRequestLocationPermission = false;
 
@@ -304,12 +350,6 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
         setTitle(title);
 
-        //Next, if this is the first time we are running... Or if we are supposed to be logged in... Log in.
-        if (bFirstTime) {
-            //TODO - add a dialog here which makes it less abrupt
-            //signInToGoogle(GOOGLE_SIGNIN_EXPLICIT);
-        }
-
         //finally, initialize the loaders if we did not ask for location services...
         //otherwise initialize after dialog answered... (activity being paused while CP is busily updating on async thread leads
         //to cursor adapters not updating UI)...
@@ -318,16 +358,6 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         }
     }
 
-
-    @Override
-    public void onStart() {
-        super.onStart();
-        //sign in if we are already logged in
-        if (Utils.isUserLoggedIn(getActivity())) {
-            //try to log in silently...
-            signInToGoogle(GOOGLE_SIGNIN_SILENT);
-        }
-    }
 
 
     @Override
@@ -409,16 +439,39 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                     }
                 }
             }
-        } else if (LOGIN_REQUEST_CODE == requestCode) {
-            //Result back from request to explicitly login (only called from activity)...
-            GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
-            //and deal with result...
-            handleSignInResult(result);
         } else if (REQUEST_GOOGLE_PLAY_SERVICES == requestCode) {
             if (resultCode == Activity.RESULT_OK) {
                 //Called when user asked to do something to make GMS work...
                 //Try logging into gms again
                 setupGMS();
+            }
+        } else if (FIREBASE_SIGN_IN == requestCode) {
+            Log.d(TAG, "In firebase logon...");
+            if (resultCode == Activity.RESULT_OK) {
+                // user is signed in!
+                Toast.makeText(getActivity(), "Firebase signed in!", Toast.LENGTH_LONG);
+                Log.d(TAG, "Firebase signed in");
+                FirebaseAuth auth = FirebaseAuth.getInstance();
+                String user = auth.getCurrentUser().getUid();
+                if (user != null) {
+                    //does the user match what has been stored?
+                    if (!user.equals(Utils.getUserId(getActivity()))) {
+                        mFirebase = null;
+                    }
+                    if (mFirebase == null) {
+                        mFirebase = new Firebase(getActivity(), user);
+                        setupFirebase();
+                    }
+                }
+                Utils.setUserId(getActivity(), user);
+                //and kick off GMS loading
+                setupGMS();
+            } else {
+                Log.d(TAG, "Firebase failure");
+                Toast.makeText(getActivity(), "Firebase failure...", Toast.LENGTH_LONG);
+                // user is not signed in. Maybe just wait for the user to press
+                // "sign in" again, or show a message
+                finishIt();
             }
         }
     }
@@ -742,20 +795,12 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
             }
         }
 
-        //Create the signin option...
-        if (mActivityGSO == null) {
-            mActivityGSO = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                    .requestEmail()
-                    .build();
-        }
-
         //next attach to GMS if not yet attached...
-        //try to get all the services here...
+        //try to get location services here
         if (mActivityGoogleApiClient == null) {
             mActivityGoogleApiClient = new GoogleApiClient.Builder(getActivity())
                     .addConnectionCallbacks(this)
                     .addOnConnectionFailedListener(this)
-                    .addApi(Auth.GOOGLE_SIGN_IN_API, mActivityGSO)
                     .addApi(LocationServices.API)
                     .build();
 
@@ -835,10 +880,10 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                     Intent intent = new Intent(getActivity(), BrowseErrorActivity.class);
                     startActivity(intent);
                 } else if (item.equals(getResources().getString(R.string.signin_button_text))) {
-                    signInToGoogle(GOOGLE_SIGNIN_EXPLICIT);
+                    //signInToGoogle(GOOGLE_SIGNIN_EXPLICIT);
                 } else if (item.equals(getResources().getString(R.string.signout_button_text))) {
                     //log us out (both activity and service)
-                    signInToGoogle(GOOGLE_SIGNOUT);
+                    //signInToGoogle(GOOGLE_SIGNOUT);
                 } else if (item.equals(getResources().getString(R.string.personal_settings))) {
                     // Display the settings fragment
                     Intent intent = new Intent();
@@ -878,93 +923,6 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
         @Override
         public void onUnbindViewHolder(ViewHolder viewHolder) {
-        }
-    }
-
-    /**
-     * GOOGLE GMS Service API routines follow (for single sign-in)
-     */
-
-    private void handleSignInResult(GoogleSignInResult result) {
-        Log.d(TAG, "handle sign in result:" + result.isSuccess());
-        if (result.isSuccess()) {
-            mAccount = result.getSignInAccount();
-            updateLoginUI(true);
-            Utils.setUserLoggedIn(getActivity(), true);
-        } else {
-            mAccount = null;
-            updateLoginUI(false);
-            Utils.setUserLoggedIn(getActivity(),false);
-        }
-    }
-
-
-    /**
-     * Sign in or out of your google account (note - will set up service to do silent signin)
-     * Can be explicit (ask for your account name), implicit (silent), or logout.
-     * We always ask explicitly if user had manually logged out before.
-     * @param type
-     */
-    private void signInToGoogle(int type) {
-
-        if ((mActivityGSO == null) || (mActivityGoogleApiClient == null)) {
-            return;
-        }
-
-        //Okay - we should have a local copy of the client...
-        if (type == GOOGLE_SIGNIN_EXPLICIT) {
-            if (mActivityGoogleApiClient != null) {
-                Intent signInIntent = Auth.GoogleSignInApi.getSignInIntent(mActivityGoogleApiClient);
-                startActivityForResult(signInIntent, LOGIN_REQUEST_CODE);
-            }
-        } else if (type == GOOGLE_SIGNIN_SILENT) {
-            OptionalPendingResult<GoogleSignInResult> optPenRes = Auth.GoogleSignInApi.silentSignIn(mActivityGoogleApiClient);
-            if (optPenRes.isDone()) {
-                Log.d(TAG, "Signed into google account");
-                GoogleSignInResult result = optPenRes.get();
-                handleSignInResult(result);
-            } else {
-                optPenRes.setResultCallback(new ResultCallback<GoogleSignInResult>() {
-                    @Override
-                    public void onResult(GoogleSignInResult googleSignInResult) {
-                        handleSignInResult(googleSignInResult);
-                    }
-                });
-            }
-        } else if (type == GOOGLE_SIGNOUT) {
-            if (mActivityGoogleApiClient != null) {
-                Auth.GoogleSignInApi.signOut(mActivityGoogleApiClient).setResultCallback(
-                        new ResultCallback<Status>() {
-                            @Override
-                            public void onResult(Status status) {
-                                //don't really need to do anything here (service signout triggers all the actions)
-                                mAccount = null;
-                                updateLoginUI(false);
-                                Utils.setUserLoggedIn(getActivity(), false);
-                            }
-                        }
-                );
-            }
-        }
-    }
-
-    /**
-     * Updates UI for login button properly...
-     * @param bLoggedIn
-     */
-    private void updateLoginUI(boolean bLoggedIn) {
-        if (bLoggedIn) {
-            int index = mGridRowAdapter.indexOf(getResources().getString(R.string.signin_button_text));
-            if (index >= 0) {
-                //and replace with button for signout
-                mGridRowAdapter.replace(index, getResources().getString(R.string.signout_button_text));
-            }
-        } else {
-            int index = mGridRowAdapter.indexOf(getResources().getString(R.string.signout_button_text));
-            if (index >= 0) {
-                //and replace with button for signout
-                mGridRowAdapter.replace(index, getResources().getString(R.string.signin_button_text));
-            }
         }
     }
 
