@@ -18,8 +18,10 @@ import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
+import com.prod.rclark.devicesync.ImageDetail;
 import com.prod.rclark.devicesync.data.AppContract.DevicesEntry;
 import com.prod.rclark.devicesync.data.AppContract.AppEntry;
+import com.prod.rclark.devicesync.data.AppContract.ImageEntry;
 
 /**
  * Created by rclar on 3/27/2016.
@@ -66,8 +68,20 @@ public class AppDbHelper extends SQLiteOpenHelper {
                 AppEntry.COLUMN_APP_DEVSSN + " TEXT NOT NULL " +
                 " );";
 
+        // Create a table to hold images.
+        // Note - these are not relational. There can be many to many mappings between so just store as seperate
+        // (note that we store apps as app label *and* device ssn)
+        final String SQL_CREATE_IMG_TABLE = "CREATE TABLE " + ImageEntry.TABLE_NAME + " (" +
+                ImageEntry._ID + " INTEGER PRIMARY KEY, " +
+                ImageEntry.COLUMN_IMG_APKNAME + " TEXT NOT NULL, " +
+                ImageEntry.COLUMN_IMG_STRIPNAME + " TEXT NOT NULL, " +
+                ImageEntry.COLUMN_IMG_FILENAME + " TEXT NOT NULL, " +
+                ImageEntry.COLUMN_IMG_URL + " TEXT " +
+                " );";
+
         sqLiteDatabase.execSQL(SQL_CREATE_DEVICES_TABLE);
         sqLiteDatabase.execSQL(SQL_CREATE_APPS_TABLE);
+        sqLiteDatabase.execSQL(SQL_CREATE_IMG_TABLE);
     }
 
     @Override
@@ -80,6 +94,7 @@ public class AppDbHelper extends SQLiteOpenHelper {
         // should be your top priority before modifying this method.
         sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + DevicesEntry.TABLE_NAME);
         sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + AppEntry.TABLE_NAME);
+        sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + ImageEntry.TABLE_NAME);
         onCreate(sqLiteDatabase);
     }
 }

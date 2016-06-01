@@ -30,6 +30,7 @@ public class AppContract {
     public static final Uri BASE_CONTENT_URI = Uri.parse("content://" + CONTENT_AUTHORITY);
 
     public static final String PATH_APPS = "apps";
+    public static final String PATH_IMAGES = "images";
     public static final String PATH_DEVICES = "devices";
     public static final String PATH_GROUPBY = "appsgroupby";    //aliases to apps db
 
@@ -154,4 +155,39 @@ public class AppContract {
         }
 
     }
+
+    /* Inner class that defines the table contents of the image table */
+    // URI Format
+    // /* - all or...
+    // /apkname
+    public static final class ImageEntry implements BaseColumns {
+
+        public static final Uri CONTENT_URI =
+                BASE_CONTENT_URI.buildUpon().appendPath(PATH_IMAGES).build();
+
+        public static final String CONTENT_TYPE =
+                ContentResolver.CURSOR_DIR_BASE_TYPE + "/" + CONTENT_AUTHORITY + "/" + PATH_IMAGES;
+        public static final String CONTENT_ITEM_TYPE =
+                ContentResolver.CURSOR_ITEM_BASE_TYPE + "/" + CONTENT_AUTHORITY + "/" + PATH_IMAGES;
+
+        public static final String TABLE_NAME = "images";
+
+        public static final String COLUMN_IMG_APKNAME = "img_apk";
+        public static final String COLUMN_IMG_STRIPNAME = "img_strip";
+        public static final String COLUMN_IMG_FILENAME = "img_filename";
+        public static final String COLUMN_IMG_URL = "img_url";
+
+        public static Uri buildImgUri(long id) {
+            return ContentUris.withAppendedId(CONTENT_URI, id);
+        }
+
+        public static Uri buildImg(String apkname) {
+            return CONTENT_URI.buildUpon().appendPath(apkname).build();
+        }
+
+        public static String getApkFromUri(Uri uri) {
+            return uri.getPathSegments().get(1);
+        }
+    }
+
 }

@@ -22,7 +22,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 
 /**
- * Created by rclar on 3/27/2016.
+ * Created by rclark on 3/27/2016.
  */
 public class AppProvider extends ContentProvider {
 
@@ -39,6 +39,8 @@ public class AppProvider extends ContentProvider {
     static final int APPS_WITH_GROUPBY_AND_HAVING = 201;
     static final int DEVICES = 300;
     static final int DEVICES_WITH_DEVICE = 301;
+    static final int IMAGES = 400;
+    static final int IMAGES_WITH_APK = 401;
 
 
     //devices ssn_setting = ?
@@ -59,6 +61,11 @@ public class AppProvider extends ContentProvider {
     //app db - devices snn_setting = ? AND app label = ?
     private static final String sAppsWithDevicesAndAppsSelection =
             AppContract.AppEntry.COLUMN_APP_PKG + " = ? AND " + AppContract.AppEntry.COLUMN_APP_DEVSSN + " = ? ";
+
+    //image db - apkname = ?
+    private static final String sImageSelection =
+            AppContract.ImageEntry.TABLE_NAME+
+                    "." + AppContract.ImageEntry.COLUMN_IMG_APKNAME + " = ? ";
 
     //get device by device
     private Cursor getDeviceByDevice(Uri uri, String[] projection, String sortOrder) {
@@ -124,6 +131,27 @@ public class AppProvider extends ContentProvider {
         );
     }
 
+    //get apps by device
+    private Cursor getImageByAPK(Uri uri, String[] projection, String sortOrder) {
+        String apk = AppContract.ImageEntry.getApkFromUri(uri);
+
+        String[] selectionArgs;
+        String selection;
+
+        selectionArgs = new String[]{apk};
+        selection = sImageSelection;
+
+        return mOpenHelper.getReadableDatabase().query(
+                AppContract.ImageEntry.TABLE_NAME,
+                projection,
+                selection,
+                selectionArgs,
+                null,
+                null,
+                sortOrder
+        );
+    }
+
     static UriMatcher buildUriMatcher() {
 
         // All paths added to the UriMatcher have a corresponding code to return when a match is
@@ -161,6 +189,9 @@ public class AppProvider extends ContentProvider {
         // /*/* (get(2)) = pass this into having param
         matcher.addURI(authority, AppContract.PATH_GROUPBY + "/*/*", APPS_WITH_GROUPBY_AND_HAVING);
 
+        matcher.addURI(authority, AppContract.PATH_IMAGES, IMAGES);
+        matcher.addURI(authority, AppContract.PATH_IMAGES + "/*", IMAGES_WITH_APK);
+
         return matcher;
     }
 
@@ -192,6 +223,10 @@ public class AppProvider extends ContentProvider {
                 return AppContract.DevicesEntry.CONTENT_ITEM_TYPE;
             case DEVICES:
                 return AppContract.DevicesEntry.CONTENT_TYPE;
+            case IMAGES:
+                return AppContract.ImageEntry.CONTENT_TYPE;
+            case IMAGES_WITH_APK:
+                return AppContract.ImageEntry.CONTENT_ITEM_TYPE;
             default:
                 throw new UnsupportedOperationException("Unknown uri: " + uri);
         }
@@ -275,6 +310,24 @@ public class AppProvider extends ContentProvider {
                 );
                 break;
             }
+            // images/*
+            case IMAGES_WITH_APK: {
+                retCursor = getImageByAPK(uri, projection, sortOrder);
+                break;
+            }
+            // images
+            case IMAGES: {
+                retCursor = mOpenHelper.getReadableDatabase().query(
+                        AppContract.ImageEntry.TABLE_NAME,
+                        projection,
+                        selection,
+                        selectionArgs,
+                        null,
+                        null,
+                        sortOrder
+                );
+                break;
+            }
 
             default:
                 throw new UnsupportedOperationException("Unknown uri: " + uri);
@@ -307,6 +360,16 @@ public class AppProvider extends ContentProvider {
                 long _id = db.insert(AppContract.DevicesEntry.TABLE_NAME, null, values);
                 if ( _id > 0 )
                     returnUri = AppContract.DevicesEntry.buildDeviceUri(_id);
+                else
+                    throw new android.database.SQLException("Failed to insert row into " + uri);
+                break;
+            }
+            case IMAGES_WITH_APK:
+            case IMAGES: {
+                updateTimeStamp(values, false);
+                long _id = db.insert(AppContract.ImageEntry.TABLE_NAME, null, values);
+                if ( _id > 0 )
+                    returnUri = AppContract.ImageEntry.buildImgUri(_id);
                 else
                     throw new android.database.SQLException("Failed to insert row into " + uri);
                 break;
@@ -349,11 +412,23 @@ public class AppProvider extends ContentProvider {
                         AppContract.AppEntry.TABLE_NAME, parse_selection, parse_selectionArgs);
                 break;
             }
-
             case DEVICES:
                 rowsDeleted = db.delete(
                         AppContract.DevicesEntry.TABLE_NAME, selection, selectionArgs);
                 break;
+            case IMAGES: {
+                rowsDeleted = db.delete(
+                        AppContract.ImageEntry.TABLE_NAME, selection, selectionArgs);
+                break;
+            }
+            case IMAGES_WITH_APK: {
+                String apk = AppContract.ImageEntry.getApkFromUri(uri);
+                String[] parse_selectionArgs = new String[]{apk};
+                String parse_selection = sImageSelection;
+                rowsDeleted = db.delete(
+                        AppContract.ImageEntry.TABLE_NAME, parse_selection, parse_selectionArgs);
+                break;
+            }
             default:
                 throw new UnsupportedOperationException("Unknown uri: " + uri);
         }
@@ -429,6 +504,21 @@ public class AppProvider extends ContentProvider {
                 String parse_selection = sDevicesSelection;
 
                 rowsUpdated = db.update(AppContract.DevicesEntry.TABLE_NAME, values, parse_selection,
+                        parse_selectionArgs);
+                break;
+            }
+            case IMAGES:
+                updateTimeStamp(values, false);
+                rowsUpdated = db.update(AppContract.ImageEntry.TABLE_NAME, values, selection,
+                        selectionArgs);
+                break;
+            case IMAGES_WITH_APK: {
+                updateTimeStamp(values, false);
+                String apk = AppContract.ImageEntry.getApkFromUri(uri);
+                String[] parse_selectionArgs = new String[]{apk};
+                String parse_selection = sImageSelection;
+
+                rowsUpdated = db.update(AppContract.ImageEntry.TABLE_NAME, values, parse_selection,
                         parse_selectionArgs);
                 break;
             }
