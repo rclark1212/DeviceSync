@@ -46,6 +46,103 @@ public class DBUtils {
     private DBUtils() {
     }
 
+    /**
+     * Writes an image detail record into the imageDB
+     * @param ctx
+     * @param image
+     */
+    public static void setImageRecordToCP(Context ctx, ImageDetail image) {
+        Uri imageDB = AppContract.ImageEntry.CONTENT_URI;
+        imageDB = imageDB.buildUpon().appendPath(image.stripname).build();
+
+        boolean bExists = false;
+
+        //grab the cursor
+        Cursor c = ctx.getContentResolver().query(imageDB, null, null, null, null);
+
+        if (c.getCount() > 0) {
+            //exists!!!
+            c.moveToFirst();
+            bExists = true;
+        }
+
+        //okay - bind a content value to object...
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(AppContract.ImageEntry.COLUMN_IMG_STRIPNAME, image.stripname);
+        contentValues.put(AppContract.ImageEntry.COLUMN_IMG_FILENAME, image.filename);
+        contentValues.put(AppContract.ImageEntry.COLUMN_IMG_APKNAME, image.apkname);
+        contentValues.put(AppContract.ImageEntry.COLUMN_IMG_URL, image.download_url);
+
+        if (bExists) {
+            //update
+            ctx.getContentResolver().update(imageDB, contentValues, null, null);
+        } else {
+            //insert
+            ctx.getContentResolver().insert(imageDB, contentValues);
+        }
+
+        c.close();
+    }
+
+    /**
+     * Deletes image in CP...
+     * @param ctx
+     * @param stripname
+     */
+    public static void deleteImageRecordFromCP(Context ctx, String stripname) {
+        Uri imageDB = AppContract.ImageEntry.CONTENT_URI;
+        imageDB = imageDB.buildUpon().appendPath(stripname).build();
+        ctx.getContentResolver().delete(imageDB, null, null);
+    }
+
+        /**
+         * Deletes device from CP
+         * @param ctx
+         * @param serial
+         */
+    public static void deleteDeviceFromCP(Context ctx, String serial) {
+        //build Uri
+        Uri deviceDB = AppContract.DevicesEntry.CONTENT_URI;
+        Uri localdeviceDB = deviceDB.buildUpon().appendPath(serial).build();
+        ctx.getContentResolver().delete(localdeviceDB, null, null);
+    }
+
+    /**
+     * Deletes app from CP
+     * @param ctx
+     * @param serial
+     * @param apkname
+     */
+    public static void deleteAppFromCP(Context ctx, String serial, String apkname) {
+        Uri appDB = AppContract.AppEntry.CONTENT_URI;
+        //build up the local device query
+        appDB = appDB.buildUpon().appendPath(serial).appendPath(apkname).build();
+        ctx.getContentResolver().delete(appDB, null, null);
+    }
+
+    /**
+     *  Gets device with passed in serial number from CP
+     */
+    public static ObjectDetail getDeviceFromCP(Context ctx, String serial) {
+        //build Uri
+        Uri deviceDB = AppContract.DevicesEntry.CONTENT_URI;
+        Uri localdeviceDB = deviceDB.buildUpon().appendPath(serial).build();
+
+        //and go
+        return getObjectFromCP(ctx, localdeviceDB);
+    }
+
+    /**
+     *  Gets device with passed in serial number from CP
+     */
+    public static ObjectDetail getAppFromCP(Context ctx, String serial, String apkname) {
+        //build Uri
+        Uri appDB = AppContract.AppEntry.CONTENT_URI;
+        appDB = appDB.buildUpon().appendPath(serial).appendPath(apkname).build();
+
+        //and go
+        return getObjectFromCP(ctx, appDB);
+    }
 
     /**
      * Returns an ObjectDetail from the CP based on the URI.
@@ -130,10 +227,64 @@ public class DBUtils {
         return returnObject;
     }
 
+    public static void saveDeviceToCP(Context ctx, ObjectDetail device) {
+        //Get the device DB reference...
+        Uri deviceDB = AppContract.DevicesEntry.CONTENT_URI;
+
+        //create the buffer
+        ContentValues contentValues = new ContentValues();
+
+        //Now, search for the device (is it in DB yet?) - search by serial
+        Uri deviceSearchUri = deviceDB.buildUpon().appendPath(device.serial).build();
+
+        //Log.d(TAG, "device query - uri:" + deviceSearchUri.toString());
+        Cursor c = ctx.getContentResolver().query(deviceSearchUri, null, null, null, null);
+
+        if (c.getCount() > 0) {
+            //device exists...
+            //preload the content values...
+            c.moveToFirst();
+            DatabaseUtils.cursorRowToContentValues(c, contentValues);
+        }
+
+        //load up contentValues with latest info...
+        contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICES_SSN, device.serial);
+        contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICE_NAME, device.label);
+        contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICE_MODEL, device.name);
+        contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICE_OSVER, device.ver);
+        contentValues.put(AppContract.DevicesEntry.COLUMN_DATE, device.installDate);
+        contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICE_TYPE, device.type);
+        contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICE_LOCATION, device.location);
+        contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICE_TIMEUPDATED, device.timestamp);
+
+        if (c.getCount() > 0) {
+            //replace
+            ctx.getContentResolver().update(deviceSearchUri, contentValues, null, null);
+        } else {
+            //add
+            ctx.getContentResolver().insert(AppContract.DevicesEntry.CONTENT_URI, contentValues);
+        }
+
+        //FIXME - update firebase database here
+
+        c.close();
+    }
+
     /**
-     * Saves an ObjectDetail App to the CP based on the URI.
-     * Used by broadcast receiver for apps
+     * Saves objectdetail app to CP (and constructs the Uri)
      */
+    public static void saveAppToCP(Context ctx, ObjectDetail app) {
+        //Construct the Uri...
+        Uri appDB = AppContract.AppEntry.CONTENT_URI;
+        //build up the local device query
+        appDB = appDB.buildUpon().appendPath(app.serial).appendPath(app.pkg).build();
+        saveAppToCP(ctx, appDB, app);
+    }
+
+        /**
+         * Saves an ObjectDetail App to the CP based on the URI.
+         * Used by broadcast receiver for apps
+         */
     public static void saveAppToCP(Context ctx, Uri uri, ObjectDetail app) {
         boolean bExists = false;
 
@@ -171,6 +322,8 @@ public class DBUtils {
             insertUri = insertUri.buildUpon().appendPath(app.serial).build();
             ctx.getContentResolver().insert(insertUri, contentValues);
         }
+
+        //FIXME - update firebase here with app.apk.
 
         c.close();
     }

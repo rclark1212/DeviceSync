@@ -77,11 +77,8 @@ public class DeviceSyncReceiver extends BroadcastReceiver {
             //delete the app from CP
             //Construct the Uri...
             Log.d(TAG, "Deleting app from CP " + packageName);
-            Uri appDB = AppContract.AppEntry.CONTENT_URI;
-            //build up the local device query
-            appDB = appDB.buildUpon().appendPath(Build.SERIAL).appendPath(packageName).build();
-            ctx.getContentResolver().delete(appDB, null, null);
-
+            DBUtils.deleteAppFromCP(ctx, Build.SERIAL, packageName);
+            //FIXME - update firebase here - delete record...
             //And note that if we have set up a list of intents to uninstall, process them here
         }
 

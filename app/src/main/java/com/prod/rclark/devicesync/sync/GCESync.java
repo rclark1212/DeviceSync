@@ -229,45 +229,8 @@ public class GCESync extends IntentService {
 
         device.timestamp = System.currentTimeMillis();
 
-        //Get the device DB reference...
-        Uri deviceDB = AppContract.DevicesEntry.CONTENT_URI;
-
-        //create the buffer
-        ContentValues contentValues = new ContentValues();
-
-        //Now, search for the device (is it in DB yet?) - search by serial
-        Uri deviceSearchUri = deviceDB.buildUpon().appendPath(device.serial).build();
-
-        //Log.d(TAG, "device query - uri:" + deviceSearchUri.toString());
-        Cursor c = mCtx.getContentResolver().query(deviceSearchUri, null, null, null, null);
-
-        if (c.getCount() > 0) {
-            //device exists...
-            //preload the content values...
-            c.moveToFirst();
-            DatabaseUtils.cursorRowToContentValues(c, contentValues);
-        }
-
-        //load up contentValues with latest info...
-        long type = mbIsATV ? AppContract.TYPE_ATV : AppContract.TYPE_TABLET;
-        contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICES_SSN, device.serial);
-        contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICE_NAME, device.label);
-        contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICE_MODEL, device.name);
-        contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICE_OSVER, device.ver);
-        contentValues.put(AppContract.DevicesEntry.COLUMN_DATE, device.installDate);
-        contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICE_TYPE, type);
-        contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICE_LOCATION, device.location);
-        contentValues.put(AppContract.DevicesEntry.COLUMN_DEVICE_TIMEUPDATED, device.timestamp);
-
-        if (c.getCount() > 0) {
-            //replace
-            mCtx.getContentResolver().update(deviceSearchUri, contentValues, null, null);
-        } else {
-            //add
-            mCtx.getContentResolver().insert(AppContract.DevicesEntry.CONTENT_URI, contentValues);
-        }
-
-        c.close();
+        //save the device to CP...
+        DBUtils.saveDeviceToCP(mCtx, device);
     }
 
     /**
@@ -367,6 +330,7 @@ public class GCESync extends IntentService {
             //Log.d(TAG, "Starting batch CP application");
             mCtx.getContentResolver().applyBatch(AppContract.CONTENT_AUTHORITY, ops);
             //Log.d(TAG, "Complete batch CP application");
+            //FIXME - apply app changes to firebase. Note, have to loop through apps list
         } catch (RemoteException e) {
             Log.e(TAG, "Batch - remoteException err");
         } catch (OperationApplicationException e) {
@@ -416,6 +380,7 @@ public class GCESync extends IntentService {
         if (app != null) {
             //Okay - we have an app object... Put it into CP
             DBUtils.saveAppToCP(mCtx, appDB, app);
+            //Note that firebase update handled in the saveAppToCP routine
         }
     }
 

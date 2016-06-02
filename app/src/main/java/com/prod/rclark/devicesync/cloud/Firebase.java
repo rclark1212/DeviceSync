@@ -152,9 +152,11 @@ public class Firebase {
 
                 //by definition, this will be more up to date than our CP so just shove it in...
                 if (object.serial != null) {
-                    Log.d(TAG, "Adding new serial to CP " + object.serial);
-                    //FIXME
-                    //-Utils.setCPRecord(mCtx, object);
+                    //as long as it is not our serial number...
+                    if (!Build.SERIAL.equals(object.serial)) {
+                        Log.d(TAG, "Adding new serial to CP " + object.serial);
+                        DBUtils.saveDeviceToCP(mCtx, object);
+                    }
                 }
             }
 
@@ -169,19 +171,16 @@ public class Firebase {
                 if (object.serial != null) {
                     //Check if this is us that pushed. Do this by comparing timestamps
                     boolean bUpdate = true;
-                    //FIXME
-                    //-ObjectDetail cp_object = Utils.getCPRecord(mCtx, object.serial);
-                    //FIXME
-                    //if (object.timestamp <= cp_object.timestamp) {
-                    //    //oh... an older instance... skip
-                    //    bUpdate = false;
-                    //}
+                    ObjectDetail cp_object = DBUtils.getDeviceFromCP(mCtx, object.serial);
+                    if (object.timestamp <= cp_object.timestamp) {
+                        //oh... an older instance... skip
+                        bUpdate = false;
+                    }
                     if (bUpdate) {
-                        Log.d(TAG, "Updating serial in CP " + object.serial);
-                        //FIXME
-                        //-Utils.setCPRecord(mCtx, object);
+                        Log.d(TAG, "Updating device serial in CP " + object.serial);
+                        DBUtils.saveDeviceToCP(mCtx, object);
                     } else {
-                        Log.d(TAG, "Got an event for a record with stale timestamp - must be due to our trigger. Punt on updating " + object.serial);
+                        Log.d(TAG, "Got an event for a device record with stale timestamp - must be due to our trigger. Punt on updating " + object.serial);
                     }
                 }
             }
@@ -195,9 +194,83 @@ public class Firebase {
                 ObjectDetail object = dataSnapshot.getValue(ObjectDetail.class);
                 if (object.serial != null) {
                     String serial = object.serial;
+                    if (Build.SERIAL.equals(serial)) {
+                        Log.d(TAG, "WARNING - deleting our own serial from CP");
+                    }
                     Log.d(TAG, "Removing serial from CP " + serial);
-                    //FIXME
-                    //Utils.deleteCPRecord(mCtx, serial);
+                    DBUtils.deleteDeviceFromCP(mCtx, serial);
+                }
+            }
+
+            @Override
+            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+                //do nothing here - don't care if child moved (and should never happen)
+                Log.e(TAG, "Child moved - should never happen!!!");
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                Log.e(TAG, "Firebase onCancelled called in childlistener - reason:" + databaseError.getDetails());
+            }
+        };
+
+        //set up the serial number app listener
+        mFirebaseAppListener = new ChildEventListener() {
+            @Override
+            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+                String key = dataSnapshot.getKey();
+
+                Log.d(TAG, "App child added - " + key);
+                //was this under devices child?
+                //add to CP
+                ObjectDetail object = dataSnapshot.getValue(ObjectDetail.class);
+
+                //by definition, this will be more up to date than our CP if it is from another serial number so just shove it in...
+                if (object.serial != null) {
+                    if (!Build.SERIAL.equals(object.serial)) {
+                        Log.d(TAG, "Adding new seria/app to CP " + object.serial + " " + object.pkg);
+                        DBUtils.saveAppToCP(mCtx, object);
+                    }
+                }
+            }
+
+            @Override
+            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+                String key = dataSnapshot.getKey();
+
+                Log.d(TAG, "App child changed - " + key);
+                //update CP
+                ObjectDetail object = dataSnapshot.getValue(ObjectDetail.class);
+
+                if (object.serial != null) {
+                    //Check if this is us that pushed. Do this by comparing timestamps
+                    boolean bUpdate = true;
+                    ObjectDetail cp_object = DBUtils.getAppFromCP(mCtx, object.serial, object.pkg);
+                    if (object.timestamp <= cp_object.timestamp) {
+                        //oh... an older instance... skip
+                        bUpdate = false;
+                    }
+                    if (bUpdate) {
+                        Log.d(TAG, "Updating app serial/app in CP " + object.serial + " " + object.pkg);
+                        DBUtils.saveAppToCP(mCtx, object);
+                    } else {
+                        Log.d(TAG, "Got an event for a device record with stale timestamp - must be due to our trigger. Punt on updating " + object.serial);
+                    }
+                }
+            }
+
+            @Override
+            public void onChildRemoved(DataSnapshot dataSnapshot) {
+                String key = dataSnapshot.getKey();
+
+                Log.d(TAG, "App child removed - " + key);
+                //remove record from CP
+                //Note - this should likely never trigger an actual CP removal (since will be removed from CP before we get here)
+                ObjectDetail object = dataSnapshot.getValue(ObjectDetail.class);
+                if (object.serial != null) {
+                    String serial = object.serial;
+                    Log.d(TAG, "Removing serial/App from CP " + serial + " " + object.pkg);
+                    DBUtils.deleteAppFromCP(mCtx, serial, object.pkg);
                 }
             }
 
@@ -225,9 +298,8 @@ public class Firebase {
 
                 if (object.filename != null) {
                     Log.d(TAG, "Adding new image to CP " + object.filename);
-                    //FIXME
-                    //-Utils.setPhotoRecord(mCtx, object);
-                    //and because we are not using a cursor loader...
+                    DBUtils.setImageRecordToCP(mCtx, object);
+                    //and send a message in case there needs to be an update (in case of not using cursor loader for images)
                     Intent localIntent = new Intent(GCESync.BROADCAST_ACTION).putExtra(GCESync.EXTENDED_DATA_STATUS,
                             GCESync.EXTENDED_DATA_STATUS_PHOTO_COMPLETE);
                     LocalBroadcastManager.getInstance(mCtx).sendBroadcast(localIntent);
@@ -246,9 +318,8 @@ public class Firebase {
 
                 if (object.filename != null) {
                     Log.d(TAG, "Updating image in CP " + object.filename);
-                    //FIXME
-                    //-Utils.setPhotoRecord(mCtx, object);
-                    //and because we are not using a cursor loader...
+                    DBUtils.setImageRecordToCP(mCtx, object);
+                    //and send a message in case there needs to be an update (in case of not using cursor loader for images)
                     Intent localIntent = new Intent(GCESync.BROADCAST_ACTION).putExtra(GCESync.EXTENDED_DATA_STATUS,
                             GCESync.EXTENDED_DATA_STATUS_PHOTO_COMPLETE);
                     LocalBroadcastManager.getInstance(mCtx).sendBroadcast(localIntent);
@@ -265,9 +336,8 @@ public class Firebase {
                 if (object.stripname != null) {
                     String removed = object.stripname;
                     Log.d(TAG, "Removing image from CP " + removed);
-                    //FIXME
-                    //-Utils.deletePhotoRecord(mCtx, removed);
-                    //and because we are not using a cursor loader...
+                    DBUtils.deleteImageRecordFromCP(mCtx, removed);
+                    //and send a message in case there needs to be an update (in case of not using cursor loader for images)
                     Intent localIntent = new Intent(GCESync.BROADCAST_ACTION).putExtra(GCESync.EXTENDED_DATA_STATUS,
                             GCESync.EXTENDED_DATA_STATUS_PHOTO_COMPLETE);
                     LocalBroadcastManager.getInstance(mCtx).sendBroadcast(localIntent);
@@ -288,6 +358,9 @@ public class Firebase {
 
         //and add the device listener
         dataBase.child(mUser).child(DEVICES).addChildEventListener(mFirebaseDeviceListener);
+
+        //add the app listener...
+        dataBase.child(mUser).child(APPS).addChildEventListener(mFirebaseAppListener);
 
         //finally add the photo listener
         dataBase.child(mUser).child(IMAGE).addChildEventListener(mFirebaseImageListener);
