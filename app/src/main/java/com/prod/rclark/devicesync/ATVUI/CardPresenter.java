@@ -29,12 +29,15 @@ package com.prod.rclark.devicesync.ATVUI;
 
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.support.v17.leanback.widget.ImageCardView;
 import android.support.v17.leanback.widget.Presenter;
 import android.support.v4.content.ContextCompat;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.bumptech.glide.Glide;
+import com.prod.rclark.devicesync.AppUtils;
 import com.prod.rclark.devicesync.DBUtils;
 import com.prod.rclark.devicesync.ObjectDetail;
 import com.prod.rclark.devicesync.R;
@@ -108,10 +111,21 @@ public class CardPresenter extends Presenter {
             } else {
                 cardView.setTitleText(element.label);
                 cardView.setContentText(element.pkg);
-                if (element.banner != null) {
-                    cardView.setMainImage(element.banner);
+                Drawable banner = null;
+                if (Build.SERIAL.equals(element.serial)) {
+                    //local app...
+                    banner = AppUtils.getLocalApkImage(cardView.getContext(), element.pkg, element.type);
+                }
+
+                if (banner != null) {
+                    cardView.setMainImage(banner);
                 } else {
-                    cardView.setMainImage(mDefaultCardImage);
+                    //glide it in
+                    Glide.with(cardView.getContext())
+                            .load(element.image_url)
+                            .centerCrop()
+                            .error(mDefaultCardImage)
+                            .into(cardView.getMainImageView());
                 }
             }
         }

@@ -30,6 +30,7 @@ package com.prod.rclark.devicesync.ATVUI;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v17.leanback.app.BackgroundManager;
 import android.support.v17.leanback.app.DetailsFragment;
@@ -43,6 +44,11 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.drawable.GlideDrawable;
+import com.bumptech.glide.request.animation.GlideAnimation;
+import com.bumptech.glide.request.target.SimpleTarget;
+import com.prod.rclark.devicesync.AppUtils;
 import com.prod.rclark.devicesync.DBUtils;
 import com.prod.rclark.devicesync.InstallUtil;
 import com.prod.rclark.devicesync.ObjectDetail;
@@ -168,11 +174,37 @@ public class ObjectDetailsFragment extends DetailsFragment {
                 actionAdapter.add(new Action(ACTION_CLONEFROM, getResources().getString(R.string.clonefrom)));
             }
         } else {
+            Drawable banner = null;
+            if (Build.SERIAL.equals(mSelectedObject.serial)) {
+                //local app...
+                banner = AppUtils.getLocalApkImage(getActivity(), mSelectedObject.pkg, mSelectedObject.type);
+            }
+
+            if (banner != null) {
+                row.setImageDrawable(banner);
+            } else {
+                //glide it in
+                Glide.with(getActivity())
+                        .load(mSelectedObject.image_url)
+                        .centerCrop()
+                        .error(getResources().getDrawable(R.drawable.noimage))
+                        .into(new SimpleTarget<GlideDrawable>(width, height) {
+                            @Override
+                            public void onResourceReady(GlideDrawable resource,
+                                                        GlideAnimation<? super GlideDrawable>
+                                                                glideAnimation) {
+                                Log.d(TAG, "details overview card image url ready: " + resource);
+                                row.setImageDrawable(resource);
+                                mAdapter.notifyArrayItemRangeChanged(0, mAdapter.size());
+                            }
+                        });
+            }
+            /*
             if (mSelectedObject.banner != null) {
                 row.setImageDrawable(mSelectedObject.banner);
             } else {
                 row.setImageDrawable(getResources().getDrawable(R.drawable.noimage));
-            }
+            }*/
             //and setup the actions...
             if (DBUtils.isObjectLocal(getActivity(), mSelectedObject)) {
                 //run app and uninstall

@@ -98,65 +98,9 @@ public class AppUtils {
             app.serial = Build.SERIAL;  //this serial number
             app.flags = AppContract.AppEntry.FLAG_NO_ACTION;
 
-
             app.name = info.applicationInfo.name;
 
-            if (app.type == AppContract.TYPE_TABLET) {
-                app.banner = info.applicationInfo.loadIcon(manager);
-            } else {
-                app.banner = info.applicationInfo.loadBanner(manager);
-                if (app.banner == null) {
-                    //see if app banner gives a different result (doubt it - think this aliases to the last method)
-                    Drawable testdraw = manager.getApplicationBanner(pkgName);
-                    if (isWide(testdraw)) {
-                        //looks like a good banner...
-                        app.banner = testdraw;
-                        //early return
-                        return app;
-                    }
-
-                    Intent intent = manager.getLeanbackLaunchIntentForPackage(pkgName);
-                    //try banner first
-                    testdraw = manager.getActivityBanner(intent);
-                    if (isWide(testdraw)) {
-                        //looks like a good banner...
-                        app.banner = testdraw;
-                        //early return
-                        return app;
-                    }
-
-                    //then logo
-                    testdraw = manager.getActivityLogo(intent);
-                    if (isWide(testdraw)) {
-                        //looks like a good banner...
-                        app.banner = testdraw;
-                        //early return
-                        return app;
-                    }
-
-                    //then icon
-                    testdraw = manager.getActivityIcon(intent);
-                    if (isWide(testdraw)) {
-                        //looks like a good banner...
-                        app.banner = testdraw;
-                        //early return
-                        return app;
-                    }
-
-                    //some apps store banner as the logo. check here
-                    testdraw = manager.getApplicationLogo(pkgName);
-                    if (isWide(testdraw)) {
-                        //looks like a good banner...
-                        app.banner = testdraw;
-                        //early return
-                        return app;
-                    }
-
-                    //okay - we give up - just use icon - ugg
-                    app.banner = info.applicationInfo.loadIcon(manager);
-                }
-            }
-            //FIXME - if package available in play store, null out above
+            app.banner = getLocalApkImage(ctx, pkgName, app.type);
 
         } catch (PackageManager.NameNotFoundException e) {
             Log.e(TAG, "Can't find package err!!!");
@@ -165,6 +109,70 @@ public class AppUtils {
         return app;
     }
 
+    /**
+     * Gets the drawable for the local installed package.
+     * Pass in apkname and type (tablet or ATV)
+     * @param ctx
+     * @param apkname
+     * @return
+     */
+    public static Drawable getLocalApkImage(Context ctx, String apkname, long type) {
+        Drawable retdraw = null;
+
+        PackageManager manager = ctx.getPackageManager();
+
+        try {
+            if (type == AppContract.TYPE_TABLET) {
+                retdraw = manager.getApplicationLogo(apkname);
+            } else {
+                retdraw = manager.getApplicationBanner(apkname);
+                if (retdraw == null) {
+                    Intent intent = manager.getLeanbackLaunchIntentForPackage(apkname);
+                    //try banner first
+                    if (intent != null) {
+                        retdraw = manager.getActivityBanner(intent);
+                        if (isWide(retdraw)) {
+                            //looks like a good banner...
+                            //early return
+                            return retdraw;
+                        }
+                    }
+
+                    //then logo
+                    retdraw = manager.getActivityLogo(intent);
+                    if (isWide(retdraw)) {
+                        //looks like a good banner...
+                        //early return
+                        return retdraw;
+                    }
+
+                    //then icon
+                    retdraw = manager.getActivityIcon(intent);
+                    if (isWide(retdraw)) {
+                        //looks like a good banner...
+                        //early return
+                        return retdraw;
+                    }
+
+                    //some apps store banner as the logo. check here
+                    retdraw = manager.getApplicationLogo(apkname);
+                    if (isWide(retdraw)) {
+                        //looks like a good banner...
+                        //early return
+                        return retdraw;
+                    }
+
+                    //okay - we give up - just use icon - ugg
+                    retdraw = manager.getApplicationLogo(apkname);
+                }
+            }
+        } catch (PackageManager.NameNotFoundException e) {
+            Log.e(TAG, "Can't find package err while trying to get image!!!");
+            return null;
+        }
+
+        return retdraw;
+    }
 
     /**
      * Checks for a wide aspect ratio indicating this is a banner resource (as opposed to icon)

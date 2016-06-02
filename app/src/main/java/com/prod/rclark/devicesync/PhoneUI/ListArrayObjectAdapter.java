@@ -1,13 +1,21 @@
 package com.prod.rclark.devicesync.PhoneUI;
 
 import android.content.Context;
+import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.drawable.GlideDrawable;
+import com.bumptech.glide.request.animation.GlideAnimation;
+import com.bumptech.glide.request.target.SimpleTarget;
+import com.prod.rclark.devicesync.AppUtils;
 import com.prod.rclark.devicesync.ObjectDetail;
 import com.prod.rclark.devicesync.R;
 
@@ -64,18 +72,43 @@ public class ListArrayObjectAdapter extends RecyclerView.Adapter <ListArrayObjec
         // Get the data model based on position
         ObjectDetail app = mArray.get(position);
         // Binding operations
-        ImageView iconView = (ImageView) viewHolder.image;
+        final ImageView iconView = (ImageView) viewHolder.image;
         TextView titleView = (TextView) viewHolder.titleText;
         TextView subtitleView = (TextView) viewHolder.subTitleText;
 
         titleView.setText(app.label);
         subtitleView.setText(app.pkg);
 
+        Drawable banner = null;
+        if (Build.SERIAL.equals(app.serial)) {
+            //local app...
+            banner = AppUtils.getLocalApkImage(iconView.getContext(), app.pkg, app.type);
+        }
+
+        //deal with bitmap...
+        if (banner != null) {
+            iconView.setImageDrawable(banner);
+        } else {
+            //glide it in
+            Glide.with(iconView.getContext())
+                    .load(app.image_url)
+                    .centerCrop()
+                    .into(new SimpleTarget<GlideDrawable>() {
+                        @Override
+                        public void onResourceReady(GlideDrawable resource,
+                                                    GlideAnimation<? super GlideDrawable>
+                                                            glideAnimation) {
+                            iconView.setImageDrawable(resource);
+                        }
+                    });
+        }
+
+        /*
         //deal with bitmap...
         if (app.banner != null) {
             //Leave this null if package available on play store and download... Use glide or picassa
             iconView.setImageDrawable(app.banner);
-        }
+        } */
 
     }
 
