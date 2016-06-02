@@ -100,8 +100,6 @@ public class AppUtils {
 
             app.name = info.applicationInfo.name;
 
-            app.banner = getLocalApkImage(ctx, pkgName, app.type);
-
         } catch (PackageManager.NameNotFoundException e) {
             Log.e(TAG, "Can't find package err!!!");
             return null;

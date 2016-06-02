@@ -86,7 +86,6 @@ public class DBUtils {
             int serialIndex = c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_DEVSSN);
             int dateIndex = c.getColumnIndex(AppContract.AppEntry.COLUMN_DATE);
             int flagsIndex = c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_FLAGS);
-            int bannerIndex = c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_BANNER);
             int typeIndex = c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_TYPE);
             int timestampIndex = c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_TIMEUPDATED);
 
@@ -99,14 +98,6 @@ public class DBUtils {
             returnObject.flags = c.getLong(flagsIndex);
             returnObject.type = c.getLong(typeIndex);
             returnObject.timestamp = c.getLong(timestampIndex);
-
-            //deal with bitmap...
-            byte[] blob = c.getBlob(bannerIndex);
-            if (blob != null) {
-                //FIXME - can't get a context for scaling. Should we just make everything a bitmap and not drawable?
-                //OR, leave this null if package available on play store and download...
-                returnObject.banner = new BitmapDrawable(Utils.convertByteArrayToBitmap(blob));
-            }
 
             returnObject.bIsDevice = false;  //app, not device
         } else {
@@ -131,7 +122,6 @@ public class DBUtils {
             returnObject.type = c.getLong(typeIndex);
 
             //deal with some device specific items...
-            returnObject.banner = null;       //will be picked up from resource and type
             returnObject.bIsDevice = true;    //this is a device
         }
 
@@ -199,21 +189,6 @@ public class DBUtils {
         contentValues.put(AppContract.AppEntry.COLUMN_APP_FLAGS, app.flags);
         contentValues.put(AppContract.AppEntry.COLUMN_APP_TIMEUPDATED, app.timestamp);
 
-        //now blob... - COLUMN_APP_BANNER
-        //First, is this image available on network?
-        if (Utils.getAppImageUriOnNetwork(app.pkg, ctx) == null) {
-            //nope - not available. So save off
-
-            //convert drawable to bytestream
-            Bitmap bitmap = Utils.drawableToBitmap(app.banner);           //convert drawable to bitmap
-            if (bitmap != null) {
-                ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream);
-                byte[] imageInByte = stream.toByteArray();
-                //And now into contentValues
-                contentValues.put(AppContract.AppEntry.COLUMN_APP_BANNER, imageInByte);
-            }
-        }
     }
 
 
@@ -414,7 +389,6 @@ public class DBUtils {
                     int serialIndex = c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_DEVSSN);
                     int dateIndex = c.getColumnIndex(AppContract.AppEntry.COLUMN_DATE);
                     int flagsIndex = c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_FLAGS);
-                    int bannerIndex = c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_BANNER);
                     int typeIndex = c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_TYPE);
 
 
@@ -425,12 +399,6 @@ public class DBUtils {
                     app.installDate = c.getLong(dateIndex);
                     app.flags = c.getLong(flagsIndex);
                     app.type = c.getLong(typeIndex);
-
-                    //deal with bitmap...
-                    byte[] blob = c.getBlob(bannerIndex);
-                    if (blob != null) {
-                        app.banner = new BitmapDrawable(Utils.convertByteArrayToBitmap(blob));
-                    }
 
                     //now write it out with fake device sn
                     Uri fakeOutUri = fakeappDB.buildUpon().appendPath(app.pkg).build();
@@ -445,22 +413,6 @@ public class DBUtils {
                     contentValues.put(AppContract.AppEntry.COLUMN_DATE, app.installDate);
                     contentValues.put(AppContract.AppEntry.COLUMN_APP_TYPE, ostype);
                     contentValues.put(AppContract.AppEntry.COLUMN_APP_FLAGS, app.flags);
-
-                    //now blob... - COLUMN_APP_BANNER
-                    //First, is this image available on network?
-                    if (Utils.getAppImageUriOnNetwork(app.pkg, ctx) == null) {
-                        //nope - not available. So save off
-
-                        //convert drawable to bytestream
-                        Bitmap bitmap = Utils.drawableToBitmap(app.banner);           //convert drawable to bitmap
-                        if (bitmap != null) {
-                            ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream);
-                            byte[] imageInByte = stream.toByteArray();
-                            //And now into contentValues
-                            contentValues.put(AppContract.AppEntry.COLUMN_APP_BANNER, imageInByte);
-                        }
-                    }
 
                     if (cout.getCount() > 0) {
                         //replace

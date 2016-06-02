@@ -47,7 +47,6 @@ public final class AppCursorMapper extends CursorMapper {
         serialIndex = cursor.getColumnIndex(AppContract.AppEntry.COLUMN_APP_DEVSSN);
         dateIndex = cursor.getColumnIndex(AppContract.AppEntry.COLUMN_DATE);
         flagsIndex = cursor.getColumnIndex(AppContract.AppEntry.COLUMN_APP_FLAGS);
-        bannerIndex = cursor.getColumnIndex(AppContract.AppEntry.COLUMN_APP_BANNER);
         typeIndex = cursor.getColumnIndex(AppContract.AppEntry.COLUMN_APP_TYPE);
     }
 
@@ -65,14 +64,6 @@ public final class AppCursorMapper extends CursorMapper {
         app.installDate = cursor.getLong(dateIndex);
         app.flags = cursor.getLong(flagsIndex);
         app.type = cursor.getLong(typeIndex);
-
-        //deal with bitmap...
-        byte[] blob = cursor.getBlob(bannerIndex);
-        if (blob != null) {
-            //FIXME - can't get a context for scaling. Should we just make everything a bitmap and not drawable?
-            //OR, leave this null if package available on play store and download...
-            app.banner = new BitmapDrawable(Utils.convertByteArrayToBitmap(blob));
-        }
 
         app.bIsDevice = false;  //app, not device
 

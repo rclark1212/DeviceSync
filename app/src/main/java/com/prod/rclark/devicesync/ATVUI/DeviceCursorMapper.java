@@ -64,7 +64,6 @@ public class DeviceCursorMapper extends CursorMapper {
         device.type = cursor.getLong(typeIndex);
 
         //deal with some device specific items...
-        device.banner = null;       //will be picked up from resource and type
         device.bIsDevice = true;    //this is a device
         return device;
     }

@@ -17,14 +17,22 @@ package com.prod.rclark.devicesync.PhoneUI;
 import android.content.Context;
 import android.database.Cursor;
 import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.support.v4.widget.CursorAdapter;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.drawable.GlideDrawable;
+import com.bumptech.glide.request.animation.GlideAnimation;
+import com.bumptech.glide.request.target.SimpleTarget;
+import com.prod.rclark.devicesync.AppUtils;
 import com.prod.rclark.devicesync.R;
 import com.prod.rclark.devicesync.Utils;
 import com.prod.rclark.devicesync.data.AppContract;
@@ -60,27 +68,48 @@ public class ListCursorObjectAdapter extends RecyclerView.Adapter <ListCursorObj
             @Override
             public void bindView(View view, Context context, Cursor cursor) {
                 // Binding operations
-                ImageView iconView = (ImageView) view.findViewById(R.id.grid_item_image);
+                final ImageView iconView = (ImageView) view.findViewById(R.id.grid_item_image);
                 TextView titleView = (TextView) view.findViewById(R.id.grid_title);
                 TextView subtitleView = (TextView) view.findViewById(R.id.grid_subtitle);
+                String serial = cursor.getString(cursor.getColumnIndex(AppContract.AppEntry.COLUMN_APP_DEVSSN));
+                long type = cursor.getLong(cursor.getColumnIndex(AppContract.AppEntry.COLUMN_APP_TYPE));
 
                 // FIXME - only binding app for now... (and depending on app cursor being passed in)
-                byte[] blob;
+                Drawable banner = null;
                 if (!mbIsDevice) {
+                    String apk = cursor.getString(cursor.getColumnIndex(AppContract.AppEntry.COLUMN_APP_PKG));
                     titleView.setText(cursor.getString(cursor.getColumnIndex(AppContract.AppEntry.COLUMN_APP_LABEL)));
-                    subtitleView.setText(cursor.getString(cursor.getColumnIndex(AppContract.AppEntry.COLUMN_APP_PKG)));
-                    blob = cursor.getBlob(cursor.getColumnIndex(AppContract.AppEntry.COLUMN_APP_BANNER));
+                    subtitleView.setText(apk);
+                    if (Build.SERIAL.equals(serial)) {
+                        //local app...
+                        banner = AppUtils.getLocalApkImage(view.getContext(), apk, type);
+                        iconView.setImageDrawable(banner);
+                    } else {
+                        //glide it in
+                        Glide.with(view.getContext())
+                                .load(apk)      //FIXME
+                                .centerCrop()
+                                .error(view.getResources().getDrawable(R.drawable.noimage))
+                                .into(new SimpleTarget<GlideDrawable>() {
+                                    @Override
+                                    public void onResourceReady(GlideDrawable resource,
+                                                                GlideAnimation<? super GlideDrawable>
+                                                                        glideAnimation) {
+                                        iconView.setImageDrawable(resource);
+                                    }
+                                });
+
+                    }
                 } else {
                     titleView.setText(cursor.getString(cursor.getColumnIndex(AppContract.DevicesEntry.COLUMN_DEVICE_NAME)));
                     subtitleView.setText(cursor.getString(cursor.getColumnIndex(AppContract.DevicesEntry.COLUMN_DEVICES_SSN)));
-                    blob = null;
+                    if (type == AppContract.TYPE_ATV) {
+                        banner = view.getResources().getDrawable(R.drawable.shieldtv);
+                    } else {
+                        banner = view.getResources().getDrawable(R.drawable.shieldtablet);
+                    }
+                    iconView.setImageDrawable(banner);
                 }
-                //deal with bitmap...
-                if (blob != null) {
-                    //Leave this null if package available on play store and download... Use glide or picassa
-                    iconView.setImageDrawable(new BitmapDrawable(Utils.convertByteArrayToBitmap(blob)));
-                }
-
             }
         };
     }

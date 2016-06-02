@@ -34,7 +34,6 @@ public class ObjectDetail implements Serializable {
     public String ver;          //version for both
     public String serial;       //serial number of device app is on
     public String image_url;    //url of the banner image for the app
-    public Drawable banner;     //this should only be used for apps not in app store FIXME
     public String location;     //location for devices
     public boolean bIsDevice;   //true if using object to represent device, false for app
     public long installDate;    //update date or install date

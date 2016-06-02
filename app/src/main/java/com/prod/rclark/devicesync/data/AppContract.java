@@ -127,7 +127,6 @@ public class AppContract {
         public static final String COLUMN_APP_LABEL = "app_label";
         public static final String COLUMN_APP_PKG = "app_pkg";
         public static final String COLUMN_APP_FLAGS = "app_flags";
-        public static final String COLUMN_APP_BANNER = "app_banner";
         public static final String COLUMN_APP_VER = "app_version";
         public static final String COLUMN_APP_TYPE = "type";
         public static final String COLUMN_APP_DEVSSN = "devicessn";
