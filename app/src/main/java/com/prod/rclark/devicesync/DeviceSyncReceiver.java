@@ -23,6 +23,7 @@ import android.os.Build;
 import android.util.Log;
 
 import com.prod.rclark.devicesync.ATVUI.MainActivity;
+import com.prod.rclark.devicesync.ATVUI.MainFragment;
 import com.prod.rclark.devicesync.PhoneUI.MainPhoneActivity;
 import com.prod.rclark.devicesync.data.AppContract;
 import com.prod.rclark.devicesync.sync.GCESync;
@@ -78,7 +79,11 @@ public class DeviceSyncReceiver extends BroadcastReceiver {
             //Construct the Uri...
             Log.d(TAG, "Deleting app from CP " + packageName);
             DBUtils.deleteAppFromCP(ctx, Build.SERIAL, packageName);
-            //FIXME - update firebase here - delete record...
+            //FIXME - verify done? update firebase here - delete record...
+            if (MainFragment.mFirebase != null) {
+                MainFragment.mFirebase.deleteAppFromFirebase(Build.SERIAL, packageName);
+            }
+
             //And note that if we have set up a list of intents to uninstall, process them here
         }
 

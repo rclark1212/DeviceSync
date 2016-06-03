@@ -24,6 +24,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.util.Log;
 
+import com.prod.rclark.devicesync.ATVUI.MainFragment;
 import com.prod.rclark.devicesync.data.AppContract;
 
 import java.io.ByteArrayOutputStream;
@@ -265,7 +266,8 @@ public class DBUtils {
             ctx.getContentResolver().insert(AppContract.DevicesEntry.CONTENT_URI, contentValues);
         }
 
-        //FIXME - update firebase database here
+        //FIXME - verify done? - update firebase database here
+        MainFragment.mFirebase.writeDeviceToFirebase(device.serial);
 
         c.close();
     }
@@ -323,7 +325,8 @@ public class DBUtils {
             ctx.getContentResolver().insert(insertUri, contentValues);
         }
 
-        //FIXME - update firebase here with app.apk.
+        //FIXME - verify done? - update firebase here with app.apk.
+        MainFragment.mFirebase.writeAppToFirebase(app.serial, app.pkg);
 
         c.close();
     }

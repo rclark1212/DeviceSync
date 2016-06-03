@@ -2,6 +2,7 @@ package com.prod.rclark.devicesync.cloud;
 
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
@@ -24,6 +25,7 @@ import com.prod.rclark.devicesync.DBUtils;
 import com.prod.rclark.devicesync.ImageDetail;
 import com.prod.rclark.devicesync.ObjectDetail;
 import com.prod.rclark.devicesync.Utils;
+import com.prod.rclark.devicesync.data.AppContract;
 import com.prod.rclark.devicesync.sync.GCESync;
 
 import java.io.ByteArrayOutputStream;
@@ -221,11 +223,11 @@ public class Firebase {
                 String key = dataSnapshot.getKey();
 
                 Log.d(TAG, "App child added - " + key);
-                //was this under devices child?
                 //add to CP
                 ObjectDetail object = dataSnapshot.getValue(ObjectDetail.class);
 
                 //by definition, this will be more up to date than our CP if it is from another serial number so just shove it in...
+                //i.e. nobody should *ever* add an app for our serial number which is not already in our CP...
                 if (object.serial != null) {
                     if (!Build.SERIAL.equals(object.serial)) {
                         Log.d(TAG, "Adding new seria/app to CP " + object.serial + " " + object.pkg);
@@ -553,10 +555,59 @@ public class Firebase {
 
         //Last delete the local record in CP - have to do this last as it will trigger a push update which will cause
         //all the remote devices to then do a merge...
-        //FIXME
-        //-Utils.deleteCPRecord(mCtx, serial);
+        DBUtils.deleteDeviceFromCP(mCtx, serial);
+        Uri appDB = AppContract.AppEntry.CONTENT_URI;
+        //build up the local device query
+        appDB = appDB.buildUpon().appendPath(serial).build();
+        mCtx.getContentResolver().delete(appDB, null, null);
     }
 
+
+    /**
+     * Does what it says - writes device serial number from CP to firebase
+     * @param serial
+     */
+    public void writeDeviceToFirebase(String serial) {
+        DatabaseReference dataBase = mFirebaseDB.getReference();
+
+        ObjectDetail device = DBUtils.getDeviceFromCP(mCtx, serial);
+        if (device != null) {
+            dataBase.child(mUser).child(DEVICES).child(device.serial).setValue(device);
+        }
+    }
+
+    /**
+     * Does what it says
+     * @param serial
+     */
+    public void writeAppToFirebase(String serial, String apkname) {
+        DatabaseReference dataBase = mFirebaseDB.getReference();
+
+        ObjectDetail app = DBUtils.getAppFromCP(mCtx, serial, apkname);
+        if (app != null) {
+            dataBase.child(mUser).child(APPS).child(app.serial).child(Utils.stripForFirebase(app.pkg)).setValue(app);
+        }
+
+        //FIXME - firebase - now make this auto-magic for image pushing
+        //check if this app is local
+        //then check if this app's image exists already in firebase...
+        //if not, then upload it...
+    }
+
+
+    /**
+     * Does what it says
+     * @param serial
+     */
+    public void deleteAppFromFirebase(String serial, String apkname) {
+        DatabaseReference dataBase = mFirebaseDB.getReference();
+
+        dataBase.child(mUser).child(APPS).child(serial).child(apkname).removeValue();
+
+        //FIXME - firebase - now make this auto-magic for image pushing
+        //check if this app exists in the CP database at all for any serial number
+        //if not, then delete it...
+    }
 
     /**
      * writeRecordToFirebase - writes the serial number record to firebase
@@ -566,20 +617,34 @@ public class Firebase {
 
         Log.d(TAG, "Writing firebase db");
 
-        //get the record...
-        //FIXME
-        //-ObjectDetail object = Utils.getCPRecord(mCtx, serial);
-        /*
-        if (object != null) {
-            //update last touched only if it is us
-            if (Build.SERIAL.equals(object.serial)) {
-                //FIXME
-                object.lastpushed = System.currentTimeMillis();
-            }
+        //write the device first...
+        writeDeviceToFirebase(serial);
 
-            //and push
-            dataBase.child(mUser).child(DEVICES).child(object.serial).setValue(object);
-        } */
+        //now the apps...
+        //Set up the query
+        Uri appDB = AppContract.AppEntry.CONTENT_URI;
+        //set up a local app query
+        Uri localApp = appDB.buildUpon().appendPath(serial).build();
+
+        //grab the cursor
+        Cursor c = mCtx.getContentResolver().query(localApp, null, null, null, null);
+
+        if (c.getCount() > 0) {
+            //Okay - we have a cursor with all the apps for the serial...
+            //Loop through the app names
+            for (int i = 0; i < c.getCount(); i++) {
+                //move to position
+                c.moveToPosition(i);
+
+                //get the app name
+                String appname = c.getString(c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_PKG));
+
+                //and write
+                writeAppToFirebase(serial, appname);
+            }
+        }
+
+        c.close();
     }
 
 

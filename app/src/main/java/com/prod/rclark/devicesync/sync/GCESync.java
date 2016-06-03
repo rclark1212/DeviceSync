@@ -28,6 +28,7 @@ import android.os.RemoteException;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
+import com.prod.rclark.devicesync.ATVUI.MainFragment;
 import com.prod.rclark.devicesync.AppUtils;
 import com.prod.rclark.devicesync.DBUtils;
 import com.prod.rclark.devicesync.ObjectDetail;
@@ -330,7 +331,9 @@ public class GCESync extends IntentService {
             //Log.d(TAG, "Starting batch CP application");
             mCtx.getContentResolver().applyBatch(AppContract.CONTENT_AUTHORITY, ops);
             //Log.d(TAG, "Complete batch CP application");
-            //FIXME - apply app changes to firebase. Note, have to loop through apps list
+            //FIXME - verify done? - apply app changes to firebase. Note, have to loop through apps list
+            Log.d(TAG, "Pushing records to firebase for serial " + Build.SERIAL);
+            MainFragment.mFirebase.pushRecordsToFirebase(Build.SERIAL);
         } catch (RemoteException e) {
             Log.e(TAG, "Batch - remoteException err");
         } catch (OperationApplicationException e) {
