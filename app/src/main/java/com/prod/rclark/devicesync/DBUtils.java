@@ -20,6 +20,7 @@ import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
+import android.media.Image;
 import android.net.Uri;
 import android.os.Build;
 import android.util.Log;
@@ -46,6 +47,36 @@ public class DBUtils {
      */
     private DBUtils() {
     }
+
+    /**
+     * Gets an image detail record from the imageDB
+     * @param ctx
+     * @param image
+     */
+    public static ImageDetail getImageRecordFromCP(Context ctx, String stripname) {
+        ImageDetail retImage = null;
+        Uri imageDB = AppContract.ImageEntry.CONTENT_URI;
+        imageDB = imageDB.buildUpon().appendPath(stripname).build();
+
+        //grab the cursor
+        Cursor c = ctx.getContentResolver().query(imageDB, null, null, null, null);
+
+        if (c.getCount() > 0) {
+            //exists!!!
+            c.moveToFirst();
+
+            retImage = new ImageDetail();
+            retImage.stripname = stripname;
+            retImage.filename = c.getString(c.getColumnIndex(AppContract.ImageEntry.COLUMN_IMG_FILENAME));
+            retImage.apkname = c.getString(c.getColumnIndex(AppContract.ImageEntry.COLUMN_IMG_APKNAME));
+            retImage.download_url = c.getString(c.getColumnIndex(AppContract.ImageEntry.COLUMN_IMG_URL));
+        }
+
+        c.close();
+
+        return retImage;
+    }
+
 
     /**
      * Writes an image detail record into the imageDB

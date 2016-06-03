@@ -27,7 +27,7 @@ import java.io.Serializable;
  * Image rules...
  * Banner will only be saved to CP if the package not available in play store (sync side).
  */
-public class ObjectDetail implements Serializable {
+public class ObjectDetail {
     public String label;        //nickname or app
     public String name;         //model name
     public String pkg;          //pkg name
@@ -42,4 +42,20 @@ public class ObjectDetail implements Serializable {
     public long timestamp;      //timestamp used for firebase compares
 
     public ObjectDetail() {};
+
+    public ObjectDetail(String label, String name, String pkg, String ver, String serial, String image_url, String location,
+                        boolean bIsDevice, long installDate, long flags, long type, long timestamp) {
+        this.label = label;
+        this.name = name;
+        this.pkg = pkg;
+        this.ver = ver;
+        this.serial = serial;
+        this.image_url = image_url;
+        this.location = location;
+        this.bIsDevice = bIsDevice;
+        this.installDate = installDate;
+        this.flags = flags;
+        this.type = type;
+        this.timestamp = timestamp;
+    }
 }

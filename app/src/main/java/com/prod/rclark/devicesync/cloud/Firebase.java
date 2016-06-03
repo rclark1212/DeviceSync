@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.support.annotation.NonNull;
@@ -21,6 +22,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
+import com.prod.rclark.devicesync.AppUtils;
 import com.prod.rclark.devicesync.DBUtils;
 import com.prod.rclark.devicesync.ImageDetail;
 import com.prod.rclark.devicesync.ObjectDetail;
@@ -223,15 +225,18 @@ public class Firebase {
                 String key = dataSnapshot.getKey();
 
                 Log.d(TAG, "App child added - " + key);
-                //add to CP
-                ObjectDetail object = dataSnapshot.getValue(ObjectDetail.class);
+                for (DataSnapshot child : dataSnapshot.getChildren()) {
+                    Log.d(TAG, "App child adding - " + child.getKey());
+                    //add to CP
+                    ObjectDetail object = child.getValue(ObjectDetail.class);
 
-                //by definition, this will be more up to date than our CP if it is from another serial number so just shove it in...
-                //i.e. nobody should *ever* add an app for our serial number which is not already in our CP...
-                if (object.serial != null) {
-                    if (!Build.SERIAL.equals(object.serial)) {
-                        Log.d(TAG, "Adding new seria/app to CP " + object.serial + " " + object.pkg);
-                        DBUtils.saveAppToCP(mCtx, object);
+                    //by definition, this will be more up to date than our CP if it is from another serial number so just shove it in...
+                    //i.e. nobody should *ever* add an app for our serial number which is not already in our CP...
+                    if (object.serial != null) {
+                        if (!Build.SERIAL.equals(object.serial)) {
+                            Log.d(TAG, "Adding new seria/app to CP " + object.serial + " " + object.pkg);
+                            DBUtils.saveAppToCP(mCtx, object);
+                        }
                     }
                 }
             }
@@ -242,21 +247,25 @@ public class Firebase {
 
                 Log.d(TAG, "App child changed - " + key);
                 //update CP
-                ObjectDetail object = dataSnapshot.getValue(ObjectDetail.class);
 
-                if (object.serial != null) {
-                    //Check if this is us that pushed. Do this by comparing timestamps
-                    boolean bUpdate = true;
-                    ObjectDetail cp_object = DBUtils.getAppFromCP(mCtx, object.serial, object.pkg);
-                    if (object.timestamp <= cp_object.timestamp) {
-                        //oh... an older instance... skip
-                        bUpdate = false;
-                    }
-                    if (bUpdate) {
-                        Log.d(TAG, "Updating app serial/app in CP " + object.serial + " " + object.pkg);
-                        DBUtils.saveAppToCP(mCtx, object);
-                    } else {
-                        Log.d(TAG, "Got an event for a device record with stale timestamp - must be due to our trigger. Punt on updating " + object.serial);
+                for (DataSnapshot child : dataSnapshot.getChildren()) {
+                    Log.d(TAG, "App child updating - " + child.getKey());
+                    ObjectDetail object = child.getValue(ObjectDetail.class);
+
+                    if (object.serial != null) {
+                        //Check if this is us that pushed. Do this by comparing timestamps
+                        boolean bUpdate = true;
+                        ObjectDetail cp_object = DBUtils.getAppFromCP(mCtx, object.serial, object.pkg);
+                        if (object.timestamp <= cp_object.timestamp) {
+                            //oh... an older instance... skip
+                            bUpdate = false;
+                        }
+                        if (bUpdate) {
+                            Log.d(TAG, "Updating app serial/app in CP " + object.serial + " " + object.pkg);
+                            DBUtils.saveAppToCP(mCtx, object);
+                        } else {
+                            Log.d(TAG, "Got an event for a device record with stale timestamp - must be due to our trigger. Punt on updating " + object.serial);
+                        }
                     }
                 }
             }
@@ -266,13 +275,17 @@ public class Firebase {
                 String key = dataSnapshot.getKey();
 
                 Log.d(TAG, "App child removed - " + key);
-                //remove record from CP
-                //Note - this should likely never trigger an actual CP removal (since will be removed from CP before we get here)
-                ObjectDetail object = dataSnapshot.getValue(ObjectDetail.class);
-                if (object.serial != null) {
-                    String serial = object.serial;
-                    Log.d(TAG, "Removing serial/App from CP " + serial + " " + object.pkg);
-                    DBUtils.deleteAppFromCP(mCtx, serial, object.pkg);
+                for (DataSnapshot child : dataSnapshot.getChildren()) {
+                    Log.d(TAG, "App child deleting - " + child.getKey());
+
+                    //remove record from CP
+                    //Note - this should likely never trigger an actual CP removal (since will be removed from CP before we get here)
+                    ObjectDetail object = child.getValue(ObjectDetail.class);
+                    if (object.serial != null) {
+                        String serial = object.serial;
+                        Log.d(TAG, "Removing serial/App from CP " + serial + " " + object.pkg);
+                        DBUtils.deleteAppFromCP(mCtx, serial, object.pkg);
+                    }
                 }
             }
 
@@ -445,13 +458,15 @@ public class Firebase {
      * Copies the local file to the cloud/firebase. Note filename is a path+file.
      * @return
      */
-    public void copyToFirebase(String filename, String apkname) {
+    public void copyToFirebase(Drawable icon, String apkname) {
 
-        if (filename == null) {
+        if (icon == null) {
             return;
         }
 
-        Log.d(TAG, "Copying filename " + filename);
+        final String filename = apkname + ".jpg";
+
+        Log.d(TAG, "Copying icon - " + filename);
         sendNetworkBusyIndicator(true);
 
         //Get bucket
@@ -462,14 +477,13 @@ public class Firebase {
         StorageReference imagesRef = userRef.child(IMAGE);
 
         //get the last segment of filename (since it is really a path)
-        final String destname = Uri.parse(filename).getLastPathSegment();
         final String apk = apkname;
 
         //Finally filerefs
-        StorageReference fileRef = imagesRef.child(destname);
+        StorageReference fileRef = imagesRef.child(filename);
 
         //Get the bitmap...
-        Bitmap bmap = BitmapFactory.decodeFile(filename);
+        Bitmap bmap = Utils.drawableToBitmap(icon);
 
         //Get the source databuffer
         ByteArrayOutputStream bitmapStream = new ByteArrayOutputStream();
@@ -491,7 +505,7 @@ public class Firebase {
                 // taskSnapshot.getMetadata() contains file metadata such as size, content-type, and download URL.
                 Log.d(TAG, "Upload to firebase succeeded!");
                 final Uri downloadUrl = taskSnapshot.getDownloadUrl();
-                addImageKey(destname, apk, downloadUrl);
+                addImageKey(filename, apk, downloadUrl);
                 sendNetworkBusyIndicator(false);
             }
         });
@@ -521,7 +535,7 @@ public class Firebase {
     }
 
 
-    //  Deletes an image key to realtime database
+    //  Deletes an image key from realtime database
     public void deleteImageKey(String filename) {
         DatabaseReference dataBase = mFirebaseDB.getReference();
 
@@ -586,12 +600,20 @@ public class Firebase {
         ObjectDetail app = DBUtils.getAppFromCP(mCtx, serial, apkname);
         if (app != null) {
             dataBase.child(mUser).child(APPS).child(app.serial).child(Utils.stripForFirebase(app.pkg)).setValue(app);
-        }
 
-        //FIXME - firebase - now make this auto-magic for image pushing
-        //check if this app is local
-        //then check if this app's image exists already in firebase...
-        //if not, then upload it...
+            //FIXME - done and verify - firebase - now make this auto-magic for image pushing
+            //check if this app is local
+            if (DBUtils.isAppLocal(mCtx, apkname)) {
+                //then check if this app's image exists already in photo cp...
+                if (DBUtils.getImageRecordFromCP(mCtx, Utils.stripForFirebase(app.pkg + ".jpg")) == null) {
+                    Log.d(TAG, "Could not find image in CP for " + app.pkg + " - uploading");
+                    //if not, then upload it...
+                    //note - calling copy to firebase ends up generating the db key which in turn causes listener to create CP record
+                    Drawable icon = AppUtils.getLocalApkImage(mCtx, app.pkg, app.type);
+                    copyToFirebase(icon, app.pkg);
+                }
+            }
+        }
     }
 
 
@@ -604,9 +626,17 @@ public class Firebase {
 
         dataBase.child(mUser).child(APPS).child(serial).child(apkname).removeValue();
 
-        //FIXME - firebase - now make this auto-magic for image pushing
+        //FIXME - done and verify - firebase - now make this auto-magic for image pushing
         //check if this app exists in the CP database at all for any serial number
-        //if not, then delete it...
+        if (DBUtils.countApp(mCtx, apkname) == 0) {
+            //if not, then delete photo...
+            //get the photo...
+            ImageDetail image = DBUtils.getImageRecordFromCP(mCtx, Utils.stripForFirebase(apkname));
+
+            //delete photo in storage
+            //this also deletes photo note in fb_db. which then ends up deleting node in CP
+            deleteImage(image.filename);
+        }
     }
 
     /**
