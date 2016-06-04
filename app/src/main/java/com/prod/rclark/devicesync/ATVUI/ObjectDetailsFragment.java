@@ -50,6 +50,7 @@ import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
 import com.prod.rclark.devicesync.AppUtils;
 import com.prod.rclark.devicesync.DBUtils;
+import com.prod.rclark.devicesync.ImageDetail;
 import com.prod.rclark.devicesync.InstallUtil;
 import com.prod.rclark.devicesync.ObjectDetail;
 import com.prod.rclark.devicesync.R;
@@ -183,9 +184,12 @@ public class ObjectDetailsFragment extends DetailsFragment {
             if (banner != null) {
                 row.setImageDrawable(banner);
             } else {
+                //get the download URL...
+                ImageDetail image = DBUtils.getImageRecordFromCP(getActivity(), mSelectedObject.pkg);
+
                 //glide it in
                 Glide.with(getActivity())
-                        .load(mSelectedObject.image_url)
+                        .load(image.download_url)
                         .centerCrop()
                         .error(getResources().getDrawable(R.drawable.noimage))
                         .into(new SimpleTarget<GlideDrawable>(width, height) {

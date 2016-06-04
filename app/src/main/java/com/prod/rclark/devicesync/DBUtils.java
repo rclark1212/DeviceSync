@@ -53,10 +53,10 @@ public class DBUtils {
      * @param ctx
      * @param image
      */
-    public static ImageDetail getImageRecordFromCP(Context ctx, String stripname) {
+    public static ImageDetail getImageRecordFromCP(Context ctx, String apk) {
         ImageDetail retImage = null;
         Uri imageDB = AppContract.ImageEntry.CONTENT_URI;
-        imageDB = imageDB.buildUpon().appendPath(stripname).build();
+        imageDB = imageDB.buildUpon().appendPath(apk).build();
 
         //grab the cursor
         Cursor c = ctx.getContentResolver().query(imageDB, null, null, null, null);
@@ -66,7 +66,7 @@ public class DBUtils {
             c.moveToFirst();
 
             retImage = new ImageDetail();
-            retImage.stripname = stripname;
+            retImage.stripname = c.getString(c.getColumnIndex(AppContract.ImageEntry.COLUMN_IMG_STRIPNAME));
             retImage.filename = c.getString(c.getColumnIndex(AppContract.ImageEntry.COLUMN_IMG_FILENAME));
             retImage.apkname = c.getString(c.getColumnIndex(AppContract.ImageEntry.COLUMN_IMG_APKNAME));
             retImage.download_url = c.getString(c.getColumnIndex(AppContract.ImageEntry.COLUMN_IMG_URL));
@@ -121,9 +121,9 @@ public class DBUtils {
      * @param ctx
      * @param stripname
      */
-    public static void deleteImageRecordFromCP(Context ctx, String stripname) {
+    public static void deleteImageRecordFromCP(Context ctx, String apk) {
         Uri imageDB = AppContract.ImageEntry.CONTENT_URI;
-        imageDB = imageDB.buildUpon().appendPath(stripname).build();
+        imageDB = imageDB.buildUpon().appendPath(apk).build();
         ctx.getContentResolver().delete(imageDB, null, null);
     }
 

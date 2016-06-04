@@ -39,6 +39,7 @@ import android.widget.TextView;
 import com.bumptech.glide.Glide;
 import com.prod.rclark.devicesync.AppUtils;
 import com.prod.rclark.devicesync.DBUtils;
+import com.prod.rclark.devicesync.ImageDetail;
 import com.prod.rclark.devicesync.ObjectDetail;
 import com.prod.rclark.devicesync.R;
 import com.prod.rclark.devicesync.data.AppContract;
@@ -120,9 +121,11 @@ public class CardPresenter extends Presenter {
                 if (banner != null) {
                     cardView.setMainImage(banner);
                 } else {
+                    //get the download URL...
+                    ImageDetail image = DBUtils.getImageRecordFromCP(cardView.getContext(), element.pkg);
                     //glide it in
                     Glide.with(cardView.getContext())
-                            .load(element.image_url)
+                            .load(image.download_url)
                             .centerCrop()
                             .error(mDefaultCardImage)
                             .into(cardView.getMainImageView());

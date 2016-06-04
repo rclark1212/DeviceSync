@@ -348,8 +348,8 @@ public class Firebase {
                 Log.d(TAG, "Image child removed - " + key);
                 //photo removed
                 ImageDetail object = dataSnapshot.getValue(ImageDetail.class);
-                if (object.stripname != null) {
-                    String removed = object.stripname;
+                if (object.apkname != null) {
+                    String removed = object.apkname;
                     Log.d(TAG, "Removing image from CP " + removed);
                     DBUtils.deleteImageRecordFromCP(mCtx, removed);
                     //and send a message in case there needs to be an update (in case of not using cursor loader for images)
@@ -633,7 +633,7 @@ public class Firebase {
         if (DBUtils.countApp(mCtx, apkname) == 0) {
             //if not, then delete photo...
             //get the photo...
-            ImageDetail image = DBUtils.getImageRecordFromCP(mCtx, Utils.stripForFirebase(apkname));
+            ImageDetail image = DBUtils.getImageRecordFromCP(mCtx, apkname);
 
             //delete photo in storage
             //this also deletes photo note in fb_db. which then ends up deleting node in CP

@@ -16,6 +16,8 @@ import com.bumptech.glide.load.resource.drawable.GlideDrawable;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
 import com.prod.rclark.devicesync.AppUtils;
+import com.prod.rclark.devicesync.DBUtils;
+import com.prod.rclark.devicesync.ImageDetail;
 import com.prod.rclark.devicesync.ObjectDetail;
 import com.prod.rclark.devicesync.R;
 
@@ -89,9 +91,11 @@ public class ListArrayObjectAdapter extends RecyclerView.Adapter <ListArrayObjec
         if (banner != null) {
             iconView.setImageDrawable(banner);
         } else {
+            ImageDetail image = DBUtils.getImageRecordFromCP(iconView.getContext(), app.pkg);
+
             //glide it in
             Glide.with(iconView.getContext())
-                    .load(app.image_url)
+                    .load(image.download_url)
                     .centerCrop()
                     .into(new SimpleTarget<GlideDrawable>() {
                         @Override
