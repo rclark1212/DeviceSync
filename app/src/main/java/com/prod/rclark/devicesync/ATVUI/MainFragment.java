@@ -32,18 +32,24 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.LoaderManager;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.CursorLoader;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.Loader;
+import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.IBinder;
+import android.os.Message;
+import android.os.Messenger;
+import android.os.RemoteException;
 import android.preference.PreferenceManager;
 import android.support.v17.leanback.app.BrowseFragment;
 import android.support.v17.leanback.database.CursorMapper;
@@ -77,6 +83,7 @@ import com.prod.rclark.devicesync.ObjectDetail;
 import com.prod.rclark.devicesync.R;
 import com.prod.rclark.devicesync.Utils;
 import com.prod.rclark.devicesync.cloud.Firebase;
+import com.prod.rclark.devicesync.cloud.FirebaseMessengerService;
 import com.prod.rclark.devicesync.data.AppContract;
 import com.prod.rclark.devicesync.sync.GCESync;
 import com.google.android.gms.common.ConnectionResult;
@@ -139,8 +146,15 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
     private UIDataSetup mUIDataSetup;
 
+    //  Firebase
     private FirebaseApp mFirebaseApp;
     public static Firebase mFirebase;
+
+    OnMainActivityCallbackListener mCallback;
+    //Put in an interface for container activity to implement so that fragment can deliver messages
+    public interface OnMainActivityCallbackListener {
+        public void onMainActivityCallback(int code, String data, String extra);
+    }
 
     //We use broadcast intents to message back from GCESync to the main activity.
     //Define our handler for this here.
@@ -227,6 +241,21 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
             //And initialize the loaders *after* we get back from the activity paused state
             initializeLoaders();
+        }
+    }
+
+    @Override
+    public void onAttach(Context ctx) {
+        super.onAttach(ctx);
+
+        // This makes sure that the container activity has implemented
+        // the callback interface. If not, it throws an exception.
+        // housekeeping function
+        try {
+            mCallback = (OnMainActivityCallbackListener) ctx;
+        } catch (ClassCastException e) {
+            throw new ClassCastException(ctx.toString()
+                    + " must implement OnMainActivityCallbackListener");
         }
     }
 
@@ -880,6 +909,8 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                     Intent intent = new Intent(getActivity(), BrowseErrorActivity.class);
                     startActivity(intent);
                 } else if (item.equals(getResources().getString(R.string.signin_button_text))) {
+                    //FIXME - test.
+                    mCallback.onMainActivityCallback(MainActivity.CALLBACK_SEND_TO_SERVICE, null, null);
                     //signInToGoogle(GOOGLE_SIGNIN_EXPLICIT);
                 } else if (item.equals(getResources().getString(R.string.signout_button_text))) {
                     //log us out (both activity and service)

@@ -25,9 +25,12 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <meta-data android:name="com.google.android.gms.version" android:value="@integer/google_play_services_version"/>
+        <meta-data
+            android:name="com.google.android.gms.version"
+            android:value="@integer/google_play_services_version" />
+
         <activity
-            android:name="com.prod.rclark.devicesync.ATVUI.MainActivity"
+            android:name=".ATVUI.MainActivity"
             android:banner="@drawable/app_icon_your_company"
             android:icon="@drawable/app_icon_your_company"
             android:label="@string/app_name"
@@ -35,43 +38,51 @@
             android:screenOrientation="landscape">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name="com.prod.rclark.devicesync.ATVUI.DetailsActivity" />
-        <activity android:name="com.prod.rclark.devicesync.ATVUI.BrowseErrorActivity" />
-        <activity android:name="com.prod.rclark.devicesync.ATVUI.SettingsActivity" />
-        <activity android:name="com.prod.rclark.devicesync.PhoneUI.PhoneSettingsActivity" />
+        <activity android:name=".ATVUI.DetailsActivity" />
+        <activity android:name=".ATVUI.BrowseErrorActivity" />
+        <activity android:name=".ATVUI.SettingsActivity" />
+        <activity android:name=".PhoneUI.PhoneSettingsActivity" />
 
         <service
-            android:name="com.prod.rclark.devicesync.sync.GCESync"
+            android:name=".sync.GCESync"
             android:exported="false" />
 
         <provider
-            android:name="com.prod.rclark.devicesync.data.AppProvider"
+            android:name=".data.AppProvider"
             android:authorities="com.prod.rclark.devicesync"
             android:exported="false"
             android:syncable="true" />
 
-        <receiver android:name="com.prod.rclark.devicesync.DeviceSyncReceiver">
+        <receiver android:name=".DeviceSyncReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.PACKAGE_ADDED" />
                 <action android:name="android.intent.action.PACKAGE_CHANGED" />
                 <action android:name="android.intent.action.PACKAGE_REPLACED" />
                 <action android:name="android.intent.action.PACKAGE_REMOVED" />
                 <action android:name="android.intent.action.PACKAGE_FULLY_REMOVED" />
-                <data android:scheme="package"/>
+
+                <data android:scheme="package" />
             </intent-filter>
         </receiver>
 
         <activity
-            android:name="com.prod.rclark.devicesync.PhoneUI.MainPhoneActivity"
+            android:name=".PhoneUI.MainPhoneActivity"
             android:label="@string/title_activity_main_phone">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <service
+            android:name=".cloud.FirebaseMessengerService"
+            android:enabled="true"
+            android:exported="true"></service>
     </application>
 
 </manifest>
