@@ -1,5 +1,6 @@
 package com.prod.rclark.devicesync.cloud;
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
@@ -65,7 +66,6 @@ public class Firebase {
     private static final String NULL = "null";
 
     private static final String FIREBASE_STORAGE_BUCKET = "gs://project-4088008660350137649.appspot.com";
-    public static final String LOCAL_PHOTO_FILENAME = "local";
 
     /**
      * Constructor - give me my context and my user UUID
@@ -605,12 +605,14 @@ public class Firebase {
             //check if this app is local
             if (DBUtils.isAppLocal(mCtx, apkname)) {
                 //then check if this app's image exists already in photo cp...
-                if (DBUtils.getImageRecordFromCP(mCtx, Utils.stripForFirebase(app.pkg + ".jpg")) == null) {
+                if (DBUtils.getImageRecordFromCP(mCtx, apkname) == null) {
                     Log.d(TAG, "Could not find image in CP for " + app.pkg + " - uploading");
                     //if not, then upload it...
                     //note - calling copy to firebase ends up generating the db key which in turn causes listener to create CP record
                     Drawable icon = AppUtils.getLocalApkImage(mCtx, app.pkg, app.type);
                     copyToFirebase(icon, app.pkg);
+                } else {
+                    Log.d(TAG, "Skip updating " + app.pkg + " image - already exists");
                 }
             }
         }
