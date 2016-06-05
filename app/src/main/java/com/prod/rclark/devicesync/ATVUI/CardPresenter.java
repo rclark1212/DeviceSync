@@ -42,6 +42,7 @@ import com.prod.rclark.devicesync.DBUtils;
 import com.prod.rclark.devicesync.ImageDetail;
 import com.prod.rclark.devicesync.ObjectDetail;
 import com.prod.rclark.devicesync.R;
+import com.prod.rclark.devicesync.Utils;
 import com.prod.rclark.devicesync.data.AppContract;
 
 /*
@@ -149,14 +150,48 @@ public class CardPresenter extends Presenter {
     private void decorateCardViewImage(ImageCardView cardView, ObjectDetail element) {
         boolean bLocal = false;
 
+        //We have a tiered system of badging...
+        //first, if app is of the wrong type, we will show the type badge (so for ATV, show tablet and vice versa)
+        //if of an okay type, we next will show flag if the app has been flagged
+        //if no flag, we will then show either home (for local apps) or cloud (for remote apps)
+        Drawable badge = null;
+        if (element.type != AppContract.TYPE_BOTH) {
+            if (Utils.bIsThisATV(cardView.getContext())) {
+                if (element.type == AppContract.TYPE_TABLET) {
+                    //load tv
+                    badge = cardView.getContext().getDrawable(R.drawable.ic_tv);
+                }
+            } else {
+                if (element.type == AppContract.TYPE_ATV) {
+                    //load tablet
+                    badge = cardView.getContext().getDrawable(R.drawable.ic_tablet);
+                }
+            }
+        }
+
+        //tier2 - flags
+        if (badge == null) {
+            if (element.flags != 0) {
+                badge = cardView.getContext().getDrawable(R.drawable.ic_flag);
+            }
+        }
+
+        //tier3 - local or remote
         //Is this object local?
         bLocal = DBUtils.isObjectLocal(cardView.getContext(), element);
+        if (badge == null) {
+            if (bLocal) {
+                badge = cardView.getContext().getDrawable(R.drawable.ic_home);
+            } else {
+                badge = cardView.getContext().getDrawable(R.drawable.ic_cloud);
+            }
+        }
+
+        cardView.setBadgeImage(badge);
+        //would be nice to have a number badge as well
 
         //Is this a local or remote object?
         if (!bLocal) {
-            cardView.setBadgeImage(ContextCompat.getDrawable(cardView.getContext(), R.drawable.star_icon));
-            //fade it out a bit (I know, expensive)
-            cardView.setAlpha(0.6f);
             //get the text views
             TextView title = (TextView) cardView.findViewById(R.id.title_text);
             TextView subtitle = (TextView) cardView.findViewById(R.id.content_text);
@@ -167,10 +202,6 @@ public class CardPresenter extends Presenter {
                 title.setTextColor(ContextCompat.getColor(cardView.getContext(), R.color.remote_text));
             }
         } else {
-            //view may have been recycled... restore it
-            cardView.setBadgeImage(null);
-            //fade it out a bit (I know, expensive)
-            cardView.setAlpha(1.0f);
             //get the text views
             TextView title = (TextView) cardView.findViewById(R.id.title_text);
             TextView subtitle = (TextView) cardView.findViewById(R.id.content_text);
