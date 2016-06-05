@@ -60,10 +60,9 @@ public class GCESync extends IntentService {
     // TODO: Rename actions, choose action names that describe tasks that this
     // IntentService can perform, e.g. ACTION_FETCH_NEW_ITEMS
     private static final String ACTION_UPDATE_LOCAL_DB = "com.prod.rclark.devicesync.sync.action.Update";
-    private static final String ACTION_PUSH_REMOTE_DB = "com.prod.rclark.devicesync.sync.action.Push";
-    private static final String ACTION_FETCH_REMOTE_DB = "com.prod.rclark.devicesync.sync.action.Fetch";
     private static final String ACTION_UPDATE_LOCAL_DEVICE = "com.prod.rclark.devicesync.sync.action.DeviceUpdate";
     private static final String ACTION_UPDATE_LOCAL_APP = "com.prod.rclark.devicesync.sync.action.AppUpdate";
+    private static final String ACTION_INSTALL_APK = "com.prod.rclark.devicesync.sync.action.APKInstall";
 
     // TODO: Rename parameters
     private static final String EXTRA_PARAM1 = "com.prod.rclark.devicesync.sync.extra.PARAM1";
@@ -100,8 +99,7 @@ public class GCESync extends IntentService {
     }
 
     /**
-     * Starts this service to perform action Foo with the given parameters. If
-     * the service is already performing a task this action will be queued.
+     * Full update of the local device in the content provider. Updates both the device as well as the apps
      *
      * @see IntentService
      */
@@ -116,8 +114,7 @@ public class GCESync extends IntentService {
     }
 
     /**
-     * Starts this service to perform action Foo with the given parameters. If
-     * the service is already performing a task this action will be queued.
+     * Updates the local device in the content provider. Updates the device only (not the apps)
      *
      * @see IntentService
      */
@@ -130,13 +127,9 @@ public class GCESync extends IntentService {
     }
 
     /**
-     * Starts this service to perform action Foo with the given parameters. If
-     * the service is already performing a task this action will be queued.
-     * Note that the second param here is very special. Indicates a delay to insert on processing
-     * the action (in ms). Used for broadcast intent actions where app package manager not quite
-     * ready for us to capture data at time we are called.
-     * Note that this routine here runs in context of broadcast receiver - so we really want to delay
-     * once we are inside the intentservice...
+     * Updates a local app in the CP
+     *
+     * Note that this called by broadcast receiver. Make sure to process delay once we are inside the intentservice...
      *
      * @see IntentService
      */
@@ -150,6 +143,22 @@ public class GCESync extends IntentService {
         }
     }
 
+    /**
+     * Kicks off an APK install intent. Why are we doing this in an intent service? Well, for devs, they may
+     * have apps on their system not available on google play. So before launching intent, see if it is available
+     * on play store. And if not, issue a ACTION_SKIP to move on...
+     *
+     * once we are inside the intentservice...
+     *
+     * @see IntentService
+     */
+    public static void startActionAPKInstall(Context context, String pkgname, String intentPrefix) {
+        Intent intent = new Intent(context, GCESync.class);
+        intent.setAction(ACTION_INSTALL_APK);
+        intent.putExtra(EXTRA_PARAM1, pkgname);
+        intent.putExtra(EXTRA_PARAM2, intentPrefix);
+        context.startService(intent);
+    }
 
     @Override
     protected void onHandleIntent(Intent intent) {
@@ -169,10 +178,6 @@ public class GCESync extends IntentService {
                 //final String param1 = intent.getStringExtra(EXTRA_PARAM1);
                 //final String param2 = intent.getStringExtra(EXTRA_PARAM2);
                 handleActionUpdate();
-            } else if (ACTION_PUSH_REMOTE_DB.equals(action)) {
-                //final String param1 = intent.getStringExtra(EXTRA_PARAM1);
-                //final String param2 = intent.getStringExtra(EXTRA_PARAM2);
-                handleActionPush();
             } else if (ACTION_UPDATE_LOCAL_DEVICE.equals(action)) {
                 //update the device...
                 handleActionLocalDeviceUpdate();
@@ -204,8 +209,10 @@ public class GCESync extends IntentService {
                     //call immediately
                     handleActionLocalAppUpdate(pkgname);
                 }
-            } else if (ACTION_FETCH_REMOTE_DB.equals(action)) {
-                handleActionFetch();
+            } else if (ACTION_INSTALL_APK.equals(action)) {
+                final String pkgname = intent.getStringExtra(EXTRA_PARAM1);
+                final String installIntent = intent.getStringExtra(EXTRA_PARAM2);
+                handleActionInstallAPK(pkgname, installIntent);
             }
         }
     }
@@ -380,23 +387,24 @@ public class GCESync extends IntentService {
         }
     }
 
-    /**
-     * Handle action Baz in the provided background thread with the provided
-     * parameters.
-     */
-    private void handleActionPush() {
-        // TODO: Handle action Foo
-        throw new UnsupportedOperationException("Not yet implemented");
-    }
 
     /**
-     * Handle action Baz in the provided background thread with the provided
-     * parameters.
+     * Handle APK install in background thread. To be specific, check if the APK exists on the market store first
+     * and then, if it does, launch market install intent else issue a broadcast ACTION_SKIP intent.
+     *
+     * @param pkg
+     * @param installIntent
      */
-    private void handleActionFetch() {
-        // TODO: Handle action Foo
-        throw new UnsupportedOperationException("Not yet implemented");
+
+    private void handleActionInstallAPK(String pkg, String intentPrefix) {
+
+        //Step 1 - check if this app exists on play store...
+
+        //Step 2 - go ahead with install
+        Log.d(TAG, "Launching install intent for " + pkg);
+        Intent goToMarket = new Intent(Intent.ACTION_VIEW).setData(Uri.parse(intentPrefix + pkg));
+        //make sure activity not on history stack...
+        goToMarket.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        mCtx.startActivity(goToMarket);
     }
-
-
 }

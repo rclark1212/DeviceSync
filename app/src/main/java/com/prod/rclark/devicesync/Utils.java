@@ -76,6 +76,7 @@ public class Utils {
     private static final String PREFS_HAS_RUN_ALREADY = "prefs_has_run_already";
     private static final String SYNCS_ARE_DISABLED = "prefs_syncs_disabled";
     private static final String CACHED_LOCATION = "prefs_last_location";
+    private static final String APP_IS_RUNNING = "prefs_app_is_active";
     private static final String PREFS_USER_ID = "prefs_user_id";
 
     /*
@@ -246,6 +247,27 @@ public class Utils {
 
         return bret;
     }
+
+    /**
+     *  Routine to set a flag if app is active (used by service for whether to deliver messages)
+     */
+    public static void setAppActive(Context ctx, boolean bAppActive) {
+        SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(ctx);
+        SharedPreferences.Editor edit = pref.edit();
+        edit.putBoolean(APP_IS_RUNNING, true);
+        edit.commit();
+    }
+
+    /**
+     *  Routine to set a flag if app is active (used by service for whether to deliver messages)
+     */
+    public static boolean isAppActive(Context ctx) {
+        SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(ctx);
+        boolean bReturn = pref.getBoolean(APP_IS_RUNNING, false);
+        return bReturn;
+    }
+
+
     //
     //  Utility routine to check if we have internet connection. Check on start
     //

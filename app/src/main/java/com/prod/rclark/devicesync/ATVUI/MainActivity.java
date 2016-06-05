@@ -46,6 +46,7 @@ http://stackoverflow.com/questions/4604239/install-application-programmatically-
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.FragmentTransaction;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -80,6 +81,9 @@ public class MainActivity extends Activity implements
     protected static final int CALLBACK_SERVICE_QUERY_LOGIN = 2018;
     protected static final int CALLBACK_SERVICE_REQUEST_LOGIN = 2019;
 
+    //main fragment
+    private MainFragment mMainFragment=null;
+
     //  Service
     boolean mBoundToService;
     Messenger mService = null;
@@ -92,13 +96,19 @@ public class MainActivity extends Activity implements
             // service using a Messenger, so here we get a client-side
             // representation of that from the raw IBinder object.
             mService = new Messenger(service);
+            Log.d(TAG, "got bound to service callback");
             mBoundToService = true;
+            //create fragment after we bind...
+            if (mMainFragment == null) {
+                finishSetup();
+            }
         }
 
         public void onServiceDisconnected(ComponentName className) {
             // This is called when the connection with the service has been
             // unexpectedly disconnected -- that is, its process crashed.
             mService = null;
+            Log.d(TAG, "got unbound to service callback");
             mBoundToService = false;
         }
     };
@@ -113,12 +123,18 @@ public class MainActivity extends Activity implements
             }
             case CALLBACK_SERVICE_QUERY_LOGIN: {
                 Log.d(TAG, "Callback: sendMessageToService - query login");
-                sendMessageToService(FirebaseMessengerService.MSG_QUERY_LOGON_STATUS, null);
+                if (!sendMessageToService(FirebaseMessengerService.MSG_QUERY_LOGON_STATUS, null)) {
+                    //We have a problem...
+                    Toast.makeText(getApplicationContext(), "Service not bound", Toast.LENGTH_SHORT).show();
+                }
                 break;
             }
             case CALLBACK_SERVICE_REQUEST_LOGIN: {
                 Log.d(TAG, "Callback: sendMessageToService - request login");
-                sendMessageToService(FirebaseMessengerService.MSG_ATTEMPT_LOGON, null);
+                if (!sendMessageToService(FirebaseMessengerService.MSG_ATTEMPT_LOGON, null)) {
+                    //We have a problem
+                    Toast.makeText(getApplicationContext(), "Service not bound", Toast.LENGTH_SHORT).show();
+                }
                 break;
             }
             default:
@@ -130,20 +146,44 @@ public class MainActivity extends Activity implements
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        Log.d(TAG, "onCreate");
+
+        if (mBoundToService) {
+            //wait until we are bound to the service before creating fragment...
+            finishSetup();
+        }
+    }
+
+    //Finish setup by creating browse fragment
+    private void finishSetup() {
+        if (mMainFragment == null) {
+            Log.d(TAG, "finishing setup and creating browsefragment");
+            mMainFragment = new MainFragment();
+            //otherwise and put it in the container
+            FragmentTransaction transaction = getFragmentManager().beginTransaction();
+            transaction.replace(R.id.fragment_container, mMainFragment);
+            transaction.commit();
+            getFragmentManager().executePendingTransactions();  //force the commit to take place
+        }
     }
 
     @Override
     public void onStart() {
         super.onStart();
         // Bind to the service
-        bindService(new Intent(this, FirebaseMessengerService.class), mConnection,
-                Context.BIND_AUTO_CREATE);
+        if (!mBoundToService) {
+            Log.d(TAG, "onStart - binding to service");
+            bindService(new Intent(this, FirebaseMessengerService.class), mConnection,
+                    Context.BIND_AUTO_CREATE);
+        }
     }
 
     @Override
     public void onStop() {
         super.onStop();
         // Unbind from the service
+        Log.d(TAG, "onStop - unbinding from service");
         if (mBoundToService) {
             unbindService(mConnection);
             mBoundToService = false;
@@ -153,10 +193,10 @@ public class MainActivity extends Activity implements
     /**
      * Sends a message to our service
      */
-    private void sendMessageToService(int messageId, Bundle bundle) {
+    private boolean sendMessageToService(int messageId, Bundle bundle) {
         if (!mBoundToService) {
             Log.d(TAG, "Service not bound but someone tried to send message");
-            return;
+            return false;
         }
 
         Message msg = Message.obtain(null, messageId, 0, 0);
@@ -170,6 +210,8 @@ public class MainActivity extends Activity implements
             Log.d(TAG, "Error accessing service!");
             e.printStackTrace();
         }
+
+        return true;
     }
 
 }

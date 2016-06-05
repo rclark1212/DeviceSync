@@ -274,6 +274,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         Log.i(TAG, "onCreate");
         super.onActivityCreated(savedInstanceState);
 
+        Log.d(TAG, "Checking internet");
         //First check internet connectivity
         if (!Utils.isOnline(getActivity())) {
             finishIt();
@@ -283,6 +284,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         mFirebaseApp = FirebaseApp.getInstance();
 
         //First, try to login...
+        Log.d(TAG, "Trying to sign in");
         firebaseSignIn();
 
         //at conclusion of signin (required), we start GMS
@@ -334,7 +336,10 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         int permissionCheck = PackageManager.PERMISSION_GRANTED;
         //dynamic permissions only needed for M
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            permissionCheck = getActivity().checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION);
+            if (this.getActivity() != null) {
+                //No idea why but this is coming up as a crash far to often :(
+                permissionCheck = this.getActivity().checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION);
+            }
         }
 
         if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
@@ -428,6 +433,9 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
     public void onResume() {
         super.onResume();
 
+        //set up app as active
+        Utils.setAppActive(this.getActivity(), true);
+
         //set up handler and register content observer
         if (mAppObserver == null) {
             mAppObserver = new AppObserver(this);
@@ -444,6 +452,10 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
     @Override
     public void onPause() {
         super.onPause();
+
+        //set up app as inactive
+        Utils.setAppActive(this.getActivity(), false);
+
         // always call unregisterContentObserver in onPause
         getActivity().getContentResolver().unregisterContentObserver(mAppObserver);
 
@@ -888,6 +900,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
      */
     private void setupGMS() {
         //Next, connect...
+        Log.d(TAG, "Setting up GMS");
 
         //Does service exist? If not, can user fix?
         GoogleApiAvailability api = GoogleApiAvailability.getInstance();

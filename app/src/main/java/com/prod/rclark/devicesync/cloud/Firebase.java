@@ -95,6 +95,7 @@ public class Firebase {
         Intent localIntent = new Intent(GCESync.BROADCAST_ACTION).putExtra(GCESync.EXTENDED_DATA_STATUS,
                 GCESync.EXTENDED_DATA_STATUS_PUSHCOMPLETE);
         //And broadcast the message
+        //Note - messages will be ignored when receiver not registered (i.e. when app not running)
         LocalBroadcastManager.getInstance(mCtx).sendBroadcast(localIntent);
 
         sendNetworkBusyIndicator(false);
@@ -324,12 +325,16 @@ public class Firebase {
                 ImageDetail object = dataSnapshot.getValue(ImageDetail.class);
 
                 if (object.filename != null) {
-                    Log.d(TAG, "Adding new image to CP " + object.filename);
-                    DBUtils.setImageRecordToCP(mCtx, object);
-                    //and send a message in case there needs to be an update (in case of not using cursor loader for images)
-                    Intent localIntent = new Intent(GCESync.BROADCAST_ACTION).putExtra(GCESync.EXTENDED_DATA_STATUS,
-                            GCESync.EXTENDED_DATA_STATUS_PHOTO_COMPLETE);
-                    LocalBroadcastManager.getInstance(mCtx).sendBroadcast(localIntent);
+                    //Is this object already in our CP?
+                    ImageDetail cp_object = DBUtils.getImageRecordFromCP(mCtx, object.apkname);
+                    if (!object.isEqual(cp_object)) {
+                        Log.d(TAG, "Adding new image to CP " + object.filename);
+                        DBUtils.setImageRecordToCP(mCtx, object);
+                        //and send a message in case there needs to be an update (in case of not using cursor loader for images)
+                        Intent localIntent = new Intent(GCESync.BROADCAST_ACTION).putExtra(GCESync.EXTENDED_DATA_STATUS,
+                                GCESync.EXTENDED_DATA_STATUS_PHOTO_COMPLETE);
+                        LocalBroadcastManager.getInstance(mCtx).sendBroadcast(localIntent);
+                    }
                 }
             }
 
@@ -344,12 +349,15 @@ public class Firebase {
                 Log.d(TAG, "Image URL " + object.download_url);
 
                 if (object.filename != null) {
-                    Log.d(TAG, "Updating image in CP " + object.filename);
-                    DBUtils.setImageRecordToCP(mCtx, object);
-                    //and send a message in case there needs to be an update (in case of not using cursor loader for images)
-                    Intent localIntent = new Intent(GCESync.BROADCAST_ACTION).putExtra(GCESync.EXTENDED_DATA_STATUS,
-                            GCESync.EXTENDED_DATA_STATUS_PHOTO_COMPLETE);
-                    LocalBroadcastManager.getInstance(mCtx).sendBroadcast(localIntent);
+                    ImageDetail cp_object = DBUtils.getImageRecordFromCP(mCtx, object.apkname);
+                    if (!object.isEqual(cp_object)) {
+                        Log.d(TAG, "Updating image in CP " + object.filename);
+                        DBUtils.setImageRecordToCP(mCtx, object);
+                        //and send a message in case there needs to be an update (in case of not using cursor loader for images)
+                        Intent localIntent = new Intent(GCESync.BROADCAST_ACTION).putExtra(GCESync.EXTENDED_DATA_STATUS,
+                                GCESync.EXTENDED_DATA_STATUS_PHOTO_COMPLETE);
+                        LocalBroadcastManager.getInstance(mCtx).sendBroadcast(localIntent);
+                    }
                 }
             }
 
@@ -707,5 +715,4 @@ public class Firebase {
         //And broadcast the message
         LocalBroadcastManager.getInstance(mCtx).sendBroadcast(localIntent);
     }
-
 }

@@ -68,6 +68,7 @@ public class AppProvider extends ContentProvider {
             // interact with the service.  We are communicating with the
             // service using a Messenger, so here we get a client-side
             // representation of that from the raw IBinder object.
+            Log.d(TAG, "Bound to service in CP");
             mService = new Messenger(service);
             mBoundToService = true;
         }
@@ -75,6 +76,7 @@ public class AppProvider extends ContentProvider {
         public void onServiceDisconnected(ComponentName className) {
             // This is called when the connection with the service has been
             // unexpectedly disconnected -- that is, its process crashed.
+            Log.d(TAG, "Unbind service in CP");
             mService = null;
             mBoundToService = false;
         }
@@ -240,8 +242,10 @@ public class AppProvider extends ContentProvider {
         //okay - we are using firebase service to mirror our CP data up to cloud - bind here
         // Bind to the service
         // NOTE - content providers never destroyed so no real opportunity/place to unbind. But that should be okay.
-        mCtx.bindService(new Intent(mCtx, FirebaseMessengerService.class), mConnection,
-                Context.BIND_AUTO_CREATE);
+        if (!mBoundToService) {
+            mCtx.bindService(new Intent(mCtx, FirebaseMessengerService.class), mConnection,
+                    Context.BIND_AUTO_CREATE);
+        }
 
         return true;
     }
@@ -761,7 +765,7 @@ public class AppProvider extends ContentProvider {
      */
     private void sendMessageToService(int messageId, Bundle bundle) {
         if (!mBoundToService) {
-            Log.d(TAG, "Service not bound but someone tried to send message");
+            Log.d(TAG, "CP - Service not bound but someone tried to send message");
             return;
         }
 

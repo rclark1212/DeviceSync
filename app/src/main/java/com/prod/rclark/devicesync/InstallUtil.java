@@ -17,6 +17,9 @@ package com.prod.rclark.devicesync;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.util.Log;
+
+import com.prod.rclark.devicesync.sync.GCESync;
 
 import java.util.ArrayList;
 
@@ -27,8 +30,9 @@ import java.util.ArrayList;
  */
 public class InstallUtil {
 
-    private final static String INSTALL_PREFIX = "market://details?id=";
-    private final static String UNINSTALL_PREFIX = "package:";
+    private final static String TAG = "InstallUtil";
+    protected final static String INSTALL_PREFIX = "market://details?id=";
+    protected final static String UNINSTALL_PREFIX = "package:";
     private InstallUtil() {};
 
     /**
@@ -36,14 +40,19 @@ public class InstallUtil {
      * @param apk
      */
     public static void installAPK(Context ctx, String apk) {
-        //TODO - implement
-        //FIXME!!!! Have to do this in intent service and check for the availability of the app on google play (i.e. tvnote not available)
-        Utils.showToast(ctx, "Installing " + apk);
+        //Utils.showToast(ctx, "Installing " + apk);
+        Log.d(TAG, "Installing " + apk);
 
-        String install = INSTALL_PREFIX + apk;
+        //For single install, make sure our batch install list is nulled out...
+        if (DeviceSyncReceiver.mInstallIntents != null) {
+            DeviceSyncReceiver.mInstallIntents.clear();
+        }
+
+        DeviceSyncReceiver.mCurrentlyInstalling = apk;
         Intent goToMarket = new Intent(Intent.ACTION_VIEW)
-                .setData(Uri.parse(install));
+                .setData(Uri.parse(INSTALL_PREFIX+apk));
         ctx.startActivity(goToMarket);
+        //GCESync.startActionAPKInstall(ctx, apk, INSTALL_PREFIX);
     }
 
     /**
@@ -51,8 +60,15 @@ public class InstallUtil {
      * @param apk
      */
     public static void uninstallAPK(Context ctx, String apk) {
-        //TODO -  implement
-        Utils.showToast(ctx, "UNinstalling " + apk);
+        //Utils.showToast(ctx, "UNinstalling " + apk);
+        Log.d(TAG, "UnInstalling " + apk);
+
+        //For single uninstall, make sure our batch install list is nulled out...
+        if (DeviceSyncReceiver.mInstallIntents != null) {
+            DeviceSyncReceiver.mInstallIntents.clear();
+        }
+
+        DeviceSyncReceiver.mCurrentlyInstalling = apk;
         Intent intent = new Intent(Intent.ACTION_DELETE);
         intent.setData(Uri.parse(UNINSTALL_PREFIX + apk));
         ctx.startActivity(intent);
@@ -75,16 +91,22 @@ public class InstallUtil {
 
         //build list
         for (int i = 0; i < apklist.size(); i++) {
-            DeviceSyncReceiver.mInstallIntents.add(INSTALL_PREFIX + apklist.get(i));
+            DeviceSyncReceiver.mInstallIntents.add(apklist.get(i));
         }
+
+        //set the prefix and action...
+        DeviceSyncReceiver.mPrefix = INSTALL_PREFIX;
+        DeviceSyncReceiver.mAction = Intent.ACTION_VIEW;
 
         //and now kick off first one...
         if (DeviceSyncReceiver.mInstallIntents.size() > 0) {
             String install = DeviceSyncReceiver.mInstallIntents.get(0);
             DeviceSyncReceiver.mInstallIntents.remove(0);
-            Intent goToMarket = new Intent(Intent.ACTION_VIEW).setData(Uri.parse(install));
-            goToMarket.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-            ctx.startActivity(goToMarket);
+            DeviceSyncReceiver.mCurrentlyInstalling = install;
+            //Intent goToMarket = new Intent(Intent.ACTION_VIEW).setData(Uri.parse(INSTALL_PREFIX + install));
+            //goToMarket.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            //ctx.startActivity(goToMarket);
+            GCESync.startActionAPKInstall(ctx, install, INSTALL_PREFIX);
         }
     }
 
@@ -104,14 +126,19 @@ public class InstallUtil {
 
         //build list
         for (int i = 0; i < apklist.size(); i++) {
-            DeviceSyncReceiver.mInstallIntents.add(UNINSTALL_PREFIX + apklist.get(i));
+            DeviceSyncReceiver.mInstallIntents.add(apklist.get(i));
         }
+
+        //set the prefix and action...
+        DeviceSyncReceiver.mPrefix = UNINSTALL_PREFIX;
+        DeviceSyncReceiver.mAction = Intent.ACTION_DELETE;
 
         //and now kick off first one...
         if (DeviceSyncReceiver.mInstallIntents.size() > 0) {
             String install = DeviceSyncReceiver.mInstallIntents.get(0);
             DeviceSyncReceiver.mInstallIntents.remove(0);
-            Intent goToMarket = new Intent(Intent.ACTION_VIEW).setData(Uri.parse(install));
+            DeviceSyncReceiver.mCurrentlyInstalling = install;
+            Intent goToMarket = new Intent(Intent.ACTION_DELETE).setData(Uri.parse(UNINSTALL_PREFIX + install));
             goToMarket.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             ctx.startActivity(goToMarket);
         }
