@@ -37,6 +37,7 @@ public class InstallUtil {
      */
     public static void installAPK(Context ctx, String apk) {
         //TODO - implement
+        //FIXME!!!! Have to do this in intent service and check for the availability of the app on google play (i.e. tvnote not available)
         Utils.showToast(ctx, "Installing " + apk);
 
         String install = INSTALL_PREFIX + apk;
@@ -65,6 +66,7 @@ public class InstallUtil {
     public static void batchInstallAPK(Context ctx, ArrayList<String> apklist) {
         //basically, set up an array string, kick off first one and let the DeviceSyncReceiver do the rest
         //create array
+        //FIXME!!!! Have to do this in intent service and check for the availability of the app on google play (i.e. tvnote not available)
         if (DeviceSyncReceiver.mInstallIntents == null) {
             DeviceSyncReceiver.mInstallIntents = new ArrayList<String>();
         } else {

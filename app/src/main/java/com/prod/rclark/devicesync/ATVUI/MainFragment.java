@@ -72,6 +72,7 @@ import com.firebase.ui.auth.AuthUI;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.prod.rclark.devicesync.DBUtils;
+import com.prod.rclark.devicesync.InstallUtil;
 import com.prod.rclark.devicesync.UIDataSetup;
 import com.prod.rclark.devicesync.ObjectDetail;
 import com.prod.rclark.devicesync.R;
@@ -87,15 +88,18 @@ import com.google.android.gms.location.LocationServices;
 import java.util.ArrayList;
 
 /*
-    psuedo-logic
+    psuedo-logic for startup - we go in several stages...
 
-    on start, if user logged in, try to log in.
-    always try to log in, out via service (with silent login). Call boot_login...
-    in service, always check to see if we are already logged in/out... send message for UI regardless of action
-    if service fails to log in, send broadcast message back to main
-        if fail message, kick off activity login. If success, send login request to service again. Call it activity_login... (different from before to not get into loop)
-    service always to broadcast success/fail back to activity
-    activity to update prefs and UI based on the message back
+    note we check if this is a first time run. steps run only on first time run are marked with *.
+    0) onActivityCreated - check for internet - punt if none
+    *1) stage0 - show welcome screen and prep user for what is about to be asked
+    2) attempt to logon silently with firebase
+    3) if not successful, show UI
+    4) enable GMS
+    5) onConnected, kick off stage2 startup (checks permissions and also verifies service logged in)
+    -> insert short training here...
+    6) Perform stage3 startup (either directly called from stage2 if services logged in or called from message from service on login)
+    7) Note that stage3 does the heavy lifting - turns on the UI, checks for mssing apps, etc.
 
  */
 
@@ -270,6 +274,11 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         Log.i(TAG, "onCreate");
         super.onActivityCreated(savedInstanceState);
 
+        //First check internet connectivity
+        if (!Utils.isOnline(getActivity())) {
+            finishIt();
+        }
+
         //Set firebase
         mFirebaseApp = FirebaseApp.getInstance();
 
@@ -322,8 +331,11 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         boolean bRequestLocationPermission = false;
 
         //Make sure we have location permissions at start
-        int permissionCheck = ContextCompat.checkSelfPermission(getActivity(),
-                Manifest.permission.ACCESS_COARSE_LOCATION);
+        int permissionCheck = PackageManager.PERMISSION_GRANTED;
+        //dynamic permissions only needed for M
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            permissionCheck = getActivity().checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION);
+        }
 
         if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
             if (!ActivityCompat.shouldShowRequestPermissionRationale(getActivity(), Manifest.permission.ACCESS_COARSE_LOCATION)) {
@@ -364,9 +376,21 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
     private void processAfterSigninStage3(boolean bInitLoaders) {
         //Update the local content provider if running for first time...
         Log.d(TAG, "Starting stage3 setup");
-        boolean bFirstTime = Utils.isRunningForFirstTime(getActivity());
+        boolean bFirstTime = Utils.isRunningForFirstTime(getActivity(), true);
         if (bFirstTime) {
-            GCESync.startActionUpdateLocal(getActivity(), null, null);
+            //Lets add a feature addition here - IFF we are running for first time *but* the database
+            //has a record of apps for this serial number, then ask the user whether they want to "restore"
+            //the system. Useful for when wiping a device.
+            int count = DBUtils.countAppsOnDevice(getActivity(), Build.SERIAL);
+            if (count != 0) {
+                //Okay - put up a dialog here...
+                //Give 3 options - no, copyall, or disable uploads
+                //FIXME - race condition here - will our CP be populated from firebase by this point?
+                //Suggestion - hide behind a welcome screen...
+                askDownloadExistingApps(count);
+            } else {
+                GCESync.startActionUpdateLocal(getActivity(), null, null);
+            }
             //init the preferences
             PreferenceManager.setDefaultValues(getActivity(), R.xml.preferences, false);
        } else {
@@ -670,7 +694,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
             mGridRowAdapter = new ArrayObjectAdapter(mGridPresenter);
         }
         mGridRowAdapter.add(getResources().getString(R.string.sync_now));
-        mGridRowAdapter.add(getResources().getString(R.string.signin_button_text));
+        mGridRowAdapter.add(getResources().getString(R.string.disable_sync_button_text));
         mGridRowAdapter.add(getString(R.string.error_fragment));
         mGridRowAdapter.add(getResources().getString(R.string.personal_settings));
         mRowsAdapter.add(new ListRow(gridHeader, mGridRowAdapter));
@@ -784,6 +808,56 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
             rowAdapter.swapCursor(null);
         }
     }
+
+    /**
+     * Used to ask user if they want to download apps found on network for the device (in case of a device wipe)
+     */
+    private void askDownloadExistingApps(int count) {
+
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(getActivity());
+
+        alertDialogBuilder.setTitle(getResources().getString(R.string.restore_apps_title));
+
+        String msg = String.format(getString(R.string.restore_apps_msg), count);
+        alertDialogBuilder
+                .setMessage(msg)
+                .setCancelable(false)
+                .setNeutralButton(getResources().getString(R.string.restore_disable_syncs), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                        //disable syncs
+                        Utils.setSyncDisabled(getActivity(), true);
+                    }
+                })
+                .setNegativeButton(getResources().getString(R.string.restore_no), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                        GCESync.startActionUpdateLocal(getActivity(), null, null);
+                    }
+                })
+                .setPositiveButton(getResources().getString(R.string.restore_yes), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                        //build the install list...
+                        ArrayList<ObjectDetail> list = DBUtils.getAppsOnDevice(getActivity(), Build.SERIAL);
+                        ArrayList<String> apklist = new ArrayList<String>();
+                        for (int i=0; i < list.size(); i++) {
+                            apklist.add(list.get(i).pkg);
+                        }
+                        //let the updates go through
+                        GCESync.startActionUpdateLocal(getActivity(), null, null);
+                        //and kick off the batch install
+                        InstallUtil.batchInstallAPK(getActivity(), apklist);
+                    }
+                });
+
+        AlertDialog alertDialog = alertDialogBuilder.create();
+        alertDialog.show();
+    }
+
 
     /**
      * Used to exit app when there is an error. Really GMS services the only error that will cause controlled exit :)
@@ -912,12 +986,21 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                     //Intent intent = new Intent(getActivity(), BrowseErrorActivity.class);
                     //startActivity(intent);
                     mCallback.onMainActivityCallback(MainActivity.CALLBACK_SERVICE_REQUEST_LOGIN, null, null);
-                } else if (item.equals(getResources().getString(R.string.signin_button_text))) {
-                    mCallback.onMainActivityCallback(MainActivity.CALLBACK_SERVICE_HELLO, null, null);
-                    //signInToGoogle(GOOGLE_SIGNIN_EXPLICIT);
-                } else if (item.equals(getResources().getString(R.string.signout_button_text))) {
-                    //log us out (both activity and service)
-                    //signInToGoogle(GOOGLE_SIGNOUT);
+                } else if (item.equals(getResources().getString(R.string.disable_sync_button_text))) {
+                    //disable sync
+                    Utils.setSyncDisabled(getActivity(), true);
+                    //and flip button to enable sync
+                    int index = mGridRowAdapter.indexOf(item);
+                    mGridRowAdapter.replace(index, getResources().getString(R.string.enable_sync_button_text));
+                } else if (item.equals(getResources().getString(R.string.enable_sync_button_text))) {
+                    //re-enable syncs
+                    Utils.setSyncDisabled(getActivity(), false);
+                    //flip button
+                    int index = mGridRowAdapter.indexOf(item);
+                    mGridRowAdapter.replace(index, getResources().getString(R.string.disable_sync_button_text));
+                    //and force a full sync...
+                    mbAllowUpdates = false;
+                    GCESync.startActionUpdateLocal(getActivity(), null, null);
                 } else if (item.equals(getResources().getString(R.string.personal_settings))) {
                     // Display the settings fragment
                     Intent intent = new Intent();

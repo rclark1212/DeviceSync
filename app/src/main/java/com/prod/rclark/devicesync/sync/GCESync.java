@@ -106,11 +106,13 @@ public class GCESync extends IntentService {
      * @see IntentService
      */
     public static void startActionUpdateLocal(Context context, String param1, String param2) {
-        Intent intent = new Intent(context, GCESync.class);
-        intent.setAction(ACTION_UPDATE_LOCAL_DB);
-        //intent.putExtra(EXTRA_PARAM1, param1);
-        //intent.putExtra(EXTRA_PARAM2, param2);
-        context.startService(intent);
+        if (!Utils.isSyncDisabled(context)) {
+            Intent intent = new Intent(context, GCESync.class);
+            intent.setAction(ACTION_UPDATE_LOCAL_DB);
+            //intent.putExtra(EXTRA_PARAM1, param1);
+            //intent.putExtra(EXTRA_PARAM2, param2);
+            context.startService(intent);
+        }
     }
 
     /**
@@ -120,9 +122,11 @@ public class GCESync extends IntentService {
      * @see IntentService
      */
     public static void startActionLocalDeviceUpdate(Context context, String param1, String param2) {
-        Intent intent = new Intent(context, GCESync.class);
-        intent.setAction(ACTION_UPDATE_LOCAL_DEVICE);
-        context.startService(intent);
+        if (!Utils.isSyncDisabled(context)) {
+            Intent intent = new Intent(context, GCESync.class);
+            intent.setAction(ACTION_UPDATE_LOCAL_DEVICE);
+            context.startService(intent);
+        }
     }
 
     /**
@@ -137,35 +141,15 @@ public class GCESync extends IntentService {
      * @see IntentService
      */
     public static void startActionLocalAppUpdate(Context context, String pkgname, String delayExecutionInMS) {
-        Intent intent = new Intent(context, GCESync.class);
-        intent.setAction(ACTION_UPDATE_LOCAL_APP);
-        intent.putExtra(EXTRA_PARAM1, pkgname);
-        intent.putExtra(EXTRA_PARAM2, delayExecutionInMS);
-        context.startService(intent);
+        if (!Utils.isSyncDisabled(context)) {
+            Intent intent = new Intent(context, GCESync.class);
+            intent.setAction(ACTION_UPDATE_LOCAL_APP);
+            intent.putExtra(EXTRA_PARAM1, pkgname);
+            intent.putExtra(EXTRA_PARAM2, delayExecutionInMS);
+            context.startService(intent);
+        }
     }
 
-
-    /**
-     * Starts this service to perform action Baz with the given parameters. If
-     * the service is already performing a task this action will be queued.
-     *
-     * @see IntentService
-     */
-    public static void startActionPushRemote(Context context, String param1, String param2) {
-        Intent intent = new Intent(context, GCESync.class);
-        intent.setAction(ACTION_PUSH_REMOTE_DB);
-        //intent.putExtra(EXTRA_PARAM1, param1);
-        //intent.putExtra(EXTRA_PARAM2, param2);
-        context.startService(intent);
-    }
-
-    public static void startActionFetchRemote(Context context, String param1, String param2) {
-        Intent intent = new Intent(context, GCESync.class);
-        intent.setAction(ACTION_FETCH_REMOTE_DB);
-        //intent.putExtra(EXTRA_PARAM1, param1);
-        //intent.putExtra(EXTRA_PARAM2, param2);
-        context.startService(intent);
-    }
 
     @Override
     protected void onHandleIntent(Intent intent) {

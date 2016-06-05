@@ -43,6 +43,8 @@ import android.graphics.drawable.Drawable;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.preference.PreferenceManager;
 import android.support.v4.content.ContextCompat;
@@ -72,7 +74,7 @@ public class Utils {
     private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
     private static final String TAG = "DS_Utils";
     private static final String PREFS_HAS_RUN_ALREADY = "prefs_has_run_already";
-    private static final String USER_IS_LOGGED_IN = "prefs_user_logged_in";
+    private static final String SYNCS_ARE_DISABLED = "prefs_syncs_disabled";
     private static final String CACHED_LOCATION = "prefs_last_location";
     private static final String PREFS_USER_ID = "prefs_user_id";
 
@@ -224,7 +226,7 @@ public class Utils {
     /**
      *  Routine to check if this is a first time run
      */
-    public static boolean isRunningForFirstTime(Context ctx) {
+    public static boolean isRunningForFirstTime(Context ctx, boolean bUpdate) {
         boolean bret = true;
 
         //Get the pref bool flag...
@@ -235,12 +237,27 @@ public class Utils {
             bret = false;
         }
 
-        //And, if we are here, we have run for first time so mark preferences as such
-        SharedPreferences.Editor edit = pref.edit();
-        edit.putBoolean(PREFS_HAS_RUN_ALREADY, true);
-        edit.commit();
+        if (bUpdate) {
+            //And, if we are here, we have run for first time so mark preferences as such
+            SharedPreferences.Editor edit = pref.edit();
+            edit.putBoolean(PREFS_HAS_RUN_ALREADY, true);
+            edit.commit();
+        }
 
         return bret;
+    }
+    //
+    //  Utility routine to check if we have internet connection. Check on start
+    //
+    public static boolean isOnline(Context ctx) {
+        ConnectivityManager cm =
+                (ConnectivityManager) ctx.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo netInfo = cm.getActiveNetworkInfo();
+
+        if (netInfo == null)
+            return false;
+
+        return netInfo.isConnected();
     }
 
     /**
@@ -275,25 +292,26 @@ public class Utils {
     }
 
     /**
-     * Tells us if user should be logged in or not
+     * Tells us if syncs are disabled or not
      * @param ctx
      * @return
      */
-    public static boolean isUserLoggedIn(Context ctx) {
+    public static boolean isSyncDisabled(Context ctx) {
         SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(ctx);
-        boolean bret = pref.getBoolean(USER_IS_LOGGED_IN, false);
+        boolean bret = pref.getBoolean(SYNCS_ARE_DISABLED, false);
         return bret;
     }
 
     /**
-     * Set whether user should be logged in or not
+     * Set whether syncs are disabled or not. NOTE - this is sync's to the CP database! (local->CP).
+     * It does NOT impact CP<->cloud
      * @param ctx
      * @return
      */
-    public static void setUserLoggedIn(Context ctx, boolean bLoggedIn) {
+    public static void setSyncDisabled(Context ctx, boolean bDisabled) {
         SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(ctx);
         SharedPreferences.Editor edit = pref.edit();
-        edit.putBoolean(USER_IS_LOGGED_IN, bLoggedIn);
+        edit.putBoolean(SYNCS_ARE_DISABLED, bDisabled);
         edit.commit();
     }
 

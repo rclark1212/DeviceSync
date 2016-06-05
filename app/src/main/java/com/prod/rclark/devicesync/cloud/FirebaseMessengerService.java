@@ -101,7 +101,7 @@ public class FirebaseMessengerService extends Service {
                             if (mFirebase == null) {
                                 //init the instance
                                 mFirebase = new Firebase(getApplicationContext(), user);
-                                //setupFirebase();
+                                setupFirebase();
                             }
                             Utils.setUserId(getApplicationContext(), user);
                             mbLoggedOn = true;
@@ -211,7 +211,7 @@ public class FirebaseMessengerService extends Service {
                         //reset firebase instance
                         mFirebase = null;
                         mFirebase = new Firebase(getApplicationContext(), user.getUid());
-                        //setupFirebase();
+                        setupFirebase();
                         Utils.setUserId(getApplicationContext(), user.getUid());
                     }
                     mbLoggedOn = true;

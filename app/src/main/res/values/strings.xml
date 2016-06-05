@@ -57,9 +57,11 @@
     <string name="signout_dialog_title">Sign Out</string>
     <string name="signout_dialog_message">Sign out or Revoke access?</string>
     <string name="signout_dialog_revoke">Revoke</string>
+    <string name="disable_sync_button_text">Disable Syncs</string>
+    <string name="enable_sync_button_text">Enable Syncs</string>
 
     <string name="app_err_title">Application Error</string>
-    <string name="gms_missing_msg">AppSyncr requires Google Play Services. Cannot access the services. Exiting.</string>
+    <string name="gms_missing_msg">AppSyncr requires an internet connection, a valid google login, and Google Play Services. One or more of these not available. Exiting.</string>
     <string name="ok">OK</string>
 
     <string name="exit_fail">Exiting - You need google Play Services to use this app.</string>
@@ -67,12 +69,6 @@
     <string name="sync_now">Force Sync</string>
     <string name="error_fragment">Error Fragment</string>
     <string name="personal_settings">Settings</string>
-    <string name="watch_trailer_1">Watch trailer</string>
-    <string name="watch_trailer_2">FREE</string>
-    <string name="rent_1">Rent By Day</string>
-    <string name="rent_2">From $1.99</string>
-    <string name="buy_1">Buy and Own</string>
-    <string name="buy_2">AT $9.99</string>
 
     <!-- Error messages -->
     <string name="error_fragment_message">An error occurred</string>
@@ -90,4 +86,10 @@
     <string name="action_example">Example action</string>
 
     <string name="action_settings">Settings</string>
+
+    <string name="restore_apps_title">Restore Apps?</string>
+    <string name="restore_apps_msg">AppSyncr noticed that the apps on this device are different than what has been recorded in the cloud (%d apps). Do you want to re-install missing apps recorded in the cloud on this device?</string>
+    <string name="restore_disable_syncs">Disable Syncing</string>
+    <string name="restore_no">No</string>
+    <string name="restore_yes">Restore Apps</string>
 </resources>

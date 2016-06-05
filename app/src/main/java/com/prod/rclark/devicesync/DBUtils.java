@@ -207,34 +207,15 @@ public class DBUtils {
         if (c.getCount() > 0) {
             //exists!!!
             c.moveToFirst();
-            returnObject = new ObjectDetail();
         } else {
             c.close();
             return null;
         }
 
         if (bApp) {
-            int labelIndex = c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_LABEL);
-            int pkgIndex = c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_PKG);
-            int verIndex = c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_VER);
-            int serialIndex = c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_DEVSSN);
-            int dateIndex = c.getColumnIndex(AppContract.AppEntry.COLUMN_DATE);
-            int flagsIndex = c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_FLAGS);
-            int typeIndex = c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_TYPE);
-            int timestampIndex = c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_TIMEUPDATED);
-
-
-            returnObject.label = c.getString(labelIndex);
-            returnObject.pkg = c.getString(pkgIndex);
-            returnObject.ver = c.getString(verIndex);
-            returnObject.serial = c.getString(serialIndex);
-            returnObject.installDate = c.getLong(dateIndex);
-            returnObject.flags = c.getLong(flagsIndex);
-            returnObject.type = c.getLong(typeIndex);
-            returnObject.timestamp = c.getLong(timestampIndex);
-
-            returnObject.bIsDevice = false;  //app, not device
+            returnObject = bindCursorToAppObject(c);
         } else {
+            returnObject = new ObjectDetail();
             //this is a device...
             int serialIndex = c.getColumnIndex(AppContract.DevicesEntry.COLUMN_DEVICES_SSN);
             int nameIndex = c.getColumnIndex(AppContract.DevicesEntry.COLUMN_DEVICE_NAME);
@@ -263,6 +244,35 @@ public class DBUtils {
 
         return returnObject;
     }
+
+    //creates an app object out of a cursor...
+    private static ObjectDetail bindCursorToAppObject(Cursor c) {
+        ObjectDetail returnObject = new ObjectDetail();
+
+        int labelIndex = c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_LABEL);
+        int pkgIndex = c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_PKG);
+        int verIndex = c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_VER);
+        int serialIndex = c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_DEVSSN);
+        int dateIndex = c.getColumnIndex(AppContract.AppEntry.COLUMN_DATE);
+        int flagsIndex = c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_FLAGS);
+        int typeIndex = c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_TYPE);
+        int timestampIndex = c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_TIMEUPDATED);
+
+
+        returnObject.label = c.getString(labelIndex);
+        returnObject.pkg = c.getString(pkgIndex);
+        returnObject.ver = c.getString(verIndex);
+        returnObject.serial = c.getString(serialIndex);
+        returnObject.installDate = c.getLong(dateIndex);
+        returnObject.flags = c.getLong(flagsIndex);
+        returnObject.type = c.getLong(typeIndex);
+        returnObject.timestamp = c.getLong(timestampIndex);
+
+        returnObject.bIsDevice = false;  //app, not device
+
+        return returnObject;
+    }
+
 
     public static void saveDeviceToCP(Context ctx, ObjectDetail device) {
         //Get the device DB reference...
@@ -464,6 +474,50 @@ public class DBUtils {
         }
         return count;
     }
+
+    /**
+     *  Routine to count number of devices in database
+     */
+    public static int countAppsOnDevice(Context ctx, String serial) {
+
+        int count = 0;
+        Uri appDB = AppContract.AppEntry.CONTENT_URI;
+        appDB.buildUpon().appendPath(serial).build();
+
+        //grab the cursor
+        Cursor c = ctx.getContentResolver().query(appDB, null, null, null, null);
+
+        count = c.getCount();
+
+        c.close();
+
+        return count;
+    }
+
+
+    /**
+     *  Routine to count number of devices in database
+     */
+    public static ArrayList<ObjectDetail> getAppsOnDevice(Context ctx, String serial) {
+
+        ArrayList<ObjectDetail> returnList = new ArrayList<ObjectDetail>();
+        Uri appDB = AppContract.AppEntry.CONTENT_URI;
+        appDB.buildUpon().appendPath(serial).build();
+
+        //grab the cursor
+        Cursor c = ctx.getContentResolver().query(appDB, null, null, null, null);
+
+        for (int i=0; i < c.getCount(); i++) {
+            c.moveToPosition(i);
+            ObjectDetail object = bindCursorToAppObject(c);
+            returnList.add(object);
+        }
+
+        c.close();
+
+        return returnList;
+    }
+
 
     /**
      *  Routine to count number of devices in database
