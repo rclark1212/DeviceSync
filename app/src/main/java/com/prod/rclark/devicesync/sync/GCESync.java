@@ -74,15 +74,23 @@ public class GCESync extends IntentService {
     public static final String BROADCAST_ACTION = "com.prod.rclark.devicesync.BROADCAST";
 
     public static final String EXTENDED_DATA_STATUS = "com.prod.rclark.devicesync.gcesync.STATUS";
-    public static final String EXTENDED_DATA_MSG = "com.prod.rclark.devicesync.gcesync.MSG";
+    public static final String EXTENDED_DATA_CMD = "com.prod.rclark.devicesync.gcesync.CMD";
+
+    public static final String EXTENDED_DATA_PARAM1 = "com.prod.rclark.devicesync.gcesync.PARAM1";
+    public static final String EXTENDED_DATA_PARAM2 = "com.prod.rclark.devicesync.gcesync.PARAM2";
 
     public static final int EXTENDED_DATA_STATUS_NULL = 0;
+
+    //Status messages for broadcasts above
     public static final int EXTENDED_DATA_STATUS_LOCALUPDATECOMPLETE = 1;
     public static final int EXTENDED_DATA_STATUS_PUSHCOMPLETE = 2;
     public static final int MAINACTIVITY_SHOW_NETWORKBUSY = 8;
     public static final int MAINACTIVITY_SHOW_NETWORKFREE = 9;
     public static final int EXTENDED_DATA_STATUS_PHOTO_COMPLETE = 10;
+    public static final int FIREBASE_SERVICE_LOGGEDIN = 20;
+    public static final int FIREBASE_SERVICE_NOTLOGGEDIN = 21;
 
+    //Command messages for broadcasts above
 
     private static Context mCtx;
     private static boolean mbIsATV;
@@ -333,7 +341,8 @@ public class GCESync extends IntentService {
             //Log.d(TAG, "Complete batch CP application");
             //FIXME - verify done? - apply app changes to firebase. Note, have to loop through apps list
             Log.d(TAG, "Pushing records to firebase for serial " + Build.SERIAL);
-            MainFragment.mFirebase.pushRecordsToFirebase(Build.SERIAL);
+            //TAGCPSAFE - NO - SHOULD NOT NEED THIS ROUTINE - individual apps will get written to DB entries
+            //MainFragment.mFirebase.pushRecordsToFirebase(Build.SERIAL);
         } catch (RemoteException e) {
             Log.e(TAG, "Batch - remoteException err");
         } catch (OperationApplicationException e) {

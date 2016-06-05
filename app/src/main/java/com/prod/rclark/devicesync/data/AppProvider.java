@@ -14,12 +14,26 @@
 
 package com.prod.rclark.devicesync.data;
 
+import android.content.ComponentName;
 import android.content.ContentProvider;
 import android.content.ContentValues;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
+import android.os.Bundle;
+import android.os.IBinder;
+import android.os.Message;
+import android.os.Messenger;
+import android.os.RemoteException;
+import android.util.Log;
+
+import com.prod.rclark.devicesync.cloud.FirebaseMessengerService;
+
+import java.util.ArrayList;
 
 /**
  * Created by rclark on 3/27/2016.
@@ -31,6 +45,7 @@ public class AppProvider extends ContentProvider {
     // The URI Matcher used by this content provider.
     private static final UriMatcher sUriMatcher = buildUriMatcher();
     private AppDbHelper mOpenHelper;
+    private Context mCtx;
 
     static final int APPS = 100;
     static final int APPS_WITH_DEVICE = 101;
@@ -42,6 +57,28 @@ public class AppProvider extends ContentProvider {
     static final int IMAGES = 400;
     static final int IMAGES_WITH_APK = 401;
 
+    //  Service
+    private boolean mBoundToService;
+    private Messenger mService = null;
+    //  Class for interacting with our firebase service...
+    private ServiceConnection mConnection = new ServiceConnection() {
+        public void onServiceConnected(ComponentName className, IBinder service) {
+            // This is called when the connection with the service has been
+            // established, giving us the object we can use to
+            // interact with the service.  We are communicating with the
+            // service using a Messenger, so here we get a client-side
+            // representation of that from the raw IBinder object.
+            mService = new Messenger(service);
+            mBoundToService = true;
+        }
+
+        public void onServiceDisconnected(ComponentName className) {
+            // This is called when the connection with the service has been
+            // unexpectedly disconnected -- that is, its process crashed.
+            mService = null;
+            mBoundToService = false;
+        }
+    };
 
     //devices ssn_setting = ?
     private static final String sDevicesSelection =
@@ -198,6 +235,14 @@ public class AppProvider extends ContentProvider {
     @Override
     public boolean onCreate() {
         mOpenHelper = new AppDbHelper(getContext());
+        mCtx = getContext();
+
+        //okay - we are using firebase service to mirror our CP data up to cloud - bind here
+        // Bind to the service
+        // NOTE - content providers never destroyed so no real opportunity/place to unbind. But that should be okay.
+        mCtx.bindService(new Intent(mCtx, FirebaseMessengerService.class), mConnection,
+                Context.BIND_AUTO_CREATE);
+
         return true;
     }
 
@@ -349,19 +394,23 @@ public class AppProvider extends ContentProvider {
                 normalizeDate(values);
                 updateTimeStamp(values, true);
                 long _id = db.insert(AppContract.AppEntry.TABLE_NAME, null, values);
-                if ( _id > 0 )
+                if ( _id > 0 ) {
                     returnUri = AppContract.AppEntry.buildAppUri(_id);
-                else
+                    updateFirebaseAppFromCV(values);
+                } else {
                     throw new android.database.SQLException("Failed to insert row into " + uri);
+                }
                 break;
             }
             case DEVICES: {
                 updateTimeStamp(values, false);
                 long _id = db.insert(AppContract.DevicesEntry.TABLE_NAME, null, values);
-                if ( _id > 0 )
+                if ( _id > 0 ) {
                     returnUri = AppContract.DevicesEntry.buildDeviceUri(_id);
-                else
+                    updateFirebaseDeviceFromCV(values);
+                } else {
                     throw new android.database.SQLException("Failed to insert row into " + uri);
+                }
                 break;
             }
             case IMAGES_WITH_APK:
@@ -388,33 +437,55 @@ public class AppProvider extends ContentProvider {
         final int match = sUriMatcher.match(uri);
         int rowsDeleted;
         // this makes delete all rows return the number of rows deleted
+        //Deleting with firebase is tricky... Have to first capture the apps/devices that
+        //are being deleted with the uri/selection being passed in
+        //Then delete from database
+        //Then replay the list to firebase service to delete the nodes
+        ArrayList<DeleteList> deleteList;
+
         if ( null == selection ) selection = "1";
         switch (match) {
             case APPS: {
+                deleteList = getAppDeleteList(uri, selection, selectionArgs);
                 rowsDeleted = db.delete(
                         AppContract.AppEntry.TABLE_NAME, selection, selectionArgs);
+                if (rowsDeleted > 0) {
+                    deleteAppDeleteList(deleteList);
+                }
                 break;
             }
             case APPS_WITH_DEVICE: {
+                deleteList = getAppDeleteList(uri, selection, selectionArgs);
                 String device = AppContract.AppEntry.getDeviceFromUri(uri);
                 String[] parse_selectionArgs = new String[]{device};
                 String parse_selection = sAppWithDevicesSelection;
                 rowsDeleted = db.delete(
                         AppContract.AppEntry.TABLE_NAME, parse_selection, parse_selectionArgs);
+                if (rowsDeleted > 0) {
+                    deleteAppDeleteList(deleteList);
+                }
                 break;
             }
             case APPS_WITH_DEVICE_AND_APP: {
+                deleteList = getAppDeleteList(uri, selection, selectionArgs);
                 String device = AppContract.AppEntry.getDeviceFromUri(uri);
                 String label = AppContract.AppEntry.getAppFromUri(uri);
                 String[] parse_selectionArgs = new String[]{label, device};
                 String parse_selection = sAppsWithDevicesAndAppsSelection;
                 rowsDeleted = db.delete(
                         AppContract.AppEntry.TABLE_NAME, parse_selection, parse_selectionArgs);
+                if (rowsDeleted > 0) {
+                    deleteAppDeleteList(deleteList);
+                }
                 break;
             }
             case DEVICES:
+                deleteList = getDeviceDeleteList(uri, selection, selectionArgs);
                 rowsDeleted = db.delete(
                         AppContract.DevicesEntry.TABLE_NAME, selection, selectionArgs);
+                if (rowsDeleted > 0) {
+                    deleteDeviceDeleteList(deleteList);
+                }
                 break;
             case IMAGES: {
                 rowsDeleted = db.delete(
@@ -479,6 +550,9 @@ public class AppProvider extends ContentProvider {
                 updateTimeStamp(values, true);
                 rowsUpdated = db.update(AppContract.AppEntry.TABLE_NAME, values, selection,
                         selectionArgs);
+                if (rowsUpdated > 0) {
+                    updateFirebaseAppFromCV(values);
+                }
                 break;
             case APPS_WITH_DEVICE_AND_APP: {
                 normalizeDate(values);
@@ -490,12 +564,18 @@ public class AppProvider extends ContentProvider {
 
                 rowsUpdated = db.update(AppContract.AppEntry.TABLE_NAME, values, parse_selection,
                         parse_selectionArgs);
+                if (rowsUpdated > 0) {
+                    updateFirebaseAppFromCV(values);
+                }
                 break;
             }
             case DEVICES:
                 updateTimeStamp(values, false);
                 rowsUpdated = db.update(AppContract.DevicesEntry.TABLE_NAME, values, selection,
                         selectionArgs);
+                if (rowsUpdated > 0) {
+                    updateFirebaseDeviceFromCV(values);
+                }
                 break;
             case DEVICES_WITH_DEVICE: {
                 updateTimeStamp(values, false);
@@ -505,6 +585,9 @@ public class AppProvider extends ContentProvider {
 
                 rowsUpdated = db.update(AppContract.DevicesEntry.TABLE_NAME, values, parse_selection,
                         parse_selectionArgs);
+                if (rowsUpdated > 0) {
+                    updateFirebaseDeviceFromCV(values);
+                }
                 break;
             }
             case IMAGES:
@@ -554,10 +637,155 @@ public class AppProvider extends ContentProvider {
                     db.endTransaction();
                 }
                 getContext().getContentResolver().notifyChange(uri, null);
+                if (returnCount > 0) {
+                    bulkUpdateFirebaseApp(values);
+                }
                 return returnCount;
             default:
                 return super.bulkInsert(uri, values);
         }
+    }
+
+    /*************************************************************************************
+     * Firebase routines follow
+     * ***********************************************************************************
+     */
+
+    //add a bulk update routine for firebase so as to not clutter code above
+    private void bulkUpdateFirebaseApp(ContentValues[] values) {
+        for (ContentValues value : values) {
+            updateFirebaseAppFromCV(value);
+        }
+    }
+
+    //add a routine that pulls serial/apk out of content value
+    private void updateFirebaseAppFromCV(ContentValues value) {
+        String serial = value.getAsString(AppContract.AppEntry.COLUMN_APP_DEVSSN);
+        String apk = value.getAsString(AppContract.AppEntry.COLUMN_APP_PKG);
+        updateFirebaseApp(serial, apk);
+    }
+
+    //add a routine that pulls serial/apk out of content value
+    private void updateFirebaseDeviceFromCV(ContentValues value) {
+        String serial = value.getAsString(AppContract.DevicesEntry.COLUMN_DEVICES_SSN);
+        updateFirebaseDevice(serial);
+    }
+
+    //Do a query of what is passed into delete routine to get a list of apps to delete
+    private ArrayList<DeleteList> getAppDeleteList(Uri uri, String selection, String[] selectionArgs) {
+        ArrayList<DeleteList> returnList = new ArrayList<DeleteList>();
+        Cursor c = query(uri, null, selection, selectionArgs, null);
+        for (int i = 0; i < c.getCount(); i++) {
+            DeleteList item = new DeleteList();
+            c.moveToPosition(i);
+            item.serial = c.getString(c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_DEVSSN));
+            item.apk = c.getString(c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_PKG));
+        }
+        c.close();
+        return returnList;
+    }
+
+
+    //Do a query of what is passed into delete routine to get a list of devices to delete
+    private ArrayList<DeleteList> getDeviceDeleteList(Uri uri, String selection, String[] selectionArgs) {
+        ArrayList<DeleteList> returnList = new ArrayList<DeleteList>();
+        Cursor c = query(uri, null, selection, selectionArgs, null);
+        for (int i = 0; i < c.getCount(); i++) {
+            DeleteList item = new DeleteList();
+            c.moveToPosition(i);
+            item.serial = c.getString(c.getColumnIndex(AppContract.DevicesEntry.COLUMN_DEVICES_SSN));
+        }
+        c.close();
+        return returnList;
+    }
+
+
+    //Processes delete list set up by query for apps
+    private void deleteAppDeleteList(ArrayList<DeleteList> deleteList) {
+        for (int i = 0; i < deleteList.size(); i++) {
+            deleteFirebaseApp(deleteList.get(i).serial, deleteList.get(i).apk);
+        }
+    }
+
+    //Processes delete list set up by query for devices
+    private void deleteDeviceDeleteList(ArrayList<DeleteList> deleteList) {
+        for (int i = 0; i < deleteList.size(); i++) {
+            deleteFirebaseDevice(deleteList.get(i).serial);
+        }
+    }
+
+    /**
+     * Routine to trigger firebase service to update app from CP
+     */
+    private void updateFirebaseApp(String serial, String apk) {
+        Log.d(TAG, "CP: sendMessageToService - write app " + serial + " " + apk);
+        Bundle params = new Bundle();
+        params.putString(FirebaseMessengerService.SERIAL_PARAM, serial);
+        params.putString(FirebaseMessengerService.APK_PARAM, apk);
+        sendMessageToService(FirebaseMessengerService.MSG_WRITE_APP_TO_FIREBASE, params);
+    }
+
+    /**
+     * Routine to trigger firebase service to delete app from CP
+     */
+    private void deleteFirebaseApp(String serial, String apk) {
+        Log.d(TAG, "CP: sendMessageToService - delete app " + serial + " " + apk);
+        Bundle params = new Bundle();
+        params.putString(FirebaseMessengerService.SERIAL_PARAM, serial);
+        params.putString(FirebaseMessengerService.APK_PARAM, apk);
+        sendMessageToService(FirebaseMessengerService.MSG_DELETE_APP_FROM_FIREBASE, params);
+    }
+
+    /**
+     * Routine to trigger firebase service to update device from CP
+     */
+    private void updateFirebaseDevice(String serial) {
+        Log.d(TAG, "CP: sendMessageToService - write device " + serial);
+        Bundle params = new Bundle();
+        params.putString(FirebaseMessengerService.SERIAL_PARAM, serial);
+        sendMessageToService(FirebaseMessengerService.MSG_WRITE_DEVICE_TO_FIREBASE, params);
+    }
+
+    /**
+     * Routine to trigger firebase service to delete device from CP
+     */
+    private void deleteFirebaseDevice(String serial) {
+        Log.d(TAG, "CP: sendMessageToService - delete device " + serial);
+        Bundle params = new Bundle();
+        params.putString(FirebaseMessengerService.SERIAL_PARAM, serial);
+        sendMessageToService(FirebaseMessengerService.MSG_DELETE_DEVICE_FROM_FIREBASE, params);
+    }
+
+    /**
+     * Sends a message to our firebase service
+     */
+    private void sendMessageToService(int messageId, Bundle bundle) {
+        if (!mBoundToService) {
+            Log.d(TAG, "Service not bound but someone tried to send message");
+            return;
+        }
+
+        Message msg = Message.obtain(null, messageId, 0, 0);
+        if (bundle != null) {
+            msg.setData(bundle);
+        }
+
+        try {
+            mService.send(msg);
+        } catch (RemoteException e) {
+            Log.d(TAG, "Error accessing service!");
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Used in routine to create a delete list
+     */
+    private class DeleteList {
+        public String serial;
+        public String apk;
+
+        public DeleteList() {}
     }
 
 }

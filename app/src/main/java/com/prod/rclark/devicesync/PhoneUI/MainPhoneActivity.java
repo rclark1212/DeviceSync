@@ -19,14 +19,27 @@ See ATVUI/MainActivity for summary
 
 This is the launch entry point on Phone/Tablet. Currently simple skeleton for a recyclerview.
 
+Needs to be updating for message receiver
+Needs to be updated for firebase logon
+Needs to be updated for CP listener/updater
+Needs to be updated for GMS location services
+more?
+
 */
 
 import android.app.Fragment;
 import android.app.FragmentManager;
+import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.IBinder;
+import android.os.Message;
+import android.os.Messenger;
+import android.os.RemoteException;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.DisplayMetrics;
@@ -41,6 +54,7 @@ import android.support.v7.app.AppCompatActivity;
 import com.prod.rclark.devicesync.ObjectDetail;
 import com.prod.rclark.devicesync.R;
 import com.prod.rclark.devicesync.UIDataSetup;
+import com.prod.rclark.devicesync.cloud.FirebaseMessengerService;
 import com.prod.rclark.devicesync.sync.GCESync;
 
 import java.util.ArrayList;
@@ -62,6 +76,30 @@ public class MainPhoneActivity extends AppCompatActivity
 
     //Our data helper - only keep a single instance shared by all
     public static UIDataSetup mUIDataSetup;
+
+    //  Service
+    boolean mBoundToService;
+    Messenger mService = null;
+    //  Class for interacting with our firebase service...
+    private ServiceConnection mConnection = new ServiceConnection() {
+        public void onServiceConnected(ComponentName className, IBinder service) {
+            // This is called when the connection with the service has been
+            // established, giving us the object we can use to
+            // interact with the service.  We are communicating with the
+            // service using a Messenger, so here we get a client-side
+            // representation of that from the raw IBinder object.
+            mService = new Messenger(service);
+            mBoundToService = true;
+        }
+
+        public void onServiceDisconnected(ComponentName className) {
+            // This is called when the connection with the service has been
+            // unexpectedly disconnected -- that is, its process crashed.
+            mService = null;
+            mBoundToService = false;
+        }
+    };
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -98,6 +136,24 @@ public class MainPhoneActivity extends AppCompatActivity
     }
 
     @Override
+    public void onStart() {
+        super.onStart();
+        // Bind to the service
+        bindService(new Intent(this, FirebaseMessengerService.class), mConnection,
+                Context.BIND_AUTO_CREATE);
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        // Unbind from the service
+        if (mBoundToService) {
+            unbindService(mConnection);
+            mBoundToService = false;
+        }
+    }
+
+    @Override
     public void onNavigationDrawerItemSelected(int position) {
         // update the main content by replacing fragments
         //Set up the data helper
@@ -123,6 +179,24 @@ public class MainPhoneActivity extends AppCompatActivity
         actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
         actionBar.setDisplayShowTitleEnabled(true);
         actionBar.setTitle(mTitle);
+    }
+
+    /**
+     * Sends a message to our service
+     */
+    public void sendMessageToService(int messageId) {
+        if (!mBoundToService) {
+            Log.d(TAG, "Service not bound but someone tried to send message");
+            return;
+        }
+
+        Message msg = Message.obtain(null, messageId, 0, 0);
+        try {
+            mService.send(msg);
+        } catch (RemoteException e) {
+            Log.d(TAG, "Error accessing service!");
+            e.printStackTrace();
+        }
     }
 
     /**

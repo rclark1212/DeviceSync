@@ -10,7 +10,7 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
-    <!-- <uses-permission android:name="android.permission.USE_CREDENTIALS" /> -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <uses-feature
         android:name="android.hardware.touchscreen"
@@ -57,15 +57,17 @@
             android:exported="false"
             android:syncable="true" />
 
-        <receiver android:name=".DeviceSyncReceiver">
+        <receiver android:name="com.prod.rclark.devicesync.DeviceSyncReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.PACKAGE_ADDED" />
                 <action android:name="android.intent.action.PACKAGE_CHANGED" />
                 <action android:name="android.intent.action.PACKAGE_REPLACED" />
                 <action android:name="android.intent.action.PACKAGE_REMOVED" />
                 <action android:name="android.intent.action.PACKAGE_FULLY_REMOVED" />
-
                 <data android:scheme="package" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
 

@@ -567,8 +567,7 @@ public class Firebase {
         dataBase.child(mUser).child(DEVICES).child(serial).removeValue();
         dataBase.child(mUser).child(APPS).child(serial).removeValue();
 
-        //Last delete the local record in CP - have to do this last as it will trigger a push update which will cause
-        //all the remote devices to then do a merge...
+        //Last delete the local record in CP
         DBUtils.deleteDeviceFromCP(mCtx, serial);
         Uri appDB = AppContract.AppEntry.CONTENT_URI;
         //build up the local device query

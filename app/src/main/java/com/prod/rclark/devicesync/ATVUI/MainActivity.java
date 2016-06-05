@@ -76,8 +76,9 @@ public class MainActivity extends Activity implements
     private static final String TAG = "MainActivity";
 
     //Callback ordinals
-    protected static final int CALLBACK_SEND_TO_SERVICE = 2017;
-
+    protected static final int CALLBACK_SERVICE_HELLO = 2017;
+    protected static final int CALLBACK_SERVICE_QUERY_LOGIN = 2018;
+    protected static final int CALLBACK_SERVICE_REQUEST_LOGIN = 2019;
 
     //  Service
     boolean mBoundToService;
@@ -105,9 +106,19 @@ public class MainActivity extends Activity implements
     //Routine called by other fragments/receivers to request activity actions
     public void onMainActivityCallback(int callbackcode, String data, String extra) {
         switch (callbackcode) {
-            case CALLBACK_SEND_TO_SERVICE: {
-                Log.d(TAG, "Callback: sendMessageToService");
-                sendMessageToService();
+            case CALLBACK_SERVICE_HELLO: {
+                Log.d(TAG, "Callback: sendMessageToService - hello");
+                sendMessageToService(FirebaseMessengerService.MSG_SAY_HELLO, null);
+                break;
+            }
+            case CALLBACK_SERVICE_QUERY_LOGIN: {
+                Log.d(TAG, "Callback: sendMessageToService - query login");
+                sendMessageToService(FirebaseMessengerService.MSG_QUERY_LOGON_STATUS, null);
+                break;
+            }
+            case CALLBACK_SERVICE_REQUEST_LOGIN: {
+                Log.d(TAG, "Callback: sendMessageToService - request login");
+                sendMessageToService(FirebaseMessengerService.MSG_ATTEMPT_LOGON, null);
                 break;
             }
             default:
@@ -120,6 +131,7 @@ public class MainActivity extends Activity implements
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
     }
+
     @Override
     public void onStart() {
         super.onStart();
@@ -141,13 +153,17 @@ public class MainActivity extends Activity implements
     /**
      * Sends a message to our service
      */
-    public void sendMessageToService() {
+    private void sendMessageToService(int messageId, Bundle bundle) {
         if (!mBoundToService) {
             Log.d(TAG, "Service not bound but someone tried to send message");
             return;
         }
 
-        Message msg = Message.obtain(null, FirebaseMessengerService.MSG_SAY_HELLO, 0, 0);
+        Message msg = Message.obtain(null, messageId, 0, 0);
+        if (bundle != null) {
+            msg.setData(bundle);
+        }
+
         try {
             mService.send(msg);
         } catch (RemoteException e) {

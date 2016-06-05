@@ -16,6 +16,7 @@ package com.prod.rclark.devicesync;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.graphics.Bitmap;
@@ -23,10 +24,12 @@ import android.graphics.drawable.BitmapDrawable;
 import android.media.Image;
 import android.net.Uri;
 import android.os.Build;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import com.prod.rclark.devicesync.ATVUI.MainFragment;
 import com.prod.rclark.devicesync.data.AppContract;
+import com.prod.rclark.devicesync.sync.GCESync;
 
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
@@ -137,6 +140,8 @@ public class DBUtils {
         Uri deviceDB = AppContract.DevicesEntry.CONTENT_URI;
         Uri localdeviceDB = deviceDB.buildUpon().appendPath(serial).build();
         ctx.getContentResolver().delete(localdeviceDB, null, null);
+        //Note that all apps will end up getting deleted as well (firebase will trigger delete device record which
+        //deletes apps as well).
     }
 
     /**
@@ -298,7 +303,9 @@ public class DBUtils {
         }
 
         //FIXME - verify done? - update firebase database here
-        MainFragment.mFirebase.writeDeviceToFirebase(device.serial);
+        Log.d(TAG, "Attempting to write device to firebase " + device.serial);
+        //TAGCPSAFE
+        //MainFragment.mFirebase.writeDeviceToFirebase(device.serial);
 
         c.close();
     }
@@ -357,7 +364,9 @@ public class DBUtils {
         }
 
         //FIXME - verify done? - update firebase here with app.apk.
-        MainFragment.mFirebase.writeAppToFirebase(app.serial, app.pkg);
+        //TAGCPSAFE
+        //MainFragment.mFirebase.writeAppToFirebase(app.serial, app.pkg);
+        Log.d(TAG, "Attempting to write app to firebase " + app.serial + " " + app.pkg);
 
         c.close();
     }

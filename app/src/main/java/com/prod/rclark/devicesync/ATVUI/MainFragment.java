@@ -32,24 +32,18 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.LoaderManager;
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.CursorLoader;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.Loader;
-import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.IBinder;
-import android.os.Message;
-import android.os.Messenger;
-import android.os.RemoteException;
 import android.preference.PreferenceManager;
 import android.support.v17.leanback.app.BrowseFragment;
 import android.support.v17.leanback.database.CursorMapper;
@@ -83,15 +77,11 @@ import com.prod.rclark.devicesync.ObjectDetail;
 import com.prod.rclark.devicesync.R;
 import com.prod.rclark.devicesync.Utils;
 import com.prod.rclark.devicesync.cloud.Firebase;
-import com.prod.rclark.devicesync.cloud.FirebaseMessengerService;
 import com.prod.rclark.devicesync.data.AppContract;
 import com.prod.rclark.devicesync.sync.GCESync;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.OptionalPendingResult;
-import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.LocationServices;
 
 import java.util.ArrayList;
@@ -146,6 +136,11 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
     private UIDataSetup mUIDataSetup;
 
+    // Pending setup flags...
+    private boolean mbPendingStage3Setup = false;
+    private boolean mbLoadCursors = false;
+    private boolean mbServiceLoggedIn = false;
+
     //  Firebase
     private FirebaseApp mFirebaseApp;
     public static Firebase mFirebase;
@@ -165,6 +160,8 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
             //check for any load complete messages
             // Get extra data included in the Intent
             int status = intent.getIntExtra(GCESync.EXTENDED_DATA_STATUS, GCESync.EXTENDED_DATA_STATUS_NULL);
+            int command = intent.getIntExtra(GCESync.EXTENDED_DATA_CMD, GCESync.EXTENDED_DATA_STATUS_NULL);
+
             if (status == GCESync.EXTENDED_DATA_STATUS_LOCALUPDATECOMPLETE) {
                 //Okay - done with loading local data!
 
@@ -177,6 +174,16 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
                 //And force an update
                 updateFromCP(null);
+            } else if (status == GCESync.FIREBASE_SERVICE_LOGGEDIN) {
+                Log.d(TAG, "Service has been logged into firebase!");
+                mbServiceLoggedIn = true;
+                //and if we have any remaining setup work to do, do it here...
+                if (mbPendingStage3Setup) {
+                    mbPendingStage3Setup = false;
+                    processAfterSigninStage3(mbLoadCursors);
+                }
+            } else if (status == GCESync.FIREBASE_SERVICE_NOTLOGGEDIN) {
+                Log.d(TAG, "Service not logged into firebase - trying to log in");
             }
 
             Log.d("DS_mainfrag_receiver", "Got status: " + status);
@@ -193,7 +200,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         Log.d(TAG, "Success - MainFragment google GMS services connect");
 
         // Note that we defer most of our initialization until after google GMS connects. Do that here...
-        processStartUpAfterSignin();
+        processStartUpAfterSigninStage2();
     }
 
     @Override
@@ -277,10 +284,11 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         //We complete the setup after we have connected to GMS (see onConnect callback)
     }
 
+    //Not used anymore - moved to service...
     private void setupFirebase() {
         //Move setup out of onConnected and to here...
         if (mFirebase != null) {
-            mFirebase.registerFirebaseDataListeners();
+            //mFirebase.registerFirebaseDataListeners();
         }
     }
 
@@ -301,11 +309,13 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
             }
             if (mFirebase == null) {
                 mFirebase = new Firebase(getActivity(), user);
-                setupFirebase();
+                //setupFirebase();
             }
             Utils.setUserId(getActivity(), user);
             //finally, kick off GMS loading
             setupGMS();
+            //and kick off a check to see if service is logged in...
+            mCallback.onMainActivityCallback(MainActivity.CALLBACK_SERVICE_QUERY_LOGIN, null, null);
         } else {
             //not signed in
             Log.d(TAG, "Firebase starting sign in activity");
@@ -322,7 +332,8 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
      * We require GMS to run. So do the bulk of the initialization after GMS has connected.
      * This is done in this routine.
      */
-    private void processStartUpAfterSignin() {
+    private void processStartUpAfterSigninStage2() {
+        Log.d(TAG, "Starting stage2 setup");
         boolean bFirstTime = false;         //indicates first time we have ever run
         boolean bRequestLocationPermission = false;
 
@@ -351,13 +362,30 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
         setupUIElements();
 
+        //Check to see if services is logged in for final update stage
+        //Initialize the loaders if we did not ask for location services...
+        //otherwise initialize after dialog answered... (activity being paused while CP is busily updating on async thread leads
+        //to cursor adapters not updating UI)...
+        if (mbServiceLoggedIn) {
+            processAfterSigninStage3(!bRequestLocationPermission);
+        } else {
+            mbPendingStage3Setup = true;
+            mbLoadCursors = !bRequestLocationPermission;
+            //check to see if we are logged in (and if we are not, the login process in this activity will complete)...
+            mCallback.onMainActivityCallback(MainActivity.CALLBACK_SERVICE_QUERY_LOGIN, null, null);
+        }
+    }
+
+    //Completion of setup routine...
+    private void processAfterSigninStage3(boolean bInitLoaders) {
         //Update the local content provider if running for first time...
-        bFirstTime = Utils.isRunningForFirstTime(getActivity());
+        Log.d(TAG, "Starting stage3 setup");
+        boolean bFirstTime = Utils.isRunningForFirstTime(getActivity());
         if (bFirstTime) {
             GCESync.startActionUpdateLocal(getActivity(), null, null);
-            //and init the preferences
+            //init the preferences
             PreferenceManager.setDefaultValues(getActivity(), R.xml.preferences, false);
-        } else {
+       } else {
             //Note an optimization we made. We block processing of the notify callback from CP until the sync adapter
             //has had a chance to complete on the initial run. The sync service will send a message if this is first run.
             //If it is not first run, enable updates here
@@ -382,11 +410,10 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         //finally, initialize the loaders if we did not ask for location services...
         //otherwise initialize after dialog answered... (activity being paused while CP is busily updating on async thread leads
         //to cursor adapters not updating UI)...
-        if (!bRequestLocationPermission) {
+        if (bInitLoaders) {
             initializeLoaders();
         }
     }
-
 
 
     @Override
@@ -489,12 +516,14 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                     }
                     if (mFirebase == null) {
                         mFirebase = new Firebase(getActivity(), user);
-                        setupFirebase();
+                        //setupFirebase();
                     }
                 }
                 Utils.setUserId(getActivity(), user);
                 //and kick off GMS loading
                 setupGMS();
+                //and kick off a request for service to log in... (on success will complete loading process).
+                mCallback.onMainActivityCallback(MainActivity.CALLBACK_SERVICE_REQUEST_LOGIN, null, null);
             } else {
                 Log.d(TAG, "Firebase failure");
                 Toast.makeText(getActivity(), "Firebase failure...", Toast.LENGTH_LONG);
@@ -906,11 +935,11 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                 startActivityForResult(intent, DETAILS_REQUEST_CODE, bundle);
             } else if (item instanceof String) {
                 if (((String) item).indexOf(getString(R.string.error_fragment)) >= 0) {
-                    Intent intent = new Intent(getActivity(), BrowseErrorActivity.class);
-                    startActivity(intent);
+                    //Intent intent = new Intent(getActivity(), BrowseErrorActivity.class);
+                    //startActivity(intent);
+                    mCallback.onMainActivityCallback(MainActivity.CALLBACK_SERVICE_REQUEST_LOGIN, null, null);
                 } else if (item.equals(getResources().getString(R.string.signin_button_text))) {
-                    //FIXME - test.
-                    mCallback.onMainActivityCallback(MainActivity.CALLBACK_SEND_TO_SERVICE, null, null);
+                    mCallback.onMainActivityCallback(MainActivity.CALLBACK_SERVICE_HELLO, null, null);
                     //signInToGoogle(GOOGLE_SIGNIN_EXPLICIT);
                 } else if (item.equals(getResources().getString(R.string.signout_button_text))) {
                     //log us out (both activity and service)
