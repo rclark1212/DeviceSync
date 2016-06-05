@@ -124,11 +124,15 @@ public class CardPresenter extends Presenter {
                     //get the download URL...
                     ImageDetail image = DBUtils.getImageRecordFromCP(cardView.getContext(), element.pkg);
                     //glide it in
-                    Glide.with(cardView.getContext())
-                            .load(image.download_url)
-                            .centerCrop()
-                            .error(mDefaultCardImage)
-                            .into(cardView.getMainImageView());
+                    if (image != null) {
+                        Glide.with(cardView.getContext())
+                                .load(image.download_url)
+                                .centerCrop()
+                                .error(mDefaultCardImage)
+                                .into(cardView.getMainImageView());
+                    } else {
+                        cardView.setMainImage(mDefaultCardImage);
+                    }
                 }
             }
         }

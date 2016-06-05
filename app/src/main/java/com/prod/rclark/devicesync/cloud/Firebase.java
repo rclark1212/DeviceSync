@@ -176,15 +176,21 @@ public class Firebase {
                     //Check if this is us that pushed. Do this by comparing timestamps
                     boolean bUpdate = true;
                     ObjectDetail cp_object = DBUtils.getDeviceFromCP(mCtx, object.serial);
-                    if (object.timestamp <= cp_object.timestamp) {
-                        //oh... an older instance... skip
-                        bUpdate = false;
-                    }
-                    if (bUpdate) {
+                    if (cp_object != null) {
+                        if (object.timestamp <= cp_object.timestamp) {
+                            //oh... an older instance... skip
+                            bUpdate = false;
+                        }
+                        if (bUpdate) {
+                            Log.d(TAG, "Updating device serial in CP " + object.serial);
+                            DBUtils.saveDeviceToCP(mCtx, object);
+                        } else {
+                            Log.d(TAG, "Got an event for a device record with stale timestamp - must be due to our trigger. Punt on updating " + object.serial);
+                        }
+                    } else {
+                        //new device to us
                         Log.d(TAG, "Updating device serial in CP " + object.serial);
                         DBUtils.saveDeviceToCP(mCtx, object);
-                    } else {
-                        Log.d(TAG, "Got an event for a device record with stale timestamp - must be due to our trigger. Punt on updating " + object.serial);
                     }
                 }
             }
@@ -256,15 +262,21 @@ public class Firebase {
                         //Check if this is us that pushed. Do this by comparing timestamps
                         boolean bUpdate = true;
                         ObjectDetail cp_object = DBUtils.getAppFromCP(mCtx, object.serial, object.pkg);
-                        if (object.timestamp <= cp_object.timestamp) {
-                            //oh... an older instance... skip
-                            bUpdate = false;
-                        }
-                        if (bUpdate) {
+                        if (cp_object != null) {
+                            if (object.timestamp <= cp_object.timestamp) {
+                                //oh... an older instance... skip
+                                bUpdate = false;
+                            }
+                            if (bUpdate) {
+                                Log.d(TAG, "Updating app serial/app in CP " + object.serial + " " + object.pkg);
+                                DBUtils.saveAppToCP(mCtx, object);
+                            } else {
+                                Log.d(TAG, "Got an event for a device record with stale timestamp - must be due to our trigger. Punt on updating " + object.serial);
+                            }
+                        } else {
+                            //new device to us...
                             Log.d(TAG, "Updating app serial/app in CP " + object.serial + " " + object.pkg);
                             DBUtils.saveAppToCP(mCtx, object);
-                        } else {
-                            Log.d(TAG, "Got an event for a device record with stale timestamp - must be due to our trigger. Punt on updating " + object.serial);
                         }
                     }
                 }

@@ -143,7 +143,6 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
     //  Firebase
     private FirebaseApp mFirebaseApp;
-    public static Firebase mFirebase;
 
     OnMainActivityCallbackListener mCallback;
     //Put in an interface for container activity to implement so that fragment can deliver messages
@@ -284,14 +283,6 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         //We complete the setup after we have connected to GMS (see onConnect callback)
     }
 
-    //Not used anymore - moved to service...
-    private void setupFirebase() {
-        //Move setup out of onConnected and to here...
-        if (mFirebase != null) {
-            //mFirebase.registerFirebaseDataListeners();
-        }
-    }
-
     /**
      * Sign in with firebase
      */
@@ -304,13 +295,6 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
             Log.d(TAG, "Firebase signed in with " + auth.getCurrentUser().getEmail());
             String user = auth.getCurrentUser().getUid();
             //does the user match what has been stored?
-            if (!user.equals(Utils.getUserId(getActivity()))) {
-                mFirebase = null;
-            }
-            if (mFirebase == null) {
-                mFirebase = new Firebase(getActivity(), user);
-                //setupFirebase();
-            }
             Utils.setUserId(getActivity(), user);
             //finally, kick off GMS loading
             setupGMS();
@@ -509,16 +493,6 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                 Log.d(TAG, "Firebase signed in");
                 FirebaseAuth auth = FirebaseAuth.getInstance();
                 String user = auth.getCurrentUser().getUid();
-                if (user != null) {
-                    //does the user match what has been stored?
-                    if (!user.equals(Utils.getUserId(getActivity()))) {
-                        mFirebase = null;
-                    }
-                    if (mFirebase == null) {
-                        mFirebase = new Firebase(getActivity(), user);
-                        //setupFirebase();
-                    }
-                }
                 Utils.setUserId(getActivity(), user);
                 //and kick off GMS loading
                 setupGMS();
