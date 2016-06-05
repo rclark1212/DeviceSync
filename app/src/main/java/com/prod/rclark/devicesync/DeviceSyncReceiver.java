@@ -44,6 +44,7 @@ public class DeviceSyncReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context ctx, Intent intent) {
         boolean bInstall = false;
+        boolean bRelaunchApp = false;
 
         if (intent.getAction().equalsIgnoreCase(Intent.ACTION_BOOT_COMPLETED)) {
             //Okay - we have finished boot. Start the service!
@@ -86,13 +87,6 @@ public class DeviceSyncReceiver extends BroadcastReceiver {
                 //Construct the Uri...
                 Log.d(TAG, "Deleting app from CP " + packageName);
                 DBUtils.deleteAppFromCP(ctx, Build.SERIAL, packageName);
-                //FIXME - verify done? update firebase here - delete record...
-                //TAGCPSAFE
-                //if (MainFragment.mFirebase != null) {
-                //    MainFragment.mFirebase.deleteAppFromFirebase(Build.SERIAL, packageName);
-                //}
-
-                //And note that if we have set up a list of intents to uninstall, process them here
             }
 
             //And note that if we have set up a list of intents to install, process them here
@@ -107,19 +101,24 @@ public class DeviceSyncReceiver extends BroadcastReceiver {
                     goToMarket.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                     ctx.startActivity(goToMarket);
                 } else {
-                    Intent i = new Intent();
-                    i.setAction(Intent.ACTION_MAIN);
-                    i.addCategory(Intent.CATEGORY_LAUNCHER);
-                    i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                    if (Utils.bIsThisATV(ctx)) {
-                        i.setComponent(new ComponentName(ctx.getPackageName(), MainActivity.class.getName()));
-                    } else {
-                        i.setComponent(new ComponentName(ctx.getPackageName(), MainPhoneActivity.class.getName()));
-                    }
-                    ctx.startActivity(i);
+                    bRelaunchApp = true;
                 }
+            } else if (bInstall) {
+                bRelaunchApp = true;
             }
 
+            if (bRelaunchApp) {
+                Intent i = new Intent();
+                i.setAction(Intent.ACTION_MAIN);
+                i.addCategory(Intent.CATEGORY_LAUNCHER);
+                i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                if (Utils.bIsThisATV(ctx)) {
+                    i.setComponent(new ComponentName(ctx.getPackageName(), MainActivity.class.getName()));
+                } else {
+                    i.setComponent(new ComponentName(ctx.getPackageName(), MainPhoneActivity.class.getName()));
+                }
+                ctx.startActivity(i);
+            }
             //Note that the main activity UI will auto-refresh from the CP changing...
         }
     }
