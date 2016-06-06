@@ -191,21 +191,24 @@ public class ObjectDetailsFragment extends DetailsFragment {
                     url = image.download_url;
                 }
 
-                //glide it in
-                Glide.with(getActivity())
-                        .load(url)
-                        .centerCrop()
-                        .error(getResources().getDrawable(R.drawable.noimage))
-                        .into(new SimpleTarget<GlideDrawable>(width, height) {
-                            @Override
-                            public void onResourceReady(GlideDrawable resource,
-                                                        GlideAnimation<? super GlideDrawable>
-                                                                glideAnimation) {
-                                Log.d(TAG, "details overview card image url ready: " + resource);
-                                row.setImageDrawable(resource);
-                                mAdapter.notifyArrayItemRangeChanged(0, mAdapter.size());
-                            }
-                        });
+                if (url == null) {
+                    row.setImageDrawable(getResources().getDrawable(R.drawable.noimage));
+                } else {
+                    //glide it in
+                    Glide.with(getActivity())
+                            .load(url)
+                            .error(getResources().getDrawable(R.drawable.noimage))
+                            .into(new SimpleTarget<GlideDrawable>(width, height) {
+                                @Override
+                                public void onResourceReady(GlideDrawable resource,
+                                                            GlideAnimation<? super GlideDrawable>
+                                                                    glideAnimation) {
+                                    Log.d(TAG, "details overview card image url ready: " + resource);
+                                    row.setImageDrawable(resource);
+                                    mAdapter.notifyArrayItemRangeChanged(0, mAdapter.size());
+                                }
+                            });
+                }
             }
             /*
             if (mSelectedObject.banner != null) {
@@ -219,26 +222,20 @@ public class ObjectDetailsFragment extends DetailsFragment {
                 actionAdapter.add(new Action(ACTION_RUNAPP, getResources().getString(R.string.run_app)));
                 actionAdapter.add(new Action(ACTION_UNINSTALL, getResources().getString(R.string.uninstall)));
             } else {
-                //install
-                actionAdapter.add(new Action(ACTION_INSTALL, getResources().getString(R.string.install)));
+                //install if the device type is correct...
+                if (Utils.bIsThisATV(getActivity())) {
+                    if ((mSelectedObject.type == AppContract.TYPE_ATV)
+                        || (mSelectedObject.type == AppContract.TYPE_BOTH)) {
+                        actionAdapter.add(new Action(ACTION_INSTALL, getResources().getString(R.string.install)));
+                    }
+                } else {
+                    if ((mSelectedObject.type == AppContract.TYPE_TABLET)
+                            || (mSelectedObject.type == AppContract.TYPE_BOTH)) {
+                        actionAdapter.add(new Action(ACTION_INSTALL, getResources().getString(R.string.install)));
+                    }
+                }
             }
         }
-        /* FIXME
-        Glide.with(getActivity())
-                .load(mSelectedMovie.getCardImageUrl())
-                .centerCrop()
-                .error(R.drawable.default_background)
-                .into(new SimpleTarget<GlideDrawable>(width, height) {
-                    @Override
-                    public void onResourceReady(GlideDrawable resource,
-                                                GlideAnimation<? super GlideDrawable>
-                                                        glideAnimation) {
-                        Log.d(TAG, "details overview card image url ready: " + resource);
-                        row.setImageDrawable(resource);
-                        mAdapter.notifyArrayItemRangeChanged(0, mAdapter.size());
-                    }
-                });
-        */
         if (actionAdapter.size() > 0) {
             row.setActionsAdapter(actionAdapter);
         }

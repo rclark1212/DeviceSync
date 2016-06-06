@@ -305,7 +305,7 @@ public class GCESync extends IntentService {
             //Force the OS type by definition...
             //note that the app is local
             //flags = flags | AppContract.AppEntry.FLAG_APP_LOCAL; - nope - SSN matching = local
-            app.type = mbIsATV ? AppContract.TYPE_ATV : AppContract.TYPE_TABLET;
+            app.type = AppUtils.getAppType(mCtx, app.pkg);
             app.flags = flags;
             app.serial = Build.SERIAL;
             //shove a timestamp in there.

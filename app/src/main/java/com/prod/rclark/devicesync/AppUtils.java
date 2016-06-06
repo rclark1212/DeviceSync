@@ -19,10 +19,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
+import android.content.pm.ConfigurationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.os.Parcelable;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
@@ -80,7 +83,7 @@ public class AppUtils {
 
         app.bIsDevice = false;
         //set the right type...
-        app.type = Utils.bIsThisATV(ctx) ? AppContract.TYPE_ATV : AppContract.TYPE_TABLET;
+        app.type = getAppType(ctx, pkgName);
 
         try {
             PackageInfo info = manager.getPackageInfo(pkgName, 0);
@@ -122,7 +125,7 @@ public class AppUtils {
         try {
             if (type == AppContract.TYPE_TABLET) {
                 retdraw = manager.getApplicationLogo(apkname);
-            } else {
+            } else {    //Both ATV and "BOTH"
                 retdraw = manager.getApplicationBanner(apkname);
                 if (retdraw == null) {
                     Intent intent = manager.getLeanbackLaunchIntentForPackage(apkname);
@@ -189,4 +192,47 @@ public class AppUtils {
         return false;
     }
 
+    /**
+     * Gets app type - returns either TYPE_ATV, TYPE_TABLET, TYPE_BOTH
+     * @param ctx
+     * @param pkg
+     * @return
+     */
+    public static int getAppType(Context ctx, String pkg) {
+        Log.d(TAG, "Checking package type - " + pkg);
+        //Do the simple test
+        int returntype = Utils.bIsThisATV(ctx) ? AppContract.TYPE_ATV : AppContract.TYPE_TABLET;
+
+        //Now the only remaining work is to see if this app actually supports both ATV and Tablet...
+        PackageManager manager = ctx.getPackageManager();
+
+        //See if it has both normal and leanback launch intents...
+        Intent intentlb = manager.getLeanbackLaunchIntentForPackage(pkg);
+        Intent intentnorm = manager.getLaunchIntentForPackage(pkg);
+        if ((intentlb != null) && (intentnorm != null)) {
+            //If ATV, need to do more checking for "BOTH". For tablet, if there is a leanback intent, we are good to go.
+            if (Utils.bIsThisATV(ctx)) {
+                if (intentnorm.hasCategory(Intent.CATEGORY_LAUNCHER)) {
+                    try {
+                        PackageInfo pi = manager.getPackageInfo(pkg, 0);
+                        if (pi.configPreferences != null) {
+                            for (int i = 0; i < pi.configPreferences.length; i++) {
+                                if ((pi.configPreferences[i].reqTouchScreen & Configuration.TOUCHSCREEN_FINGER) != 0) {
+                                    Log.d(TAG, "Rare unicorn app with both leanback and normal launch intents found - " + pkg);
+                                    returntype = AppContract.TYPE_BOTH;
+                                    return returntype;
+                                }
+                            }
+                        }
+                    } catch (PackageManager.NameNotFoundException e) {
+                        Log.d(TAG, "When trying to check for TYPE_BOTH, couldn't find package");
+                    }
+                }
+            } else {
+                Log.d(TAG, "Rare unicorn app with both leanback and normal launch intents found - " + pkg);
+                returntype = AppContract.TYPE_BOTH;
+            }
+        }
+        return returntype;
+    }
 }
