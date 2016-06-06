@@ -114,11 +114,8 @@ public class CardPresenter extends Presenter {
             } else {
                 cardView.setTitleText(element.label);
                 cardView.setContentText(element.pkg);
-                Drawable banner = null;
-                if (Build.SERIAL.equals(element.serial)) {
-                    //local app...
-                    banner = AppUtils.getLocalApkImage(cardView.getContext(), element.pkg, element.type);
-                }
+                //is image available locally?
+                Drawable banner = AppUtils.getLocalApkImage(cardView.getContext(), element.pkg, element.type);
 
                 if (banner != null) {
                     cardView.setMainImage(banner);
