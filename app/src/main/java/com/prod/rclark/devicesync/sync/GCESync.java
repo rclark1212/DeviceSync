@@ -31,10 +31,18 @@ import android.util.Log;
 import com.prod.rclark.devicesync.ATVUI.MainFragment;
 import com.prod.rclark.devicesync.AppUtils;
 import com.prod.rclark.devicesync.DBUtils;
+import com.prod.rclark.devicesync.DeviceSyncReceiver;
+import com.prod.rclark.devicesync.InstallUtil;
 import com.prod.rclark.devicesync.ObjectDetail;
 import com.prod.rclark.devicesync.Utils;
 import com.prod.rclark.devicesync.data.AppContract;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -399,12 +407,54 @@ public class GCESync extends IntentService {
     private void handleActionInstallAPK(String pkg, String intentPrefix) {
 
         //Step 1 - check if this app exists on play store...
+        //InstallUtil.CHECK_URL
+        //ping the play store address to see if it is valid
+        boolean bExists = true;
+        HttpURLConnection urlConnection = null;
+        BufferedReader reader = null;
+        String line = null;
+        try {
+            String urlbuild = InstallUtil.CHECK_URL + pkg;
+            //make the URL
+            URL url = new URL(urlbuild);
 
-        //Step 2 - go ahead with install
-        Log.d(TAG, "Launching install intent for " + pkg);
-        Intent goToMarket = new Intent(Intent.ACTION_VIEW).setData(Uri.parse(intentPrefix + pkg));
-        //make sure activity not on history stack...
-        goToMarket.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        mCtx.startActivity(goToMarket);
+            // Create the request to TMDB, and open the connection
+            urlConnection = (HttpURLConnection) url.openConnection();
+            urlConnection.setRequestMethod("GET");
+            urlConnection.connect();
+            //FIXME - read a line or 2 and see what comes back... failures all will be same
+            // Read the input stream into a String
+            InputStream inputStream = urlConnection.getInputStream();
+            if (inputStream == null) {
+                // Nothing to do. Seems this is also a sign of an app not on store...
+                bExists = false;
+                Log.d(TAG, "Check play store, got null input");
+            }
+            reader = new BufferedReader(new InputStreamReader(inputStream));
+            line = reader.readLine();
+
+        } catch (IOException e) {
+            Log.d(TAG, "URL Error - couldn't find " + pkg);
+            // mark this as not existing on play store...
+            bExists = false;
+        } finally {
+            if (urlConnection != null) {
+                urlConnection.disconnect();
+            }
+        }
+
+        if (bExists) {
+            //Step 2 - go ahead with install
+            Log.d(TAG, "Launching install intent for " + pkg);
+            Intent goToMarket = new Intent(Intent.ACTION_VIEW).setData(Uri.parse(intentPrefix + pkg));
+            //make sure activity not on history stack...
+            goToMarket.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            mCtx.startActivity(goToMarket);
+        } else {
+            //send skip intent
+            Intent intent = new Intent();
+            intent.setAction(DeviceSyncReceiver.ACTION_SKIP);
+            sendBroadcast(intent);
+        }
     }
 }

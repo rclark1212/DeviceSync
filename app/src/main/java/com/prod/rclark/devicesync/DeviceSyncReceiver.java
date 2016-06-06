@@ -42,7 +42,7 @@ public class DeviceSyncReceiver extends BroadcastReceiver {
 
     //IMPORTANT - IF YOU CHANGE ACTION BELOW, HAVE TO CHANGE MANIFEST FILTER!!!
     //this is a private action we use to skip a file install in the case of the apk not being available on google play
-    protected static final String ACTION_SKIP = "com.prod.rclark.devicesync.action.ACTION_SKIP_PACKAGE";
+    public static final String ACTION_SKIP = "com.prod.rclark.devicesync.action.ACTION_SKIP_PACKAGE";
 
     public static ArrayList<String> mInstallIntents;
     public static String mCurrentlyInstalling;

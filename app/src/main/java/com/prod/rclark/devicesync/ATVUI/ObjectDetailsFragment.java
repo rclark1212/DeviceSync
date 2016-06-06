@@ -186,10 +186,14 @@ public class ObjectDetailsFragment extends DetailsFragment {
             } else {
                 //get the download URL...
                 ImageDetail image = DBUtils.getImageRecordFromCP(getActivity(), mSelectedObject.pkg);
+                String url = null;
+                if (image != null) {
+                    url = image.download_url;
+                }
 
                 //glide it in
                 Glide.with(getActivity())
-                        .load(image.download_url)
+                        .load(url)
                         .centerCrop()
                         .error(getResources().getDrawable(R.drawable.noimage))
                         .into(new SimpleTarget<GlideDrawable>(width, height) {

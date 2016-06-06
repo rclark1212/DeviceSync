@@ -31,8 +31,10 @@ import java.util.ArrayList;
 public class InstallUtil {
 
     private final static String TAG = "InstallUtil";
-    protected final static String INSTALL_PREFIX = "market://details?id=";
-    protected final static String UNINSTALL_PREFIX = "package:";
+    public final static String INSTALL_PREFIX = "market://details?id=";
+    public final static String UNINSTALL_PREFIX = "package:";
+    public final static String CHECK_URL = "https://play.google.com/store/apps/details?id=";
+
     private InstallUtil() {};
 
     /**
@@ -49,10 +51,10 @@ public class InstallUtil {
         }
 
         DeviceSyncReceiver.mCurrentlyInstalling = apk;
-        Intent goToMarket = new Intent(Intent.ACTION_VIEW)
-                .setData(Uri.parse(INSTALL_PREFIX+apk));
-        ctx.startActivity(goToMarket);
-        //GCESync.startActionAPKInstall(ctx, apk, INSTALL_PREFIX);
+        //Intent goToMarket = new Intent(Intent.ACTION_VIEW)
+        //        .setData(Uri.parse(INSTALL_PREFIX+apk));
+        //ctx.startActivity(goToMarket);
+        GCESync.startActionAPKInstall(ctx, apk, INSTALL_PREFIX);
     }
 
     /**

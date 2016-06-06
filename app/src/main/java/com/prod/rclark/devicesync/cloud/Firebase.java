@@ -241,8 +241,17 @@ public class Firebase {
                     //i.e. nobody should *ever* add an app for our serial number which is not already in our CP...
                     if (object.serial != null) {
                         if (!Build.SERIAL.equals(object.serial)) {
-                            Log.d(TAG, "Adding new seria/app to CP " + object.serial + " " + object.pkg);
+                            Log.d(TAG, "Adding new serial/app to CP " + object.serial + " " + object.pkg);
                             DBUtils.saveAppToCP(mCtx, object);
+                        } else {
+                            //and if it is our serial number, lets make sure it is not stale...
+                            //grab our serial...
+                            ObjectDetail local = DBUtils.getAppFromCP(mCtx, Build.SERIAL, object.pkg);
+                            //FIXME (possibly) depending on how we do flags
+                            if (local == null) {
+                                //hmm... not in our database. Looks stale - delete
+                                child.getRef().removeValue();
+                            }
                         }
                     }
                 }
@@ -275,9 +284,16 @@ public class Firebase {
                                 Log.d(TAG, "Got an event for a device record with stale timestamp - must be due to our trigger. Punt on updating " + object.serial);
                             }
                         } else {
-                            //new device to us...
-                            Log.d(TAG, "Updating app serial/app in CP " + object.serial + " " + object.pkg);
-                            DBUtils.saveAppToCP(mCtx, object);
+                            if (!Build.SERIAL.equals(object.serial)) {
+                                //new device to us...
+                                Log.d(TAG, "Updating app serial/app in CP " + object.serial + " " + object.pkg);
+                                DBUtils.saveAppToCP(mCtx, object);
+                            } else {
+                                //wait - this is our serial number and we have no record of it...
+                                //FIXME (possibly) depending on how we do flags
+                                //hmm... not in our database. Looks stale - delete
+                                child.getRef().removeValue();
+                            }
                         }
                     }
                 }
@@ -327,7 +343,7 @@ public class Firebase {
                 if (object.filename != null) {
                     //Is this object already in our CP?
                     ImageDetail cp_object = DBUtils.getImageRecordFromCP(mCtx, object.apkname);
-                    if (!object.isEqual(cp_object)) {
+                    if (!object.isEqual(cp_object) || (cp_object == null)) {
                         Log.d(TAG, "Adding new image to CP " + object.filename);
                         DBUtils.setImageRecordToCP(mCtx, object);
                         //and send a message in case there needs to be an update (in case of not using cursor loader for images)
@@ -350,7 +366,7 @@ public class Firebase {
 
                 if (object.filename != null) {
                     ImageDetail cp_object = DBUtils.getImageRecordFromCP(mCtx, object.apkname);
-                    if (!object.isEqual(cp_object)) {
+                    if (!object.isEqual(cp_object) || (cp_object == null)) {
                         Log.d(TAG, "Updating image in CP " + object.filename);
                         DBUtils.setImageRecordToCP(mCtx, object);
                         //and send a message in case there needs to be an update (in case of not using cursor loader for images)
