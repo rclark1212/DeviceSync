@@ -175,11 +175,8 @@ public class ObjectDetailsFragment extends DetailsFragment {
                 actionAdapter.add(new Action(ACTION_CLONEFROM, getResources().getString(R.string.clonefrom)));
             }
         } else {
-            Drawable banner = null;
-            if (Build.SERIAL.equals(mSelectedObject.serial)) {
-                //local app...
-                banner = AppUtils.getLocalApkImage(getActivity(), mSelectedObject.pkg, mSelectedObject.type);
-            }
+            //Get local app if it exists...
+            Drawable banner = AppUtils.getLocalApkImage(getActivity(), mSelectedObject.pkg, mSelectedObject.type);
 
             if (banner != null) {
                 row.setImageDrawable(banner);

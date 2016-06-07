@@ -20,6 +20,7 @@
     <string name="remove_device">Remove Device</string>
     <string name="show_apps">Show Apps</string>
     <string name="run_app">Launch App</string>
+    <string name="continuetext">Continue</string>
 
     <!-- pref UI elements -->
     <string name="pref_app_capture_settings">Application Data</string>

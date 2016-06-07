@@ -110,7 +110,13 @@ public class CardPresenter extends Presenter {
                 } else {
                     drawable = cardView.getResources().getDrawable(R.drawable.shieldtablet);
                 }
-                cardView.setMainImage(drawable);
+                //Use glide for all image sets...
+                Glide.with(cardView.getContext())
+                        .load("")
+                        .placeholder(drawable)
+                        .centerCrop()
+                        .error(drawable)
+                        .into(cardView.getMainImageView());
             } else {
                 cardView.setTitleText(element.label);
                 cardView.setContentText(element.pkg);
@@ -118,7 +124,12 @@ public class CardPresenter extends Presenter {
                 Drawable banner = AppUtils.getLocalApkImage(cardView.getContext(), element.pkg, element.type);
 
                 if (banner != null) {
-                    cardView.setMainImage(banner);
+                    Glide.with(cardView.getContext())
+                            .load("")
+                            .placeholder(banner)
+                            .centerCrop()
+                            .error(banner)
+                            .into(cardView.getMainImageView());
                 } else {
                     //get the download URL...
                     ImageDetail image = DBUtils.getImageRecordFromCP(cardView.getContext(), element.pkg);
@@ -130,7 +141,12 @@ public class CardPresenter extends Presenter {
                                 .error(mDefaultCardImage)
                                 .into(cardView.getMainImageView());
                     } else {
-                        cardView.setMainImage(mDefaultCardImage);
+                        Glide.with(cardView.getContext())
+                                .load("")
+                                .placeholder(mDefaultCardImage)
+                                .centerCrop()
+                                .error(mDefaultCardImage)
+                                .into(cardView.getMainImageView());
                     }
                 }
             }
@@ -217,6 +233,7 @@ public class CardPresenter extends Presenter {
         //Log.d(TAG, "onUnbindViewHolder");
         ImageCardView cardView = (ImageCardView) viewHolder.view;
         // Remove references to images so that the garbage collector can free up memory
+        cardView.setTitleText("debugUnbind");   //for testing
         cardView.setBadgeImage(null);
         cardView.setMainImage(null);
     }

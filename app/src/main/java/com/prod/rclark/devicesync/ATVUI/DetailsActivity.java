@@ -61,6 +61,7 @@ public class DetailsActivity extends Activity {
         if (mbOpenRow) {
             Log.d(TAG, "Setting up open serial return");
             data.putExtra(MainFragment.DETAILS_RESULT_KEY, mOpenSerial);
+            mbOpenRow = false;
         }
         setResult(RESULT_OK, data);
 

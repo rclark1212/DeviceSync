@@ -63,6 +63,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
@@ -504,7 +505,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                         ListRow lr = (ListRow) mRowsAdapter.get(i);
                         if (lr.getHeaderItem().getId() == (long) id) {
                             //found it...
-                            setSelectedPosition(i);
+                            setSelectedPosition(i, true);
                             break;
                         }
                     }
@@ -609,11 +610,6 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                 }
             });
         }
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
     }
 
 

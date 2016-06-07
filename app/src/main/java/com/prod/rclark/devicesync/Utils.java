@@ -398,14 +398,16 @@ public class Utils {
 
             if ((addresses != null) && (addresses.size() > 0)) {
                 //We got an address!!!
-                if (Utils.bIsThisATV(ctx)) {
-                    ret = String.format(ctx.getResources().getString(R.string.atv_location), addresses.get(0).getLocality(), addresses.get(0).getAdminArea());
+                if (addresses.get(0).getAdminArea() != null) {
+                    if (Utils.bIsThisATV(ctx)) {
+                        ret = String.format(ctx.getResources().getString(R.string.atv_location), addresses.get(0).getLocality(), addresses.get(0).getAdminArea());
+                    } else {
+                        ret = String.format(ctx.getResources().getString(R.string.phone_location),
+                                addresses.get(0).getAddressLine(0), addresses.get(0).getLocality(), addresses.get(0).getAdminArea());
+                    }
                 } else {
-                    ret = String.format(ctx.getResources().getString(R.string.phone_location),
-                            addresses.get(0).getAddressLine(0), addresses.get(0).getLocality(), addresses.get(0).getAdminArea());
+                    ret = String.format(ctx.getResources().getString(R.string.latlong_location), addresses.get(0).getLatitude(), addresses.get(0).getLongitude());
                 }
-            } else {
-                ret = String.format(ctx.getResources().getString(R.string.latlong_location), addresses.get(0).getLatitude(), addresses.get(0).getLongitude());
             }
         }
 
