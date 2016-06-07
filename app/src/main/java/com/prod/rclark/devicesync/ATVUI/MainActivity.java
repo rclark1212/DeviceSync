@@ -181,7 +181,6 @@ public class MainActivity extends Activity implements
 
     @Override
     public void onStop() {
-        super.onStop();
         // Unbind from the service
         Log.d(TAG, "onStop - unbinding from service");
         if (mBoundToService) {
@@ -189,6 +188,7 @@ public class MainActivity extends Activity implements
             unbindService(mConnection);
         }
         Log.d(TAG, "onStop - unbound from service");
+        super.onStop();
     }
 
     /**

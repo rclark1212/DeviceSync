@@ -429,7 +429,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         super.onResume();
 
         //set up app as active
-        //Utils.setAppActive(this.getActivity(), true);
+        Utils.setAppActive(this.getActivity(), true);
 
         //set up handler and register content observer
         if (mAppObserver == null) {
@@ -446,16 +446,16 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
     @Override
     public void onPause() {
-        super.onPause();
-
         //set up app as inactive
-        //Utils.setAppActive(this.getActivity(), false);
+        Utils.setAppActive(this.getActivity(), false);
 
         // always call unregisterContentObserver in onPause
         getActivity().getContentResolver().unregisterContentObserver(mAppObserver);
 
         //Unregister receiver
         LocalBroadcastManager.getInstance(this.getActivity()).unregisterReceiver(mMessageReceiver);
+
+        super.onPause();
     }
 
     @Override
