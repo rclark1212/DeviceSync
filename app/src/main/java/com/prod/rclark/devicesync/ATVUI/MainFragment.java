@@ -145,9 +145,6 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
     private boolean mbLoadCursors = false;
     private boolean mbServiceLoggedIn = false;
 
-    //  Firebase
-    private FirebaseApp mFirebaseApp;
-
     OnMainActivityCallbackListener mCallback;
     //Put in an interface for container activity to implement so that fragment can deliver messages
     public interface OnMainActivityCallbackListener {
@@ -280,9 +277,6 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
             finishIt();
         }
 
-        //Set firebase
-        mFirebaseApp = FirebaseApp.getInstance();
-
         //First, try to login...
         Log.d(TAG, "Trying to sign in");
         firebaseSignIn();
@@ -314,8 +308,9 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         } else {
             //not signed in
             Log.d(TAG, "Firebase starting sign in activity");
+            //Set firebase
             startActivityForResult(
-                    AuthUI.getInstance(mFirebaseApp)
+                    AuthUI.getInstance(FirebaseApp.getInstance())
                             .createSignInIntentBuilder()
                             .setProviders(AuthUI.GOOGLE_PROVIDER)
                             .build(),
@@ -434,7 +429,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         super.onResume();
 
         //set up app as active
-        Utils.setAppActive(this.getActivity(), true);
+        //Utils.setAppActive(this.getActivity(), true);
 
         //set up handler and register content observer
         if (mAppObserver == null) {
@@ -454,7 +449,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         super.onPause();
 
         //set up app as inactive
-        Utils.setAppActive(this.getActivity(), false);
+        //Utils.setAppActive(this.getActivity(), false);
 
         // always call unregisterContentObserver in onPause
         getActivity().getContentResolver().unregisterContentObserver(mAppObserver);
@@ -840,6 +835,8 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                         dialog.cancel();
                         //disable syncs
                         Utils.setSyncDisabled(getActivity(), true);
+                        //FIXME - note this leaves apps in a weird state. Will show apps as local to device but no option
+                        //to install, etc...
                     }
                 })
                 .setNegativeButton(getResources().getString(R.string.restore_no), new DialogInterface.OnClickListener() {

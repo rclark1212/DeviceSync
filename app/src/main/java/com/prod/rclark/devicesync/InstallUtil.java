@@ -50,7 +50,7 @@ public class InstallUtil {
             DeviceSyncReceiver.mInstallIntents.clear();
         }
 
-        DeviceSyncReceiver.mCurrentlyInstalling = apk;
+        //DeviceSyncReceiver.mCurrentlyInstalling = apk;
         //Intent goToMarket = new Intent(Intent.ACTION_VIEW)
         //        .setData(Uri.parse(INSTALL_PREFIX+apk));
         //ctx.startActivity(goToMarket);

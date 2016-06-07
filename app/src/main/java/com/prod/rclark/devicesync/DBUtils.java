@@ -323,19 +323,19 @@ public class DBUtils {
     /**
      * Saves objectdetail app to CP (and constructs the Uri)
      */
-    public static void saveAppToCP(Context ctx, ObjectDetail app) {
+    public static void saveAppToCP(Context ctx, ObjectDetail app, boolean bUpdateTimestamp) {
         //Construct the Uri...
         Uri appDB = AppContract.AppEntry.CONTENT_URI;
         //build up the local device query
         appDB = appDB.buildUpon().appendPath(app.serial).appendPath(app.pkg).build();
-        saveAppToCP(ctx, appDB, app);
+        saveAppToCP(ctx, appDB, app, bUpdateTimestamp);
     }
 
-        /**
-         * Saves an ObjectDetail App to the CP based on the URI.
-         * Used by broadcast receiver for apps
-         */
-    public static void saveAppToCP(Context ctx, Uri uri, ObjectDetail app) {
+    /**
+     * Saves an ObjectDetail App to the CP based on the URI.
+     * Used by broadcast receiver for apps
+     */
+    public static void saveAppToCP(Context ctx, Uri uri, ObjectDetail app, boolean bUpdateTimestamp) {
         boolean bExists = false;
 
         //First are we loading an app or a device object?
@@ -358,7 +358,9 @@ public class DBUtils {
             bExists = true;
         }
 
-        app.timestamp = System.currentTimeMillis();
+        if (bUpdateTimestamp) {
+            app.timestamp = System.currentTimeMillis();
+        }
 
         bindAppToContentValues(app, contentValues, ctx);
 

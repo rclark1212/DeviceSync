@@ -236,21 +236,33 @@ public class Firebase {
                     Log.d(TAG, "App child adding - " + child.getKey());
                     //add to CP
                     ObjectDetail object = child.getValue(ObjectDetail.class);
-
-                    //by definition, this will be more up to date than our CP if it is from another serial number so just shove it in...
-                    //i.e. nobody should *ever* add an app for our serial number which is not already in our CP...
                     if (object.serial != null) {
-                        if (!Build.SERIAL.equals(object.serial)) {
-                            Log.d(TAG, "Adding new serial/app to CP " + object.serial + " " + object.pkg);
-                            DBUtils.saveAppToCP(mCtx, object);
+                        //Check to see if we already have this in our database...
+                        boolean bUpdate = true;
+                        ObjectDetail cp_object = DBUtils.getAppFromCP(mCtx, object.serial, object.pkg);
+                        if (cp_object != null) {
+                            if (object.timestamp <= cp_object.timestamp) {
+                                //oh... an older instance (or same instance)... skip
+                                bUpdate = false;
+                            }
+                            if (bUpdate) {
+                                Log.d(TAG, "Updating app serial/app in CP " + object.serial + " " + object.pkg);
+                                DBUtils.saveAppToCP(mCtx, object, false);
+                            } else {
+                                Log.d(TAG, "Got an event for a device record with stale timestamp - must be due to our trigger or due to us starting. Punt on updating " + object.serial);
+                            }
                         } else {
-                            //and if it is our serial number, lets make sure it is not stale...
-                            //grab our serial...
-                            ObjectDetail local = DBUtils.getAppFromCP(mCtx, Build.SERIAL, object.pkg);
-                            //FIXME (possibly) depending on how we do flags
-                            if (local == null) {
+                            if (!Build.SERIAL.equals(object.serial)) {
+                                //new device to us...
+                                Log.d(TAG, "Updating app serial/app in CP " + object.serial + " " + object.pkg);
+                                DBUtils.saveAppToCP(mCtx, object, false);
+                            } else {
+                                //wait - this is our serial number and we have no record of it...
+                                //FIXME (possibly) depending on how we do flags
                                 //hmm... not in our database. Looks stale - delete
-                                child.getRef().removeValue();
+                                if (!Utils.isRunningForFirstTime(mCtx, false)) {
+                                    child.getRef().removeValue();
+                                }
                             }
                         }
                     }
@@ -279,7 +291,7 @@ public class Firebase {
                             }
                             if (bUpdate) {
                                 Log.d(TAG, "Updating app serial/app in CP " + object.serial + " " + object.pkg);
-                                DBUtils.saveAppToCP(mCtx, object);
+                                DBUtils.saveAppToCP(mCtx, object, false);
                             } else {
                                 Log.d(TAG, "Got an event for a device record with stale timestamp - must be due to our trigger. Punt on updating " + object.serial);
                             }
@@ -287,12 +299,14 @@ public class Firebase {
                             if (!Build.SERIAL.equals(object.serial)) {
                                 //new device to us...
                                 Log.d(TAG, "Updating app serial/app in CP " + object.serial + " " + object.pkg);
-                                DBUtils.saveAppToCP(mCtx, object);
+                                DBUtils.saveAppToCP(mCtx, object, false);
                             } else {
                                 //wait - this is our serial number and we have no record of it...
                                 //FIXME (possibly) depending on how we do flags
                                 //hmm... not in our database. Looks stale - delete
-                                child.getRef().removeValue();
+                                if (!Utils.isRunningForFirstTime(mCtx, false)) {
+                                    child.getRef().removeValue();
+                                }
                             }
                         }
                     }

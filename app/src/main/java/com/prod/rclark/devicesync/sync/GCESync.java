@@ -390,7 +390,7 @@ public class GCESync extends IntentService {
 
         if (app != null) {
             //Okay - we have an app object... Put it into CP
-            DBUtils.saveAppToCP(mCtx, appDB, app);
+            DBUtils.saveAppToCP(mCtx, appDB, app, true);
             //Note that firebase update handled in the saveAppToCP routine
         }
     }

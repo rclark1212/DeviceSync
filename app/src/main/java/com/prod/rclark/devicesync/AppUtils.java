@@ -168,7 +168,7 @@ public class AppUtils {
                 }
             }
         } catch (PackageManager.NameNotFoundException e) {
-            Log.e(TAG, "Can't find package err while trying to get image!!!");
+            Log.d(TAG, "Can't find package err while trying to get image!!!");
             return null;
         }
 

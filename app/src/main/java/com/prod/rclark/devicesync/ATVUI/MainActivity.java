@@ -185,9 +185,10 @@ public class MainActivity extends Activity implements
         // Unbind from the service
         Log.d(TAG, "onStop - unbinding from service");
         if (mBoundToService) {
-            unbindService(mConnection);
             mBoundToService = false;
+            unbindService(mConnection);
         }
+        Log.d(TAG, "onStop - unbound from service");
     }
 
     /**
