@@ -18,7 +18,7 @@
         android:required="false" />
     <uses-feature
         android:name="android.software.leanback"
-        android:required="true" />
+        android:required="false" />
 
     <application
         android:allowBackup="true"
@@ -46,6 +46,7 @@
         </activity>
         <activity android:name=".ATVUI.DetailsActivity" />
         <activity android:name=".ATVUI.SettingsActivity" />
+        <activity android:name=".HelpActivity" />
         <activity android:name=".PhoneUI.PhoneSettingsActivity" />
 
         <service
@@ -82,7 +83,6 @@
             android:label="@string/title_activity_main_phone">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>

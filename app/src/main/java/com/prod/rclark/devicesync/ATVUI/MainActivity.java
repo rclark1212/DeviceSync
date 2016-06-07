@@ -58,11 +58,14 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
+import android.support.v17.leanback.widget.ImageCardView;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.prod.rclark.devicesync.HelpActivity;
 import com.prod.rclark.devicesync.R;
 import com.prod.rclark.devicesync.cloud.FirebaseMessengerService;
 
@@ -149,6 +152,8 @@ public class MainActivity extends Activity implements
 
         Log.d(TAG, "onCreate");
 
+        //showTutorial();
+
         if (mBoundToService) {
             //wait until we are bound to the service before creating fragment...
             finishSetup();
@@ -166,6 +171,13 @@ public class MainActivity extends Activity implements
             transaction.commit();
             getFragmentManager().executePendingTransactions();  //force the commit to take place
         }
+    }
+
+    private void showTutorial() {
+        Intent intent = new Intent(getApplication(), HelpActivity.class);
+
+        //Start activity from fragment so we get result back...
+        startActivity(intent);
     }
 
     @Override
