@@ -46,9 +46,11 @@ http://stackoverflow.com/questions/4604239/install-application-programmatically-
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.FragmentTransaction;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
@@ -67,10 +69,16 @@ import android.widget.Toast;
 
 import com.prod.rclark.devicesync.HelpActivity;
 import com.prod.rclark.devicesync.R;
+import com.prod.rclark.devicesync.Utils;
 import com.prod.rclark.devicesync.cloud.FirebaseMessengerService;
 
 /*
  * MainActivity class that loads MainFragment
+ *
+ * We do our service initialization now in MainActivity:
+ * 1) First, check for internet
+ * 2) Next, if first time install, show tutorial
+ * 3) Next,
  */
 public class MainActivity extends Activity implements
         MainFragment.OnMainActivityCallbackListener {
@@ -87,6 +95,42 @@ public class MainActivity extends Activity implements
     //main fragment
     private MainFragment mMainFragment=null;
 
+    //Initialization state machine params/variables
+    private final static int STATE_EVENT_ONCREATE = 0;
+    private final static int STATE_EVENT_SRVC_BIND = 1;
+    private final static int STATE_EVENT_INET_OKAY = 2;
+    private final static int STATE_EVENT_WELCOME_DONE = 3;
+    private final static int STATE_EVENT_GMS_AVAILABLE = 4;
+    private final static int STATE_EVENT_TUTORIAL_DONE = 5;
+    private final static int STATE_EVENT_FIREBASE_LOGON = 6;
+    private final static int STATE_EVENT_PERMISSION_CHECKED = 7;
+
+
+    //Initialization state machine params/variables
+    private final static int STATE_LAUNCH = 0;
+    private final static int STATE_SHOWING_WELCOME = 1;
+    private final static int STATE_FIXING_GMS = 2;
+    private final static int STATE_LOGGING_ON = 3;
+    private final static int STATE_CHECKING_PERMISSIONS = 5;
+    private final static int STATE_SHOWING_TUTORIAL = 6;
+    private final static int STATE_APPINIT_COMPLETE = 7;
+
+    private int mInitCurrentState = STATE_LAUNCH;
+
+    //state variables
+    private boolean mbCreate = false;
+    private boolean mbServiceBind = false;
+    private boolean mbInetOkay = false;
+    private boolean mbWelcomeDone = false;
+    private boolean mbGMSAvailable = false;
+    private boolean mbTutorialShown = false;
+    private boolean mbFirebaseLoggedOn = false;
+    private boolean mbHaveLocationPermission = false;
+
+    //Pending intent returns...
+    private int WELCOME_INTENT_DONE = 3017;
+    private int TUTORIAL_INTENT_DONE = 3018;
+
     //  Service
     boolean mBoundToService;
     Messenger mService = null;
@@ -102,9 +146,7 @@ public class MainActivity extends Activity implements
             Log.d(TAG, "got bound to service callback");
             mBoundToService = true;
             //create fragment after we bind...
-            if (mMainFragment == null) {
-                finishSetup();
-            }
+            appInitStateMachine(STATE_EVENT_SRVC_BIND);
         }
 
         public void onServiceDisconnected(ComponentName className) {
@@ -151,14 +193,17 @@ public class MainActivity extends Activity implements
         setContentView(R.layout.activity_main);
 
         Log.d(TAG, "onCreate");
+        appInitStateMachine(STATE_EVENT_ONCREATE);
 
-        //showTutorial();
-
-        if (mBoundToService) {
-            //wait until we are bound to the service before creating fragment...
-            finishSetup();
+        Log.d(TAG, "Checking internet");
+        //First check internet connectivity
+        if (!Utils.isOnline(this)) {
+            finishIt();
+        } else {
+            appInitStateMachine(STATE_EVENT_INET_OKAY);
         }
     }
+
 
     //Finish setup by creating browse fragment
     private void finishSetup() {
@@ -173,12 +218,28 @@ public class MainActivity extends Activity implements
         }
     }
 
+    //Shows a welcome screen (and hides some processing behind it)
+    private void showWelcome() {
+        Intent intent = new Intent(getApplication(), HelpActivity.class);
+
+        if (Utils.isRunningForFirstTime(this, false)) {
+            //Start activity from fragment so we get result back...
+            startActivityForResult(intent, WELCOME_INTENT_DONE);
+        }
+        appInitStateMachine(STATE_EVENT_WELCOME_DONE);
+    }
+
+    //Shows a short tutorial screen (and hides some processing behind it)
     private void showTutorial() {
         Intent intent = new Intent(getApplication(), HelpActivity.class);
 
-        //Start activity from fragment so we get result back...
-        startActivity(intent);
+        if (Utils.isRunningForFirstTime(this, false)) {
+            //Start activity from fragment so we get result back...
+            startActivityForResult(intent, TUTORIAL_INTENT_DONE);
+        }
+        appInitStateMachine(STATE_EVENT_WELCOME_DONE);
     }
+
 
     @Override
     public void onStart() {
@@ -225,6 +286,141 @@ public class MainActivity extends Activity implements
         }
 
         return true;
+    }
+
+    /**
+     * The initialization of the lifecycle is ending up causing spaghetti event code. Try to unify all the lifecycle
+     * starts into one synchronized state machine. Can then trigger on this as we debug lifecyle events.
+     *
+     * @param newEvent
+     */
+    public synchronized void appInitStateMachine(int newEvent) {
+
+        //Step1, as new events come in set the various flags
+        //Probably a better way to do this but my mind works this way...
+        switch (newEvent) {
+            case STATE_EVENT_ONCREATE:
+                mbCreate = true;
+                break;
+            case STATE_EVENT_SRVC_BIND:
+                mbServiceBind = true;
+                break;
+            case STATE_EVENT_INET_OKAY:
+                mbInetOkay = true;
+                break;
+            case STATE_EVENT_WELCOME_DONE:
+                mbWelcomeDone = true;
+                break;
+            case STATE_EVENT_GMS_AVAILABLE:
+                mbGMSAvailable = true;
+                break;
+            case STATE_EVENT_TUTORIAL_DONE:
+                mbTutorialShown = true;
+                break;
+            case STATE_EVENT_FIREBASE_LOGON:
+                mbFirebaseLoggedOn = true;
+                break;
+            case STATE_EVENT_PERMISSION_CHECKED:
+                mbHaveLocationPermission = true;
+                break;
+        }
+
+        //
+        //Now execute the state machine to process the newEvent (if there is any processing to do)
+        // Note this is in general order of operation
+        //
+        switch (mInitCurrentState) {
+            case STATE_LAUNCH:
+                if (mbCreate && mbServiceBind && mbInetOkay) {
+                    //service, oncreate and inet all okay...
+                    //Okay to have a single state waiting for all 3 since all 3 failing will punt us out of app
+                    //Kick off GMS enable, logon and tutorial
+                    mInitCurrentState = STATE_SHOWING_WELCOME;
+                    showWelcome();
+                }
+                break;
+            case STATE_SHOWING_WELCOME:
+                //Okay, welcome taken care of - now we branch...
+                /*
+                if (mbWelcomeDone) {
+                    if (mbGMSLoggedOn && mbFirebaseLoggedOn) {
+                        //move all the way to permission
+                        mInitCurrentState = STATE_CHECKING_PERMISSIONS;
+                        //checkPermissions
+                    } else if (!mbGMSLoggedOn) {
+                        //move to fix GMS
+                        mInitCurrentState = STATE_FIXING_GMS;
+                        //fixGMS
+                    } else if (!mbFirebaseLoggedOn) {
+                        //move to logon to firebase
+                        mInitCurrentState = STATE_LOGGING_ON;
+                        //firebaselogon
+                    }
+                }
+                 */
+                if (mbWelcomeDone) {
+                    //welcome has been completed
+                    finishSetup();
+                }
+                break;
+            case STATE_FIXING_GMS:
+                if (mbGMSAvailable) {
+                    if (mbFirebaseLoggedOn) {
+                        //move to checking permissions
+                        mInitCurrentState = STATE_CHECKING_PERMISSIONS;
+                        //check permissions
+                    } else {
+                        mInitCurrentState = STATE_LOGGING_ON;
+                        //firebase logon
+                    }
+                }
+                break;
+            case STATE_LOGGING_ON:
+                if (mbFirebaseLoggedOn) {
+                    //Okay - logged on... Check permissions
+                    mInitCurrentState = STATE_CHECKING_PERMISSIONS;
+                    //check permissions
+                }
+                break;
+            case STATE_CHECKING_PERMISSIONS:
+                if (mbHaveLocationPermission) {
+                    //Okay - got permission result (positive or negative) for location
+                    mInitCurrentState = STATE_SHOWING_TUTORIAL;
+                    showTutorial();
+                }
+                break;
+            case STATE_SHOWING_TUTORIAL:
+                if (mbTutorialShown) {
+                    mInitCurrentState = STATE_APPINIT_COMPLETE;
+                }
+
+        }
+
+    }
+
+
+    /**
+     * Used to exit app when there is an error. Really GMS services the only error that will cause controlled exit :)
+     */
+    private void finishIt() {
+
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
+
+        alertDialogBuilder.setTitle(getResources().getString(R.string.app_err_title));
+
+        alertDialogBuilder
+                .setMessage(getResources().getString(R.string.gms_missing_msg))
+                .setCancelable(false)
+                .setNeutralButton(getResources().getString(R.string.ok), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                        finish();
+                    }
+                });
+
+        AlertDialog alertDialog = alertDialogBuilder.create();
+        alertDialog.show();
     }
 
 }

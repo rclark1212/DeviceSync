@@ -272,12 +272,6 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         Log.i(TAG, "onCreate");
         super.onActivityCreated(savedInstanceState);
 
-        Log.d(TAG, "Checking internet");
-        //First check internet connectivity
-        if (!Utils.isOnline(getActivity())) {
-            finishIt();
-        }
-
         //First, try to login...
         Log.d(TAG, "Trying to sign in");
         firebaseSignIn();
