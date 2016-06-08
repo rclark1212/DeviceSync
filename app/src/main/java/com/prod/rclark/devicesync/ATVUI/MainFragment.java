@@ -505,7 +505,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                         ListRow lr = (ListRow) mRowsAdapter.get(i);
                         if (lr.getHeaderItem().getId() == (long) id) {
                             //found it...
-                            setSelectedPosition(i, true);
+                            setSelectedPosition(i, false);
                             break;
                         }
                     }

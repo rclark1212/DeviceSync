@@ -85,6 +85,10 @@ public class AppUtils {
         //set the right type...
         app.type = getAppType(ctx, pkgName);
 
+        if (app.type == AppContract.TYPE_NONE) {
+            return null;
+        }
+
         try {
             PackageInfo info = manager.getPackageInfo(pkgName, 0);
             //Step 3 - verify the flags (if system_flag and pref set, punt)
@@ -137,22 +141,22 @@ public class AppUtils {
                             //early return
                             return retdraw;
                         }
-                    }
 
-                    //then logo
-                    retdraw = manager.getActivityLogo(intent);
-                    if (isWide(retdraw)) {
-                        //looks like a good banner...
-                        //early return
-                        return retdraw;
-                    }
+                        //then logo
+                        retdraw = manager.getActivityLogo(intent);
+                        if (isWide(retdraw)) {
+                            //looks like a good banner...
+                            //early return
+                            return retdraw;
+                        }
 
-                    //then icon
-                    retdraw = manager.getActivityIcon(intent);
-                    if (isWide(retdraw)) {
-                        //looks like a good banner...
-                        //early return
-                        return retdraw;
+                        //then icon
+                        retdraw = manager.getActivityIcon(intent);
+                        if (isWide(retdraw)) {
+                            //looks like a good banner...
+                            //early return
+                            return retdraw;
+                        }
                     }
 
                     //some apps store banner as the logo. check here
@@ -209,7 +213,9 @@ public class AppUtils {
         //See if it has both normal and leanback launch intents...
         Intent intentlb = manager.getLeanbackLaunchIntentForPackage(pkg);
         Intent intentnorm = manager.getLaunchIntentForPackage(pkg);
-        if ((intentlb != null) && (intentnorm != null)) {
+        if ((intentlb == null) && (intentnorm == null)) {
+            return AppContract.TYPE_NONE;
+        } else if ((intentlb != null) && (intentnorm != null)) {
             //If ATV, need to do more checking for "BOTH". For tablet, if there is a leanback intent, we are good to go.
             if (Utils.bIsThisATV(ctx)) {
                 if (intentnorm.hasCategory(Intent.CATEGORY_LAUNCHER)) {

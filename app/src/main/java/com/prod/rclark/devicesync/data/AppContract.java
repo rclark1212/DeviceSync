@@ -37,6 +37,7 @@ public class AppContract {
     public static final int TYPE_ATV = 0;       //indicates this is an ATV app/device
     public static final int TYPE_TABLET = 1;    //indicates this is a phone/tablet app/device
     public static final int TYPE_BOTH = 2;      //indicates this app supports both. FIXME - not implemented yet (although the UI queries set up to use for unique and app supersets)
+    public static final int TYPE_NONE = 4;      //indicates no launch intents for this app... (and we skip it)
 
     // To make it easy to query for the exact date, we normalize all dates that go into
     // the database to the start of the the Julian day at UTC.

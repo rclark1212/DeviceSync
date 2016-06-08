@@ -314,20 +314,23 @@ public class GCESync extends IntentService {
             //bind app to the contentValues
             DBUtils.bindAppToContentValues(app, contentValues, mCtx);
 
-            if (c.getCount() > 0) {
-                //replace
-                //getApplicationContext().getContentResolver().update(appSearchUri, contentValues, null, null);
-                ops.add(ContentProviderOperation.newUpdate(appSearchUri)
-                        .withValues(contentValues)
-                        .withYieldAllowed(true)
-                        .build());
-            } else {
-                //add
-                //getApplicationContext().getContentResolver().insert(insertUri, contentValues);
-                ops.add(ContentProviderOperation.newInsert(insertUri)
-                        .withValues(contentValues)
-                        .withYieldAllowed(true)
-                        .build());
+            //only write app if it has a launch intent...
+            if (app.type != AppContract.TYPE_NONE) {
+                if (c.getCount() > 0) {
+                    //replace
+                    //getApplicationContext().getContentResolver().update(appSearchUri, contentValues, null, null);
+                    ops.add(ContentProviderOperation.newUpdate(appSearchUri)
+                            .withValues(contentValues)
+                            .withYieldAllowed(true)
+                            .build());
+                } else {
+                    //add
+                    //getApplicationContext().getContentResolver().insert(insertUri, contentValues);
+                    ops.add(ContentProviderOperation.newInsert(insertUri)
+                            .withValues(contentValues)
+                            .withYieldAllowed(true)
+                            .build());
+                }
             }
 
             c.close();
