@@ -26,6 +26,7 @@ public class HelpActivity extends Activity {
         //Pass in which screen to look for in savedInstanceState... For now, just hardcode
         mWView.loadUrl(TUTORIAL_HELP);
 
+        mButton.requestFocus();
         mButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
