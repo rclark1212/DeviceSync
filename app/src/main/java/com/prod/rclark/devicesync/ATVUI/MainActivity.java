@@ -111,6 +111,8 @@ public class MainActivity extends Activity implements
     private final static int STATE_EVENT_FIREBASE_LOGON = 6;
     private final static int STATE_EVENT_PERMISSION_CHECKED = 7;
     private final static int STATE_EVENT_GMS_CONNECTED = 8;
+    private final static int STATE_EVENT_WAITING_FOR_BINDING_LOGIN = 9;
+    private final static int STATE_EVENT_WAITING_FOR_BINDING_QUERY = 10;
 
 
     //Initialization state machine params/variables
@@ -135,6 +137,9 @@ public class MainActivity extends Activity implements
     private boolean mbTutorialShown = false;
     private boolean mbFirebaseLoggedOn = false;
     private boolean mbHaveLocationPermission = false;
+    private boolean mbStateWaitingForBindingLogin = false;
+    private boolean mbStateWaitingForBindingQuery = false;
+
 
     //Pending intent returns...
     private static final int REQUEST_SHOW_WELCOME = 3017;
@@ -185,7 +190,8 @@ public class MainActivity extends Activity implements
                 Log.d(TAG, "Callback: sendMessageToService - query login");
                 if (!sendMessageToService(FirebaseMessengerService.MSG_QUERY_LOGON_STATUS, null)) {
                     //We have a problem...
-                    Toast.makeText(getApplicationContext(), "Service not bound", Toast.LENGTH_SHORT).show();
+                    //Toast.makeText(getApplicationContext(), "Service not bound", Toast.LENGTH_SHORT).show();
+                    appInitStateMachine(STATE_EVENT_WAITING_FOR_BINDING_QUERY);
                 }
                 break;
             }
@@ -193,7 +199,8 @@ public class MainActivity extends Activity implements
                 Log.d(TAG, "Callback: sendMessageToService - request login");
                 if (!sendMessageToService(FirebaseMessengerService.MSG_ATTEMPT_LOGON, null)) {
                     //We have a problem
-                    Toast.makeText(getApplicationContext(), "Service not bound", Toast.LENGTH_SHORT).show();
+                    //Toast.makeText(getApplicationContext(), "Service not bound", Toast.LENGTH_SHORT).show();
+                    appInitStateMachine(STATE_EVENT_WAITING_FOR_BINDING_LOGIN);
                 }
                 break;
             }
@@ -350,6 +357,12 @@ public class MainActivity extends Activity implements
             case STATE_EVENT_PERMISSION_CHECKED:
                 mbHaveLocationPermission = true;
                 break;
+            case STATE_EVENT_WAITING_FOR_BINDING_LOGIN:          //This is a special case - onStart called after fragment activity attaches
+                mbStateWaitingForBindingLogin = true;           //need to post the query and deliver once bind occurs
+                break;
+            case STATE_EVENT_WAITING_FOR_BINDING_QUERY:          //This is a special case - onStart called after fragment activity attaches
+                mbStateWaitingForBindingQuery = true;           //need to post the query and deliver once bind occurs
+                break;
         }
 
         //
@@ -427,6 +440,32 @@ public class MainActivity extends Activity implements
                 Log.d(TAG, "Init routine - all done");
                 mInitCurrentState = STATE_APPINIT_COMPLETE;
                 finishSetup();
+            }
+        }
+
+        /**
+         * Special case the final init state. We can get a service request before onStart rebinds service. So handle that
+         * here by posting the bind request. And fulfilling after bind comes back as successful.
+         */
+        if (mInitCurrentState == STATE_APPINIT_COMPLETE) {
+            if (newEvent == STATE_EVENT_SRVC_BIND) {
+                if (mbStateWaitingForBindingQuery) {
+                    Log.d(TAG, "Got a delayed binding response in appInit - Query");
+                    mbStateWaitingForBindingQuery = false;
+                    if (!sendMessageToService(FirebaseMessengerService.MSG_QUERY_LOGON_STATUS, null)) {
+                        //Uh oh - we have a real problem
+                        Toast.makeText(getApplicationContext(), "Service not bound - really stuck on query", Toast.LENGTH_SHORT).show();
+                    }
+                }
+
+                if (mbStateWaitingForBindingLogin) {
+                    Log.d(TAG, "Got a delayed binding response in appInit - Login");
+                    mbStateWaitingForBindingLogin = false;
+                    if (!sendMessageToService(FirebaseMessengerService.MSG_ATTEMPT_LOGON, null)) {
+                        //Uh oh - we have a real problem
+                        Toast.makeText(getApplicationContext(), "Service not bound - really stuck on login", Toast.LENGTH_SHORT).show();
+                    }
+                }
             }
         }
     }

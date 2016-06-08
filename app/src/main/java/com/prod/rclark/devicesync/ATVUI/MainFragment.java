@@ -106,11 +106,8 @@ import java.util.ArrayList;
 
 
 public class MainFragment extends BrowseFragment implements LoaderManager.LoaderCallbacks<Cursor>,
-        ContentObserverCallback, ActivityCompat.OnRequestPermissionsResultCallback, GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener {
+        ContentObserverCallback, ActivityCompat.OnRequestPermissionsResultCallback {
     private static final String TAG = "MainFragment";
-
-    private static final int MY_PERMISSIONS_REQUEST_LOCATION = 1;
 
     private static final int PREFERENCE_REQUEST_CODE = 1967;
     public static final String PREF_RESULT_KEY = "prefResult";
@@ -120,9 +117,6 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
     private static final int DETAILS_REQUEST_CODE = 1968;
     public static final String DETAILS_RESULT_KEY = "detailsResult";
-
-    private static final int REQUEST_GOOGLE_PLAY_SERVICES = 1970;
-    private final static int FIREBASE_SIGN_IN = 1975;
 
     private static final int GRID_ITEM_WIDTH = 200;
     private static final int GRID_ITEM_HEIGHT = 200;
@@ -134,12 +128,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
     private AppObserver mAppObserver;
     private boolean mbAllowUpdates = false;         //semaphore used to block updates from the initial CP flurry of loads...
 
-    //sigh - can't use service for signing in when we have an intent for result...
-    //But service needs google api client as well.
-    //So use two google api clients. One for service. One for handling single signin with dialogs...
-    private GoogleApiClient mActivityGoogleApiClient = null;
-
-    private UIDataSetup mUIDataSetup;
+    private UIDataSetup mUIDataSetup;               //class used for setting up data fetches from CP
 
     // Pending setup flags...
     private boolean mbPendingStage3Setup = false;
@@ -181,7 +170,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                 //and if we have any remaining setup work to do, do it here...
                 if (mbPendingStage3Setup) {
                     mbPendingStage3Setup = false;
-                    processAfterSigninStage3(mbLoadCursors);
+                    processAfterSigninStage3();
                 }
             } else if (status == GCESync.FIREBASE_SERVICE_NOTLOGGEDIN) {
                 Log.d(TAG, "Service not logged into firebase - trying to log in");
@@ -191,66 +180,6 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         }
     };
 
-
-    /*
-    Callbacks for google services
-    */
-    @Override
-    public void onConnected(Bundle bundle) {
-        // Display the connection status
-        Log.d(TAG, "Success - MainFragment google GMS services connect");
-
-        // Note that we defer most of our initialization until after google GMS connects. Do that here...
-        processStartUpAfterSigninStage2();
-    }
-
-    @Override
-    public void onConnectionFailed(ConnectionResult result) {
-        Log.e(TAG, "MainFragment Failed google GMS services connect - result:" + result);
-        //We are not connected - exit
-        finishIt();
-    };
-
-    @Override
-    public void onConnectionSuspended(int i) {
-        Log.d(TAG, "MainFragment Suspended google GMS services connect - cause:" + i);
-        //We are not connected
-        //Try to connect again
-        mActivityGoogleApiClient.connect();
-    }
-
-    /**
-     * Okay - on first install, need to ask for permission for location. By that time, CP already updated.
-     * Fix that here by adding location to the device's record...
-     */
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (MY_PERMISSIONS_REQUEST_LOCATION == requestCode) {
-            // Is there a result array? (should be if okay chosen)
-            if ((grantResults.length > 0)
-                    && (grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                // Yay! We get location. Go ahead an update the device record...
-                Log.d(TAG, "location priviledge granted. Updating CP");
-                //Now get the location
-                String location = Utils.getLocation(getActivity(), mActivityGoogleApiClient);
-                //set this cached value...
-                Utils.setCachedLocation(getActivity(), location);
-            } else {
-                Log.d(TAG, "location priviledge DENIED. Grr...");
-                Utils.setCachedLocation(getActivity(), null);
-            }
-
-            //let array updates go through on CP changes
-            mbAllowUpdates = true;
-            GCESync.startActionLocalDeviceUpdate(getActivity(), null, null);
-            //and because we may have been paused and not seen the broadcast receiver message, force an update
-            updateFromCP(null);
-
-            //And initialize the loaders *after* we get back from the activity paused state
-            initializeLoaders();
-        }
-    }
 
     @Override
     public void onAttach(Context ctx) {
@@ -269,49 +198,16 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
-        Log.i(TAG, "onCreate");
+        Log.d(TAG, "onCreate");
         super.onActivityCreated(savedInstanceState);
 
-        //First, try to login...
-        Log.d(TAG, "Trying to sign in");
-        firebaseSignIn();
+        //Okay - by time we create activity, we should be 100% done due to main activity work...
+        setupUIElements();
 
-        //at conclusion of signin (required), we start GMS
-
-        //at conclusion of GMS, we finish our loading...
-
-        //We complete the setup after we have connected to GMS (see onConnect callback)
+        //Do necessary setup
+        processStartUpAfterSigninStage2();
     }
 
-    /**
-     * Sign in with firebase
-     */
-    private void firebaseSignIn() {
-        //Sign in with firebase...
-        FirebaseAuth auth = FirebaseAuth.getInstance();
-        if (auth.getCurrentUser() != null) {
-            // already signed in
-            //store in prefs
-            Log.d(TAG, "Firebase signed in with " + auth.getCurrentUser().getEmail());
-            String user = auth.getCurrentUser().getUid();
-            //does the user match what has been stored?
-            Utils.setUserId(getActivity(), user);
-            //finally, kick off GMS loading
-            setupGMS();
-            //and kick off a check to see if service is logged in...
-            mCallback.onMainActivityCallback(MainActivity.CALLBACK_SERVICE_QUERY_LOGIN, null, null);
-        } else {
-            //not signed in
-            Log.d(TAG, "Firebase starting sign in activity");
-            //Set firebase
-            startActivityForResult(
-                    AuthUI.getInstance(FirebaseApp.getInstance())
-                            .createSignInIntentBuilder()
-                            .setProviders(AuthUI.GOOGLE_PROVIDER)
-                            .build(),
-                    FIREBASE_SIGN_IN);
-        }
-    }
 
     /**
      * We require GMS to run. So do the bulk of the initialization after GMS has connected.
@@ -319,56 +215,19 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
      */
     private void processStartUpAfterSigninStage2() {
         Log.d(TAG, "Starting stage2 setup");
-        boolean bFirstTime = false;         //indicates first time we have ever run
-        boolean bRequestLocationPermission = false;
-
-        //Make sure we have location permissions at start
-        int permissionCheck = PackageManager.PERMISSION_GRANTED;
-        //dynamic permissions only needed for M
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (this.getActivity() != null) {
-                //No idea why but this is coming up as a crash far to often :(
-                permissionCheck = this.getActivity().checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION);
-            }
-        }
-
-        if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
-            if (!ActivityCompat.shouldShowRequestPermissionRationale(getActivity(), Manifest.permission.ACCESS_COARSE_LOCATION)) {
-                String[] permissions = {Manifest.permission.ACCESS_COARSE_LOCATION};
-                //and only need to do this for SDK23...
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    bRequestLocationPermission = true;
-                    //below line will cause dialog to come up and pause/resume this activity...
-                    requestPermissions(permissions, MY_PERMISSIONS_REQUEST_LOCATION);
-                }
-            }
-        } else {
-            //we have permission - get location...
-            String location = Utils.getLocation(getActivity(), mActivityGoogleApiClient);
-            //set this cached value...
-            if (location != null) {
-                Utils.setCachedLocation(getActivity(), location);
-            }
-        }
-
-        setupUIElements();
 
         //Check to see if services is logged in for final update stage
-        //Initialize the loaders if we did not ask for location services...
-        //otherwise initialize after dialog answered... (activity being paused while CP is busily updating on async thread leads
-        //to cursor adapters not updating UI)...
         if (mbServiceLoggedIn) {
-            processAfterSigninStage3(!bRequestLocationPermission);
+            processAfterSigninStage3();
         } else {
             mbPendingStage3Setup = true;
-            mbLoadCursors = !bRequestLocationPermission;
             //check to see if we are logged in (and if we are not, the login process in this activity will complete)...
             mCallback.onMainActivityCallback(MainActivity.CALLBACK_SERVICE_QUERY_LOGIN, null, null);
         }
     }
 
     //Completion of setup routine...
-    private void processAfterSigninStage3(boolean bInitLoaders) {
+    private void processAfterSigninStage3() {
         //Update the local content provider if running for first time...
         Log.d(TAG, "Starting stage3 setup");
         boolean bFirstTime = Utils.isRunningForFirstTime(getActivity(), true);
@@ -410,12 +269,8 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
         setTitle(title);
 
-        //finally, initialize the loaders if we did not ask for location services...
-        //otherwise initialize after dialog answered... (activity being paused while CP is busily updating on async thread leads
-        //to cursor adapters not updating UI)...
-        if (bInitLoaders) {
-            initializeLoaders();
-        }
+        //finally, initialize the loaders
+        initializeLoaders();
     }
 
 
@@ -495,7 +350,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                     int id = mUIDataSetup.getSerialRow(serial);
 
                     //and figure out which row...
-                    for (int i=0; i < mRowsAdapter.size(); i++) {
+                    for (int i = 0; i < mRowsAdapter.size(); i++) {
                         ListRow lr = (ListRow) mRowsAdapter.get(i);
                         if (lr.getHeaderItem().getId() == (long) id) {
                             //found it...
@@ -504,32 +359,6 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                         }
                     }
                 }
-            }
-        } else if (REQUEST_GOOGLE_PLAY_SERVICES == requestCode) {
-            if (resultCode == Activity.RESULT_OK) {
-                //Called when user asked to do something to make GMS work...
-                //Try logging into gms again
-                setupGMS();
-            }
-        } else if (FIREBASE_SIGN_IN == requestCode) {
-            Log.d(TAG, "In firebase logon...");
-            if (resultCode == Activity.RESULT_OK) {
-                // user is signed in!
-                Toast.makeText(getActivity(), "Firebase signed in!", Toast.LENGTH_LONG);
-                Log.d(TAG, "Firebase signed in");
-                FirebaseAuth auth = FirebaseAuth.getInstance();
-                String user = auth.getCurrentUser().getUid();
-                Utils.setUserId(getActivity(), user);
-                //and kick off GMS loading
-                setupGMS();
-                //and kick off a request for service to log in... (on success will complete loading process).
-                mCallback.onMainActivityCallback(MainActivity.CALLBACK_SERVICE_REQUEST_LOGIN, null, null);
-            } else {
-                Log.d(TAG, "Firebase failure");
-                Toast.makeText(getActivity(), "Firebase failure...", Toast.LENGTH_LONG);
-                // user is not signed in. Maybe just wait for the user to press
-                // "sign in" again, or show a message
-                finishIt();
             }
         }
     }
@@ -858,61 +687,6 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
     }
 
 
-    /**
-     * Used to exit app when there is an error. Really GMS services the only error that will cause controlled exit :)
-     */
-    private void finishIt() {
-
-        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(getActivity());
-
-        alertDialogBuilder.setTitle(getResources().getString(R.string.app_err_title));
-
-        alertDialogBuilder
-                .setMessage(getResources().getString(R.string.gms_missing_msg))
-                .setCancelable(false)
-                .setNeutralButton(getResources().getString(R.string.ok), new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.cancel();
-                        getActivity().finish();
-                    }
-                });
-
-        AlertDialog alertDialog = alertDialogBuilder.create();
-        alertDialog.show();
-    }
-
-    /**
-     * Sets up GMS. And tries to tell user how to fix any errors
-     */
-    private void setupGMS() {
-        //Next, connect...
-        Log.d(TAG, "Setting up GMS");
-
-        //Does service exist? If not, can user fix?
-        GoogleApiAvailability api = GoogleApiAvailability.getInstance();
-        int code = api.isGooglePlayServicesAvailable(getActivity());
-        if (code != ConnectionResult.SUCCESS) {
-            if (api.isUserResolvableError(code) &&
-                    api.showErrorDialogFragment(getActivity(), code, REQUEST_GOOGLE_PLAY_SERVICES)) {
-                //Will get this call in activity result...
-            } else {
-                finishIt();
-            }
-        }
-
-        //next attach to GMS if not yet attached...
-        //try to get location services here
-        if (mActivityGoogleApiClient == null) {
-            mActivityGoogleApiClient = new GoogleApiClient.Builder(getActivity())
-                    .addConnectionCallbacks(this)
-                    .addOnConnectionFailedListener(this)
-                    .addApi(LocationServices.API)
-                    .build();
-
-            mActivityGoogleApiClient.connect();
-        }
-    }
 
     private void setupUIElements() {
         // setBadgeDrawable(getActivity().getResources().getDrawable(
