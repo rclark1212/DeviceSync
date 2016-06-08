@@ -420,6 +420,8 @@ public class MainActivity extends Activity implements
             if (mbFirebaseLoggedOn) {
                 //Okay - logged on... Check permissions
                 mInitCurrentState = STATE_CHECKING_PERMISSIONS;
+                //tell service to login to start populating CP...
+                sendMessageToService(FirebaseMessengerService.MSG_ATTEMPT_LOGON, null);
                 //check permissions
                 mbHaveLocationPermission = checkForLocationPermission();
             }

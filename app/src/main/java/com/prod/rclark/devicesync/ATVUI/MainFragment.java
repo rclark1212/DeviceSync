@@ -247,6 +247,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
             }
             //init the preferences
             PreferenceManager.setDefaultValues(getActivity(), R.xml.preferences, false);
+
        } else {
             //Note an optimization we made. We block processing of the notify callback from CP until the sync adapter
             //has had a chance to complete on the initial run. The sync service will send a message if this is first run.
