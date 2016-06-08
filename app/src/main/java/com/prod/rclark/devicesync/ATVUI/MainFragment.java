@@ -27,8 +27,6 @@
 
 package com.prod.rclark.devicesync.ATVUI;
 
-import android.Manifest;
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.LoaderManager;
 import android.content.BroadcastReceiver;
@@ -38,7 +36,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.Loader;
-import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.net.Uri;
@@ -59,48 +56,28 @@ import android.support.v17.leanback.widget.Row;
 import android.support.v17.leanback.widget.RowPresenter;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
-import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.Gravity;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.firebase.ui.auth.AuthUI;
-import com.google.firebase.FirebaseApp;
-import com.google.firebase.auth.FirebaseAuth;
 import com.prod.rclark.devicesync.DBUtils;
 import com.prod.rclark.devicesync.InstallUtil;
 import com.prod.rclark.devicesync.UIDataSetup;
 import com.prod.rclark.devicesync.ObjectDetail;
 import com.prod.rclark.devicesync.R;
 import com.prod.rclark.devicesync.Utils;
-import com.prod.rclark.devicesync.cloud.Firebase;
 import com.prod.rclark.devicesync.data.AppContract;
 import com.prod.rclark.devicesync.sync.GCESync;
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GoogleApiAvailability;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.location.LocationServices;
 
 import java.util.ArrayList;
 
 /*
-    psuedo-logic for startup - we go in several stages...
-
-    note we check if this is a first time run. steps run only on first time run are marked with *.
-    0) onActivityCreated - check for internet - punt if none
-    *1) stage0 - show welcome screen and prep user for what is about to be asked
-    2) attempt to logon silently with firebase
-    3) if not successful, show UI
-    4) enable GMS
-    5) onConnected, kick off stage2 startup (checks permissions and also verifies service logged in)
-    -> insert short training here...
-    6) Perform stage3 startup (either directly called from stage2 if services logged in or called from message from service on login)
-    7) Note that stage3 does the heavy lifting - turns on the UI, checks for mssing apps, etc.
+    Moved startup code mostly to activity. See calling activity for details. By time we hit this fragment...
+    Expect GMS, firebase, location to all be handled.
 
  */
 
@@ -132,7 +109,6 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
     // Pending setup flags...
     private boolean mbPendingStage3Setup = false;
-    private boolean mbLoadCursors = false;
     private boolean mbServiceLoggedIn = false;
 
     OnMainActivityCallbackListener mCallback;
@@ -170,7 +146,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                 //and if we have any remaining setup work to do, do it here...
                 if (mbPendingStage3Setup) {
                     mbPendingStage3Setup = false;
-                    processAfterSigninStage3();
+                    processUIAfterSigninStage3();
                 }
             } else if (status == GCESync.FIREBASE_SERVICE_NOTLOGGEDIN) {
                 Log.d(TAG, "Service not logged into firebase - trying to log in");
@@ -205,7 +181,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         setupUIElements();
 
         //Do necessary setup
-        processStartUpAfterSigninStage2();
+        processUIStartUpStage2();
     }
 
 
@@ -213,21 +189,21 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
      * We require GMS to run. So do the bulk of the initialization after GMS has connected.
      * This is done in this routine.
      */
-    private void processStartUpAfterSigninStage2() {
+    private void processUIStartUpStage2() {
         Log.d(TAG, "Starting stage2 setup");
 
         //Check to see if services is logged in for final update stage
         if (mbServiceLoggedIn) {
-            processAfterSigninStage3();
+            processUIAfterSigninStage3();
         } else {
             mbPendingStage3Setup = true;
             //check to see if we are logged in (and if we are not, the login process in this activity will complete)...
-            mCallback.onMainActivityCallback(MainActivity.CALLBACK_SERVICE_QUERY_LOGIN, null, null);
+            mCallback.onMainActivityCallback(MainActivity.CALLBACK_SERVICE_REQUEST_LOGIN, null, null);
         }
     }
 
     //Completion of setup routine...
-    private void processAfterSigninStage3() {
+    private void processUIAfterSigninStage3() {
         //Update the local content provider if running for first time...
         Log.d(TAG, "Starting stage3 setup");
         boolean bFirstTime = Utils.isRunningForFirstTime(getActivity(), true);
@@ -235,13 +211,11 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
             //Lets add a feature addition here - IFF we are running for first time *but* the database
             //has a record of apps for this serial number, then ask the user whether they want to "restore"
             //the system. Useful for when wiping a device.
-            int count = DBUtils.countAppsOnDevice(getActivity(), Build.SERIAL);
-            if (count != 0) {
+            ArrayList<ObjectDetail> missing = DBUtils.getMissingApps(getActivity(), Build.SERIAL);
+            if (missing.size() > 0) {
                 //Okay - put up a dialog here...
                 //Give 3 options - no, copyall, or disable uploads
-                //FIXME - race condition here - will our CP be populated from firebase by this point?
-                //Suggestion - hide behind a welcome screen...
-                askDownloadExistingApps(count);
+                askDownloadExistingApps(missing);
             } else {
                 GCESync.startActionUpdateLocal(getActivity(), null, null);
             }
@@ -639,13 +613,13 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
     /**
      * Used to ask user if they want to download apps found on network for the device (in case of a device wipe)
      */
-    private void askDownloadExistingApps(int count) {
+    private void askDownloadExistingApps(final ArrayList<ObjectDetail> missing) {
 
         AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(getActivity());
 
         alertDialogBuilder.setTitle(getResources().getString(R.string.restore_apps_title));
 
-        String msg = String.format(getString(R.string.restore_apps_msg), count);
+        String msg = String.format(getString(R.string.restore_apps_msg), missing.size());
         alertDialogBuilder
                 .setMessage(msg)
                 .setCancelable(false)
@@ -671,10 +645,9 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                     public void onClick(DialogInterface dialog, int which) {
                         dialog.cancel();
                         //build the install list...
-                        ArrayList<ObjectDetail> list = DBUtils.getAppsOnDevice(getActivity(), Build.SERIAL);
                         ArrayList<String> apklist = new ArrayList<String>();
-                        for (int i=0; i < list.size(); i++) {
-                            apklist.add(list.get(i).pkg);
+                        for (int i=0; i < missing.size(); i++) {
+                            apklist.add(missing.get(i).pkg);
                         }
                         //let the updates go through
                         GCESync.startActionUpdateLocal(getActivity(), null, null);

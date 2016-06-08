@@ -484,7 +484,7 @@ public class DBUtils {
 
         int count = 0;
         Uri appDB = AppContract.AppEntry.CONTENT_URI;
-        appDB.buildUpon().appendPath(serial).build();
+        appDB = appDB.buildUpon().appendPath(serial).build();
 
         //grab the cursor
         Cursor c = ctx.getContentResolver().query(appDB, null, null, null, null);
@@ -504,7 +504,7 @@ public class DBUtils {
 
         ArrayList<ObjectDetail> returnList = new ArrayList<ObjectDetail>();
         Uri appDB = AppContract.AppEntry.CONTENT_URI;
-        appDB.buildUpon().appendPath(serial).build();
+        appDB = appDB.buildUpon().appendPath(serial).build();
 
         //grab the cursor
         Cursor c = ctx.getContentResolver().query(appDB, null, null, null, null);
@@ -538,6 +538,25 @@ public class DBUtils {
 
         return count;
     }
+
+    /**
+     * Get missing apps
+     * Returns back a list of apps which are up in the CP/cloud but not local to the device
+     */
+    public static ArrayList<ObjectDetail> getMissingApps(Context ctx, String serial) {
+        ArrayList<ObjectDetail> missing = new ArrayList<ObjectDetail>();
+        ArrayList<ObjectDetail> cp_apps = getAppsOnDevice(ctx, serial);
+
+        for (int i=0; i < cp_apps.size(); i++) {
+            ObjectDetail local = AppUtils.getLocalAppDetails(ctx, cp_apps.get(i).pkg);
+            if (local == null) {
+                //App in CP, not on device. Add to missing
+                missing.add(cp_apps.get(i));
+            }
+        }
+        return missing;
+    }
+
 
     /**
      * Routine for testing CP and queries only...

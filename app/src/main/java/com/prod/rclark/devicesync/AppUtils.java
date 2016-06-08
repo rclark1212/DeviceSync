@@ -15,6 +15,7 @@
 
 package com.prod.rclark.devicesync;
 
+import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -22,14 +23,19 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.ConfigurationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.content.res.Configuration;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Parcelable;
 import android.preference.PreferenceManager;
+import android.text.format.Time;
 import android.util.Log;
 
 import com.prod.rclark.devicesync.data.AppContract;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by rclark on 4/22/16.
@@ -240,5 +246,74 @@ public class AppUtils {
             }
         }
         return returntype;
+    }
+
+    public static ArrayList<ObjectDetail> loadApps(Context ctx) {
+        return loadAppsByOS(ctx, Utils.bIsThisATV(ctx));
+    }
+
+    public static ArrayList<ObjectDetail> loadAppsByOS(Context ctx, boolean bATV) {
+        PackageManager manager = ctx.getPackageManager();
+        ArrayList<ObjectDetail> apps = new ArrayList<ObjectDetail>();
+        ArrayList<String> pkgs = new ArrayList<String>();
+
+        //Grab the apps
+        Intent intent = new Intent(Intent.ACTION_MAIN, null);
+
+        if (bATV) {
+            intent.addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER);
+        } else {
+            intent.addCategory(Intent.CATEGORY_LAUNCHER);
+        }
+
+        //next, set up apps, shieldhub, games
+        List<ResolveInfo> availableActivities = manager.queryIntentActivities(intent, 0);
+        //loop through all apps...
+        for (int j = 0; j < availableActivities.size(); j++) {
+            ResolveInfo ri = availableActivities.get(j);
+
+            ObjectDetail app = AppUtils.getLocalAppDetails(ctx, ri.activityInfo.packageName);
+
+            if (app != null) {
+                //Have we already added this?
+                if (pkgs.contains(app.pkg.toString())) {
+                    //punt...
+                    continue;
+                }
+
+                apps.add(app);
+                pkgs.add(app.pkg.toString());
+            }
+        }
+
+        return apps;
+    }
+
+    /**
+     * Populates an object with local device info (including location)
+     * Note, this doesn't really belong in this utility class since it is loading a device, not app)
+     *
+    */
+    public static ObjectDetail getLocalDeviceInfo(Context ctx) {
+        ObjectDetail device = new ObjectDetail();
+
+        //Set up local device into object
+        device.bIsDevice = true;
+        device.serial = Build.SERIAL;
+        device.label = BluetoothAdapter.getDefaultAdapter().getName();
+        device.name = Build.MODEL;
+        device.ver = Build.FINGERPRINT + " (" + Build.VERSION.RELEASE + ")";
+
+        device.type = Utils.bIsThisATV(ctx) ? AppContract.TYPE_ATV : AppContract.TYPE_TABLET;
+
+        Time time = new Time();
+        time.setToNow();
+        device.installDate = time.toMillis(true);
+        device.location = Utils.getCachedLocation(ctx);
+        if (device.location == null) {
+            device.location = ctx.getResources().getString(R.string.unknown);
+        }
+
+        return device;
     }
 }

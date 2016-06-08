@@ -233,7 +233,7 @@ public class GCESync extends IntentService {
     private void handleActionLocalDeviceUpdate() {
         //Okay - first update the device database - serial number, nickname, date, model name, os_ver
         //Get an object with local device info...
-        ObjectDetail device = SyncUtils.getLocalDeviceInfo(mCtx);
+        ObjectDetail device = AppUtils.getLocalDeviceInfo(mCtx);
 
         device.timestamp = System.currentTimeMillis();
 
@@ -261,7 +261,7 @@ public class GCESync extends IntentService {
         Uri appDB = AppContract.AppEntry.CONTENT_URI;
 
         //Step 1 - get a copy of the apps...
-        ArrayList<ObjectDetail> apps = SyncUtils.loadApps(mCtx);
+        ArrayList<ObjectDetail> apps = AppUtils.loadApps(mCtx);
 
         //Step 2 - use a ContentProviderOperation for better perf...
         ArrayList<ContentProviderOperation> ops = new ArrayList<ContentProviderOperation>();
