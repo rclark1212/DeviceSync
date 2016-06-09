@@ -55,8 +55,8 @@ public class HelpActivity extends Activity {
         mButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //just go back...
-                onBackPressed();
+                setResult(RESULT_OK);
+                finish();
             }
         });
     }
@@ -97,7 +97,14 @@ public class HelpActivity extends Activity {
             if (event.getAction() == KeyEvent.ACTION_DOWN) {
                 if (event.getKeyCode() == KeyEvent.KEYCODE_BUTTON_A) {
                     bEatKey = true;
-                    onBackPressed();
+                    setResult(RESULT_OK);
+                    finish();
+                } else if (event.getKeyCode() == KeyEvent.KEYCODE_DPAD_DOWN) {
+                    bEatKey = true;
+                    mWView.scrollBy(0, 20);
+                } else if (event.getKeyCode() == KeyEvent.KEYCODE_DPAD_UP) {
+                    bEatKey = true;
+                    mWView.scrollBy(0, -20);
                 }
             }
         }

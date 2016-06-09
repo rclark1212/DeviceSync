@@ -47,6 +47,7 @@
         <activity android:name=".ATVUI.DetailsActivity" />
         <activity android:name=".ATVUI.SettingsActivity" />
         <activity android:name=".HelpActivity" />
+        <activity android:name=".InitActivity" />
         <activity android:name=".PhoneUI.PhoneSettingsActivity" />
 
         <service
