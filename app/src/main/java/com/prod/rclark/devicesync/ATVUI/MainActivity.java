@@ -243,7 +243,7 @@ public class MainActivity extends Activity implements
     //Shows a welcome screen (and hides some processing behind it)
     private boolean showWelcome() {
         Intent intent = new Intent(getApplication(), HelpActivity.class);
-
+        intent.putExtra(HelpActivity.HELP_ORDINAL, HelpActivity.WELCOME_HELP);
         if (Utils.isRunningForFirstTime(this, false)) {
             //Start activity from fragment so we get result back...
             startActivityForResult(intent, REQUEST_SHOW_WELCOME);
@@ -255,7 +255,7 @@ public class MainActivity extends Activity implements
     //Shows a short tutorial screen (and hides some processing behind it)
     private boolean showTutorial() {
         Intent intent = new Intent(getApplication(), HelpActivity.class);
-
+        intent.putExtra(HelpActivity.HELP_ORDINAL, HelpActivity.TUTORIAL_HELP_ATV);
         if (Utils.isRunningForFirstTime(this, false)) {
             //Start activity from fragment so we get result back...
             startActivityForResult(intent, REQUEST_SHOW_TUTORIAL);

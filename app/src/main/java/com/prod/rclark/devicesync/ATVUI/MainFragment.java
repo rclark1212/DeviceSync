@@ -65,6 +65,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.prod.rclark.devicesync.DBUtils;
+import com.prod.rclark.devicesync.HelpActivity;
 import com.prod.rclark.devicesync.InstallUtil;
 import com.prod.rclark.devicesync.UIDataSetup;
 import com.prod.rclark.devicesync.ObjectDetail;
@@ -496,7 +497,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         }
         mGridRowAdapter.add(getResources().getString(R.string.sync_now));
         mGridRowAdapter.add(getResources().getString(R.string.disable_sync_button_text));
-        mGridRowAdapter.add(getString(R.string.error_fragment));
+        mGridRowAdapter.add(getString(R.string.help));
         mGridRowAdapter.add(getResources().getString(R.string.personal_settings));
         mRowsAdapter.add(new ListRow(gridHeader, mGridRowAdapter));
 
@@ -730,10 +731,11 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                 //Start activity from fragment so we get result back...
                 startActivityForResult(intent, DETAILS_REQUEST_CODE, bundle);
             } else if (item instanceof String) {
-                if (((String) item).indexOf(getString(R.string.error_fragment)) >= 0) {
-                    //Intent intent = new Intent(getActivity(), BrowseErrorActivity.class);
-                    //startActivity(intent);
-                    mCallback.onMainActivityCallback(MainActivity.CALLBACK_SERVICE_REQUEST_LOGIN, null, null);
+                if (item.equals(getString(R.string.help))) {
+                    //show help
+                    Intent intent = new Intent(getActivity(), HelpActivity.class);
+                    intent.putExtra(HelpActivity.HELP_ORDINAL, HelpActivity.HELP);
+                    startActivity(intent);
                 } else if (item.equals(getResources().getString(R.string.disable_sync_button_text))) {
                     //disable sync
                     Utils.setSyncDisabled(getActivity(), true);

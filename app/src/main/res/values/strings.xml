@@ -68,7 +68,7 @@
     <string name="exit_fail">Exiting - You need google Play Services to use this app.</string>
     <string name="preferences">Preferences</string>
     <string name="sync_now">Force Sync</string>
-    <string name="error_fragment">Error Fragment</string>
+    <string name="help">Help</string>
     <string name="personal_settings">Settings</string>
 
     <!-- Error messages -->
