@@ -45,8 +45,11 @@ public class DetailsActivity extends Activity {
     private static final String TAG = "VideoDetailsActivity";
 
     //return codes
+    //leave null at 0
     public static final int DETAIL_RETCODE_OPENROW = 1;         //open row
     public static final int DETAIL_RETCODE_INSTALLMISSING = 2;  //install missing
+    public static final int DETAIL_RETCODE_REMOVEDEVICE = 3;    //change device name
+    public static final int DETAIL_RETCODE_CLONEFROM = 4;       //clone from device
 
 
     /**
@@ -71,6 +74,14 @@ public class DetailsActivity extends Activity {
             Log.d(TAG, "Setting up install missing return");
             data.putExtra(MainFragment.DETAILS_RESULT_KEY, mOpenSerial);
             data.putExtra(MainFragment.DETAILS_RESULT_ACTION, DETAIL_RETCODE_INSTALLMISSING);
+        } else if (mReturnCode == DETAIL_RETCODE_REMOVEDEVICE) {
+            Log.d(TAG, "Setting up remove device return");
+            data.putExtra(MainFragment.DETAILS_RESULT_KEY, mOpenSerial);
+            data.putExtra(MainFragment.DETAILS_RESULT_ACTION, DETAIL_RETCODE_REMOVEDEVICE);
+        } else if (mReturnCode == DETAIL_RETCODE_CLONEFROM) {
+            Log.d(TAG, "Setting up clone from return");
+            data.putExtra(MainFragment.DETAILS_RESULT_KEY, mOpenSerial);
+            data.putExtra(MainFragment.DETAILS_RESULT_ACTION, DETAIL_RETCODE_CLONEFROM);
         }
 
         mReturnCode = 0;

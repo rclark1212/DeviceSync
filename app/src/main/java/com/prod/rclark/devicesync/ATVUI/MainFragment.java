@@ -355,6 +355,11 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                     }
                     //Okay - created list - go install!
                     InstallUtil.batchInstallAPK(getActivity(), apklist);
+                } else if (action == DetailsActivity.DETAIL_RETCODE_REMOVEDEVICE) {
+                    //Okay, remove device
+                    //FIXME - implement
+                } else if (action == DetailsActivity.DETAIL_RETCODE_CLONEFROM) {
+                    //FIXME - implement the clone
                 }
             }
         }

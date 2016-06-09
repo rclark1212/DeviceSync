@@ -30,7 +30,6 @@ package com.prod.rclark.devicesync.ATVUI;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.support.v17.leanback.app.BackgroundManager;
 import android.support.v17.leanback.app.DetailsFragment;
@@ -71,6 +70,7 @@ public class ObjectDetailsFragment extends DetailsFragment {
     private static final int ACTION_SHOWAPPS = 5;
     private static final int ACTION_RUNAPP = 6;
     private static final int ACTION_ADD_MISSING = 7;
+    private static final int ACTION_CHANGE_NAME = 8;
 
     private static final int DETAIL_THUMB_WIDTH = 274;
     private static final int DETAIL_THUMB_HEIGHT = 274;
@@ -172,6 +172,7 @@ public class ObjectDetailsFragment extends DetailsFragment {
             if (DBUtils.isObjectLocal(getActivity(), mSelectedObject)) {
                 actionAdapter.add(new Action(ACTION_SHOWAPPS, getResources().getString(R.string.show_apps)));
                 actionAdapter.add(new Action(ACTION_ADD_MISSING, getString(R.string.add_missing)));
+                actionAdapter.add(new Action(ACTION_CHANGE_NAME, getString(R.string.change_name)));
             } else {
                 actionAdapter.add(new Action(ACTION_SHOWAPPS, getResources().getString(R.string.show_apps)));
                 actionAdapter.add(new Action(ACTION_REMOVEDEVICE, getResources().getString(R.string.remove_device)));
@@ -273,11 +274,14 @@ public class ObjectDetailsFragment extends DetailsFragment {
                         getActivity().onBackPressed();
                         break;
                     case ACTION_REMOVEDEVICE:
-                        Toast.makeText(getActivity(), action.toString(), Toast.LENGTH_SHORT).show();
+                        DetailsActivity.mOpenSerial = mSelectedObject.serial;
+                        DetailsActivity.mReturnCode = DetailsActivity.DETAIL_RETCODE_REMOVEDEVICE;
                         getActivity().onBackPressed();
                         break;
                     case ACTION_CLONEFROM:
-                        Toast.makeText(getActivity(), action.toString(), Toast.LENGTH_SHORT).show();
+                        DetailsActivity.mOpenSerial = mSelectedObject.serial;
+                        DetailsActivity.mReturnCode = DetailsActivity.DETAIL_RETCODE_CLONEFROM;
+                        getActivity().onBackPressed();
                         break;
                     case ACTION_RUNAPP:
                         Utils.launchApp(getActivity(), mSelectedObject.pkg);
@@ -287,6 +291,10 @@ public class ObjectDetailsFragment extends DetailsFragment {
                         DetailsActivity.mOpenSerial = mSelectedObject.serial;
                         DetailsActivity.mReturnCode = DetailsActivity.DETAIL_RETCODE_INSTALLMISSING;
                         getActivity().onBackPressed();
+                        break;
+                    case ACTION_CHANGE_NAME:
+                        //FIXME - actually just change the name right here and don't leave.
+                        //Remember to update CP as well as set the name
                         break;
                 }
             }

@@ -21,6 +21,8 @@
     <string name="show_apps">Show Apps</string>
     <string name="run_app">Launch App</string>
     <string name="add_missing">Install Missing Apps</string>
+    <string name="change_name">Change Name</string>
+
     <string name="continuetext">Continue</string>
 
     <!-- pref UI elements -->
