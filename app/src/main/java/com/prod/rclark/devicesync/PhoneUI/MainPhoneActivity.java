@@ -29,17 +29,22 @@ more?
 
 import android.app.Fragment;
 import android.app.FragmentManager;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
+import android.preference.PreferenceManager;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.DisplayMetrics;
@@ -51,10 +56,15 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 
+import com.prod.rclark.devicesync.ATVUI.AppObserver;
+import com.prod.rclark.devicesync.DBUtils;
+import com.prod.rclark.devicesync.InitActivity;
 import com.prod.rclark.devicesync.ObjectDetail;
 import com.prod.rclark.devicesync.R;
 import com.prod.rclark.devicesync.UIDataSetup;
+import com.prod.rclark.devicesync.Utils;
 import com.prod.rclark.devicesync.cloud.FirebaseMessengerService;
+import com.prod.rclark.devicesync.data.AppContract;
 import com.prod.rclark.devicesync.sync.GCESync;
 
 import java.util.ArrayList;
@@ -77,9 +87,17 @@ public class MainPhoneActivity extends AppCompatActivity
     //Our data helper - only keep a single instance shared by all
     public static UIDataSetup mUIDataSetup;
 
+    //Pending intent returns...
+    private static final int REQUEST_INIT_COMPLETE = 3022;
+
     //  Service
     boolean mBoundToService;
     Messenger mService = null;
+    int mPendingSvsMessage = 0;
+    boolean mbServiceLoggedIn = false;
+    boolean mbPendingCompleteSetup = false;
+    static boolean mbInitDone = false;
+
     //  Class for interacting with our firebase service...
     private ServiceConnection mConnection = new ServiceConnection() {
         public void onServiceConnected(ComponentName className, IBinder service) {
@@ -89,14 +107,52 @@ public class MainPhoneActivity extends AppCompatActivity
             // service using a Messenger, so here we get a client-side
             // representation of that from the raw IBinder object.
             mService = new Messenger(service);
+            Log.d(TAG, "got bound to service callback");
             mBoundToService = true;
+            //create fragment after we bind...
+            //if there is a pending message, execute it (this can happen on activity attach in fragment before onstart
+            if (mPendingSvsMessage != 0) {
+                sendMessageToService(mPendingSvsMessage, null);
+                mPendingSvsMessage = 0;
+            }
         }
 
         public void onServiceDisconnected(ComponentName className) {
             // This is called when the connection with the service has been
             // unexpectedly disconnected -- that is, its process crashed.
             mService = null;
+            Log.d(TAG, "got unbound to service callback");
             mBoundToService = false;
+        }
+    };
+
+    //We use broadcast intents to message back from GCESync to the main activity.
+    //Define our handler for this here.
+    private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+
+            //check for any load complete messages
+            // Get extra data included in the Intent
+            int status = intent.getIntExtra(GCESync.EXTENDED_DATA_STATUS, GCESync.EXTENDED_DATA_STATUS_NULL);
+            int command = intent.getIntExtra(GCESync.EXTENDED_DATA_CMD, GCESync.EXTENDED_DATA_STATUS_NULL);
+
+            if (status == GCESync.EXTENDED_DATA_STATUS_LOCALUPDATECOMPLETE) {
+                //Okay - done with loading local data!
+                //if you must update CP, do it here...
+            } else if (status == GCESync.FIREBASE_SERVICE_LOGGEDIN) {
+                Log.d(TAG, "Service has been logged into firebase!");
+                mbServiceLoggedIn = true;
+                //and if we have any remaining setup work to do, do it here...
+                if (mbPendingCompleteSetup) {
+                    mbPendingCompleteSetup = false;
+                    finishSetup();
+                }
+            } else if (status == GCESync.FIREBASE_SERVICE_NOTLOGGEDIN) {
+                Log.d(TAG, "Service not logged into firebase - trying to log in");
+            }
+
+            Log.d("DS_mainfrag_receiver", "Got status: " + status);
         }
     };
 
@@ -107,6 +163,45 @@ public class MainPhoneActivity extends AppCompatActivity
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main_phone);
+
+        //Do our initialization
+        Intent intent = new Intent(getApplication(), InitActivity.class);
+        startActivityForResult(intent, REQUEST_INIT_COMPLETE);
+    }
+
+    /**
+     * Complete the setup after the init service returns...
+     */
+    private void finishSetup() {
+        String[] headers;
+
+        //deal with scanning system/setting up CP first...
+        //Update the local content provider if running for first time...
+        Log.d(TAG, "Starting phone finish setup");
+        boolean bFirstTime = Utils.isRunningForFirstTime(this, true);
+        if (bFirstTime) {
+            //Lets add a feature addition here - IFF we are running for first time *but* the database
+            //has a record of apps for this serial number, then ask the user whether they want to "restore"
+            //the system. Useful for when wiping a device.
+            ArrayList<ObjectDetail> missing = DBUtils.getMissingApps(this, Build.SERIAL);
+            if (missing.size() > 0) {
+                //Okay - put up a dialog here...
+                //Give 3 options - no, copyall, or disable uploads
+                Utils.askDownloadExistingApps(this, missing);
+                //askDownloadExistingApps(missing);
+            } else {
+                GCESync.startActionUpdateLocal(this, null, null);
+            }
+            //init the preferences
+            PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
+
+        } else {
+            //and note that we always want to update the local device (pick up new location and pick up any BT name changes)
+            GCESync.startActionLocalDeviceUpdate(this, null, null);
+        }
+
+        //set init done flag
+        mbInitDone = true;
 
         //Set up the data helper
         //Load the UI data structure
@@ -129,29 +224,115 @@ public class MainPhoneActivity extends AppCompatActivity
                 R.id.navigation_drawer,
                 (DrawerLayout) findViewById(R.id.drawer_layout),
                 headers);
-
-        //Start up sync service
-        //And update the local content provider...
-        GCESync.startActionUpdateLocal(getApplicationContext(), null, null);
     }
+
 
     @Override
     public void onStart() {
         super.onStart();
         // Bind to the service
-        bindService(new Intent(this, FirebaseMessengerService.class), mConnection,
-                Context.BIND_AUTO_CREATE);
+        if (!mBoundToService) {
+            Log.d(TAG, "onStart - binding to service");
+            bindService(new Intent(this, FirebaseMessengerService.class), mConnection,
+                    Context.BIND_AUTO_CREATE);
+        }
     }
 
     @Override
     public void onStop() {
-        super.onStop();
         // Unbind from the service
+        Log.d(TAG, "onStop - unbinding from service");
         if (mBoundToService) {
-            unbindService(mConnection);
             mBoundToService = false;
+            unbindService(mConnection);
+        }
+        Log.d(TAG, "onStop - unbound from service");
+        super.onStop();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        //set up app as active
+        Utils.setAppActive(this, true);
+
+        /*
+        //set up handler and register content observer
+        if (mAppObserver == null) {
+            mAppObserver = new AppObserver(this);
+        }
+        getActivity().getContentResolver().registerContentObserver(AppContract.AppEntry.CONTENT_URI,
+                true,
+                mAppObserver);
+        */
+
+        //Register receiver
+        LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(GCESync.BROADCAST_ACTION));
+
+    }
+
+    @Override
+    public void onPause() {
+        //set up app as inactive
+        Utils.setAppActive(this, false);
+
+        /*
+        // always call unregisterContentObserver in onPause
+        getActivity().getContentResolver().unregisterContentObserver(mAppObserver);
+        */
+
+        //Unregister receiver
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mMessageReceiver);
+
+        super.onPause();
+    }
+
+    /**
+     * Sends a message to our service
+     */
+    private boolean sendMessageToService(int messageId, Bundle bundle) {
+        if (!mBoundToService) {
+            Log.d(TAG, "Service not bound but someone tried to send message");
+            return false;
+        }
+
+        Message msg = Message.obtain(null, messageId, 0, 0);
+        if (bundle != null) {
+            msg.setData(bundle);
+        }
+
+        try {
+            mService.send(msg);
+        } catch (RemoteException e) {
+            Log.d(TAG, "Error accessing service!");
+            e.printStackTrace();
+        }
+
+        return true;
+    }
+
+    /**
+     * And wait for finish from init
+     */
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_INIT_COMPLETE) {
+            //init is done!
+            Log.d(TAG, "InitService complete");
+            //set up flag to complete setup
+            mbPendingCompleteSetup = true;
+            //make sure we are logged in by service...
+            //below message will generate a broadcast message back which will then finish setup
+            if (!sendMessageToService(FirebaseMessengerService.MSG_ATTEMPT_LOGON, null)) {
+                //We have a problem
+                //Toast.makeText(getApplicationContext(), "Service not bound", Toast.LENGTH_SHORT).show();
+                mPendingSvsMessage = FirebaseMessengerService.MSG_ATTEMPT_LOGON;
+            }
         }
     }
+
 
     @Override
     public void onNavigationDrawerItemSelected(int position) {
@@ -181,23 +362,6 @@ public class MainPhoneActivity extends AppCompatActivity
         actionBar.setTitle(mTitle);
     }
 
-    /**
-     * Sends a message to our service
-     */
-    public void sendMessageToService(int messageId) {
-        if (!mBoundToService) {
-            Log.d(TAG, "Service not bound but someone tried to send message");
-            return;
-        }
-
-        Message msg = Message.obtain(null, messageId, 0, 0);
-        try {
-            mService.send(msg);
-        } catch (RemoteException e) {
-            Log.d(TAG, "Error accessing service!");
-            e.printStackTrace();
-        }
-    }
 
     /**
      * A placeholder fragment containing a simple view.

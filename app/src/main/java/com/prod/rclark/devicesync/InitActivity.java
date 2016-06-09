@@ -32,6 +32,7 @@ import com.prod.rclark.devicesync.cloud.FirebaseMessengerService;
 /**
  * Created by rclark on 6/8/2016.
  * Move all the activity initialization to this activity so it can be shared by ATV and Phone.
+ * The initialization is involved enough to make this a necessity and unspaghetti-fy event code :(
  * (note that phone/ATV still need to handle connecting to service but all the initialization stuff
  * will be handled here)
  */
@@ -134,11 +135,6 @@ public class InitActivity extends Activity implements
         } else {
             appInitStateMachine(STATE_EVENT_INET_OKAY);
         }
-    }
-
-    //Finish setup by creating browse fragment
-    private void finishInit() {
-
     }
 
     @Override
@@ -554,6 +550,7 @@ public class InitActivity extends Activity implements
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        Log.d(TAG, "onActivityResult - code " + requestCode);
         if (requestCode == REQUEST_GOOGLE_PLAY_SERVICES) {
             appInitStateMachine(STATE_EVENT_GMS_AVAILABLE);
         } else if (requestCode == REQUEST_SHOW_TUTORIAL) {

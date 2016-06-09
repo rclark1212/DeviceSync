@@ -28,8 +28,10 @@
 package com.prod.rclark.devicesync;
 
 import android.Manifest;
+import android.app.AlertDialog;
 import android.app.UiModeManager;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -59,11 +61,13 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
+import com.prod.rclark.devicesync.sync.GCESync;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -446,4 +450,55 @@ public class Utils {
             return null;
         }
     }
+
+    /**
+     * Used to ask user if they want to download apps found on network for the device (in case of a device wipe)
+     */
+    public static void askDownloadExistingApps(final Context ctx, final ArrayList<ObjectDetail> missing) {
+
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(ctx);
+
+        alertDialogBuilder.setTitle(ctx.getString(R.string.restore_apps_title));
+
+        String msg = String.format(ctx.getString(R.string.restore_apps_msg), missing.size());
+        alertDialogBuilder
+                .setMessage(msg)
+                .setCancelable(false)
+                .setNeutralButton(ctx.getResources().getString(R.string.restore_disable_syncs), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                        //disable syncs
+                        Utils.setSyncDisabled(ctx, true);
+                        //FIXME - note this leaves apps in a weird state. Will show apps as local to device but no option
+                        //to install, etc...
+                    }
+                })
+                .setNegativeButton(ctx.getResources().getString(R.string.restore_no), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                        GCESync.startActionUpdateLocal(ctx, null, null);
+                    }
+                })
+                .setPositiveButton(ctx.getResources().getString(R.string.restore_yes), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                        //build the install list...
+                        ArrayList<String> apklist = new ArrayList<String>();
+                        for (int i=0; i < missing.size(); i++) {
+                            apklist.add(missing.get(i).pkg);
+                        }
+                        //let the updates go through
+                        GCESync.startActionUpdateLocal(ctx, null, null);
+                        //and kick off the batch install
+                        InstallUtil.batchInstallAPK(ctx, apklist);
+                    }
+                });
+
+        AlertDialog alertDialog = alertDialogBuilder.create();
+        alertDialog.show();
+    }
+
 }

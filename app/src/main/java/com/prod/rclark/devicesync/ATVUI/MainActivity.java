@@ -249,7 +249,8 @@ public class MainActivity extends Activity implements
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_INIT_COMPLETE) {
-            //new for activity intent...
+            //init done!
+            Log.d(TAG, "InitService complete");
             finishSetup();
         }
     }

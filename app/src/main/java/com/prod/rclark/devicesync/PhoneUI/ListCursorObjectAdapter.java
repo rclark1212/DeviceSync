@@ -67,12 +67,21 @@ public class ListCursorObjectAdapter extends RecyclerView.Adapter <ListCursorObj
 
             @Override
             public void bindView(View view, Context context, Cursor cursor) {
+
                 // Binding operations
                 final ImageView iconView = (ImageView) view.findViewById(R.id.grid_item_image);
                 TextView titleView = (TextView) view.findViewById(R.id.grid_title);
                 TextView subtitleView = (TextView) view.findViewById(R.id.grid_subtitle);
-                String serial = cursor.getString(cursor.getColumnIndex(AppContract.AppEntry.COLUMN_APP_DEVSSN));
-                long type = cursor.getLong(cursor.getColumnIndex(AppContract.AppEntry.COLUMN_APP_TYPE));
+                String serial;
+                long type;
+
+                if (!mbIsDevice) {
+                    serial = cursor.getString(cursor.getColumnIndex(AppContract.AppEntry.COLUMN_APP_DEVSSN));
+                    type = cursor.getLong(cursor.getColumnIndex(AppContract.AppEntry.COLUMN_APP_TYPE));
+                } else {
+                    serial = cursor.getString(cursor.getColumnIndex(AppContract.DevicesEntry.COLUMN_DEVICES_SSN));
+                    type = cursor.getLong(cursor.getColumnIndex(AppContract.DevicesEntry.COLUMN_DEVICE_TYPE));
+                }
 
                 // FIXME - only binding app for now... (and depending on app cursor being passed in)
                 Drawable banner = null;

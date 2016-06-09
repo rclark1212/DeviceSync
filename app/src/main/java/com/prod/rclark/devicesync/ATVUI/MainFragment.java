@@ -217,7 +217,8 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
             if (missing.size() > 0) {
                 //Okay - put up a dialog here...
                 //Give 3 options - no, copyall, or disable uploads
-                askDownloadExistingApps(missing);
+                Utils.askDownloadExistingApps(getActivity(), missing);
+                //askDownloadExistingApps(missing);
             } else {
                 GCESync.startActionUpdateLocal(getActivity(), null, null);
             }
