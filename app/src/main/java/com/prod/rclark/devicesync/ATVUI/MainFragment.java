@@ -94,7 +94,8 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
     public static final int PREF_UPDATE_CP_FLAG = 2;
 
     private static final int DETAILS_REQUEST_CODE = 1968;
-    public static final String DETAILS_RESULT_KEY = "detailsResult";
+    public static final String DETAILS_RESULT_KEY = "detailsSerial";
+    public static final String DETAILS_RESULT_ACTION = "detailsAction";
 
     private static final int GRID_ITEM_WIDTH = 200;
     private static final int GRID_ITEM_HEIGHT = 200;
@@ -317,23 +318,43 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
             //check to see if detail screen selection was to show apps for a device...
             if (data != null) {
                 String serial = data.getStringExtra(DETAILS_RESULT_KEY);
-                //find the row with this serial number...
-                //and select it...
-                if (serial != null) {
-                    Log.d(TAG, "DetailRet - select pos");
+                int action = data.getIntExtra(DETAILS_RESULT_ACTION, 0);
 
-                    //get the id...
-                    int id = mUIDataSetup.getSerialRow(serial);
+                if (action == DetailsActivity.DETAIL_RETCODE_OPENROW) {
+                    //find the row with this serial number...
+                    //and select it...
+                    if (serial != null) {
+                        Log.d(TAG, "DetailRet - select pos");
 
-                    //and figure out which row...
-                    for (int i = 0; i < mRowsAdapter.size(); i++) {
-                        ListRow lr = (ListRow) mRowsAdapter.get(i);
-                        if (lr.getHeaderItem().getId() == (long) id) {
-                            //found it...
-                            setSelectedPosition(i, false);
-                            break;
+                        //get the id...
+                        int id = mUIDataSetup.getSerialRow(serial);
+
+                        //and figure out which row...
+                        for (int i = 0; i < mRowsAdapter.size(); i++) {
+                            ListRow lr = (ListRow) mRowsAdapter.get(i);
+                            if (lr.getHeaderItem().getId() == (long) id) {
+                                //found it...
+                                setSelectedPosition(i, false);
+                                break;
+                            }
                         }
                     }
+                } else if (action == DetailsActivity.DETAIL_RETCODE_INSTALLMISSING) {
+                    //get to install our missing apps...
+                    //Get the row...
+                    ListRow lr_missing = (ListRow) mRowsAdapter.get(mUIDataSetup.getMissingRow());
+                    //Now get the adapter
+                    ArrayObjectAdapter missing_adapter = (ArrayObjectAdapter) lr_missing.getAdapter();
+                    //Now construct the install list...
+                    ArrayList<String> apklist = new ArrayList<String>();
+                    for (int i=0; i < missing_adapter.size(); i++) {
+                        Object object = missing_adapter.get(i);
+                        if (object instanceof ObjectDetail) {
+                            apklist.add(((ObjectDetail) object).pkg);
+                        }
+                    }
+                    //Okay - created list - go install!
+                    InstallUtil.batchInstallAPK(getActivity(), apklist);
                 }
             }
         }

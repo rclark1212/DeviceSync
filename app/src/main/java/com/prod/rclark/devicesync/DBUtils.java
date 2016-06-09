@@ -412,6 +412,13 @@ public class DBUtils {
         //check serial number first - a lot cheaper than CP.
         if (object.serial.equals(Build.SERIAL)) {
             bLocal = true;
+            //actually do one more test - if we say disable syncs when installing for first time, we will have
+            //"local" serial numbers for apps not installed...
+            if (!object.bIsDevice) {
+                if (AppUtils.getLocalAppDetails(ctx, object.pkg) == null) {
+                    bLocal = false;
+                }
+            }
         } else if (!object.bIsDevice) {
             if (DBUtils.isAppLocal(ctx, object.pkg)) {
                 bLocal = true;

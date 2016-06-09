@@ -70,6 +70,7 @@ public class ObjectDetailsFragment extends DetailsFragment {
     private static final int ACTION_REMOVEDEVICE = 4;
     private static final int ACTION_SHOWAPPS = 5;
     private static final int ACTION_RUNAPP = 6;
+    private static final int ACTION_ADD_MISSING = 7;
 
     private static final int DETAIL_THUMB_WIDTH = 274;
     private static final int DETAIL_THUMB_HEIGHT = 274;
@@ -127,10 +128,11 @@ public class ObjectDetailsFragment extends DetailsFragment {
     }
 
     protected void updateBackground(ObjectDetail item) {
-//        if (item.banner != null) {
-  //          mBackgroundManager.setDrawable(item.banner);
-    //    }
         /*
+        NOPE - don't do backgrounds on this app
+        if (item.banner != null) {
+            mBackgroundManager.setDrawable(item.banner);
+        }
         Glide.with(getActivity())
                 .load(uri)
                 .centerCrop()
@@ -169,6 +171,7 @@ public class ObjectDetailsFragment extends DetailsFragment {
             //and setup the actions...
             if (DBUtils.isObjectLocal(getActivity(), mSelectedObject)) {
                 actionAdapter.add(new Action(ACTION_SHOWAPPS, getResources().getString(R.string.show_apps)));
+                actionAdapter.add(new Action(ACTION_ADD_MISSING, getString(R.string.add_missing)));
             } else {
                 actionAdapter.add(new Action(ACTION_SHOWAPPS, getResources().getString(R.string.show_apps)));
                 actionAdapter.add(new Action(ACTION_REMOVEDEVICE, getResources().getString(R.string.remove_device)));
@@ -258,7 +261,7 @@ public class ObjectDetailsFragment extends DetailsFragment {
                     case ACTION_SHOWAPPS:
                         //Go to app row. To do this, set some activity globals and return them on activity finish
                         DetailsActivity.mOpenSerial = mSelectedObject.serial;
-                        DetailsActivity.mbOpenRow = true;
+                        DetailsActivity.mReturnCode = DetailsActivity.DETAIL_RETCODE_OPENROW;
                         getActivity().onBackPressed();
                         break;
                     case ACTION_INSTALL:
@@ -278,6 +281,11 @@ public class ObjectDetailsFragment extends DetailsFragment {
                         break;
                     case ACTION_RUNAPP:
                         Utils.launchApp(getActivity(), mSelectedObject.pkg);
+                        getActivity().onBackPressed();
+                        break;
+                    case ACTION_ADD_MISSING:
+                        DetailsActivity.mOpenSerial = mSelectedObject.serial;
+                        DetailsActivity.mReturnCode = DetailsActivity.DETAIL_RETCODE_INSTALLMISSING;
                         getActivity().onBackPressed();
                         break;
                 }
