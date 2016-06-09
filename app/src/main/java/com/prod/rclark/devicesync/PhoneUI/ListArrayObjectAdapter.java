@@ -10,6 +10,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.resource.drawable.GlideDrawable;
@@ -33,7 +34,7 @@ public class ListArrayObjectAdapter extends RecyclerView.Adapter <ListArrayObjec
 
     // Provide a direct reference to each of the views within a data item
     // Used to cache the views within the item layout for fast access
-    public static class ViewHolder extends RecyclerView.ViewHolder {
+    public static class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
         public TextView titleText;
         public TextView subTitleText;
         public ImageView image;
@@ -46,6 +47,20 @@ public class ListArrayObjectAdapter extends RecyclerView.Adapter <ListArrayObjec
             image = (ImageView) itemView.findViewById(R.id.grid_item_image);
             titleText = (TextView) itemView.findViewById(R.id.grid_title);
             subTitleText = (TextView) itemView.findViewById(R.id.grid_subtitle);
+
+            itemView.setOnClickListener(this);
+        }
+
+        @Override
+        public void onClick(View v) {
+            int position = getAdapterPosition();
+            ImageView clicked = (ImageView) v.findViewById(R.id.grid_item_image);
+            String display = "clicky";
+            Object object = clicked.getTag();
+            if (object instanceof ObjectDetail) {
+                display = "clickster of " + ((ObjectDetail) object).serial + " " + ((ObjectDetail) object).pkg;
+            }
+            Toast.makeText(v.getContext(), display, Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -54,6 +69,7 @@ public class ListArrayObjectAdapter extends RecyclerView.Adapter <ListArrayObjec
         mCtx = ctx;
         mArray = array;
     }
+
 
     @Override
     public ListArrayObjectAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
@@ -78,41 +94,38 @@ public class ListArrayObjectAdapter extends RecyclerView.Adapter <ListArrayObjec
         TextView titleView = (TextView) viewHolder.titleText;
         TextView subtitleView = (TextView) viewHolder.subTitleText;
 
+        //tag this view - object or position? object safest...
+        iconView.setTag(app);
+
         titleView.setText(app.label);
         subtitleView.setText(app.pkg);
 
         Drawable banner = null;
-        if (Build.SERIAL.equals(app.serial)) {
-            //local app...
-            banner = AppUtils.getLocalApkImage(iconView.getContext(), app.pkg, app.type);
-        }
+        //is there a local app who can supply image?...
+        banner = AppUtils.getLocalApkImage(iconView.getContext(), app.pkg, app.type);
 
         //deal with bitmap...
         if (banner != null) {
             iconView.setImageDrawable(banner);
         } else {
             ImageDetail image = DBUtils.getImageRecordFromCP(iconView.getContext(), app.pkg);
-
-            //glide it in
-            Glide.with(iconView.getContext())
-                    .load(image.download_url)
-                    .centerCrop()
-                    .into(new SimpleTarget<GlideDrawable>() {
-                        @Override
-                        public void onResourceReady(GlideDrawable resource,
-                                                    GlideAnimation<? super GlideDrawable>
-                                                            glideAnimation) {
-                            iconView.setImageDrawable(resource);
-                        }
-                    });
+            if (image != null) {
+                //glide it in
+                Glide.with(iconView.getContext())
+                        .load(image.download_url)
+                        .centerCrop()
+                        .into(new SimpleTarget<GlideDrawable>() {
+                            @Override
+                            public void onResourceReady(GlideDrawable resource,
+                                                        GlideAnimation<? super GlideDrawable>
+                                                                glideAnimation) {
+                                iconView.setImageDrawable(resource);
+                            }
+                        });
+            } else {
+                iconView.setImageDrawable(iconView.getResources().getDrawable(R.drawable.noimage));
+            }
         }
-
-        /*
-        //deal with bitmap...
-        if (app.banner != null) {
-            //Leave this null if package available on play store and download... Use glide or picassa
-            iconView.setImageDrawable(app.banner);
-        } */
 
     }
 

@@ -173,12 +173,12 @@ public class CardPresenter extends Presenter {
             if (Utils.bIsThisATV(cardView.getContext())) {
                 if (element.type == AppContract.TYPE_TABLET) {
                     //load tv
-                    badge = cardView.getContext().getDrawable(R.drawable.ic_tv);
+                    badge = cardView.getContext().getDrawable(R.drawable.ic_tablet);
                 }
             } else {
                 if (element.type == AppContract.TYPE_ATV) {
                     //load tablet
-                    badge = cardView.getContext().getDrawable(R.drawable.ic_tablet);
+                    badge = cardView.getContext().getDrawable(R.drawable.ic_tv);
                 }
             }
         }

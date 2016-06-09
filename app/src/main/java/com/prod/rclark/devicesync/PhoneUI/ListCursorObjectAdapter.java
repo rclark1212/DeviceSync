@@ -27,12 +27,16 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.resource.drawable.GlideDrawable;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
 import com.prod.rclark.devicesync.AppUtils;
+import com.prod.rclark.devicesync.DBUtils;
+import com.prod.rclark.devicesync.ImageDetail;
+import com.prod.rclark.devicesync.ObjectDetail;
 import com.prod.rclark.devicesync.R;
 import com.prod.rclark.devicesync.Utils;
 import com.prod.rclark.devicesync.data.AppContract;
@@ -83,35 +87,54 @@ public class ListCursorObjectAdapter extends RecyclerView.Adapter <ListCursorObj
                     type = cursor.getLong(cursor.getColumnIndex(AppContract.DevicesEntry.COLUMN_DEVICE_TYPE));
                 }
 
+                //Set tags... Set title tag to serial
+                titleView.setTag(serial);
+
                 // FIXME - only binding app for now... (and depending on app cursor being passed in)
                 Drawable banner = null;
                 if (!mbIsDevice) {
                     String apk = cursor.getString(cursor.getColumnIndex(AppContract.AppEntry.COLUMN_APP_PKG));
                     titleView.setText(cursor.getString(cursor.getColumnIndex(AppContract.AppEntry.COLUMN_APP_LABEL)));
                     subtitleView.setText(apk);
-                    if (Build.SERIAL.equals(serial)) {
-                        //local app...
-                        banner = AppUtils.getLocalApkImage(view.getContext(), apk, type);
+
+                    //tag view with apk
+                    subtitleView.setTag(apk);
+
+                    //See if there is a local banner...
+                    banner = AppUtils.getLocalApkImage(view.getContext(), apk, type);
+
+                    if (banner != null) {
+                        //local app has image...
                         iconView.setImageDrawable(banner);
                     } else {
+                        //get the download URL...
+                        ImageDetail image = DBUtils.getImageRecordFromCP(view.getContext(), apk);
                         //glide it in
-                        Glide.with(view.getContext())
-                                .load(apk)      //FIXME
-                                .centerCrop()
-                                .error(view.getResources().getDrawable(R.drawable.noimage))
-                                .into(new SimpleTarget<GlideDrawable>() {
-                                    @Override
-                                    public void onResourceReady(GlideDrawable resource,
-                                                                GlideAnimation<? super GlideDrawable>
-                                                                        glideAnimation) {
-                                        iconView.setImageDrawable(resource);
-                                    }
-                                });
-
+                        if (image != null) {
+                            //glide it in
+                            Glide.with(view.getContext())
+                                    .load(image.download_url)
+                                    .centerCrop()
+                                    .error(view.getResources().getDrawable(R.drawable.noimage))
+                                    .into(new SimpleTarget<GlideDrawable>() {
+                                        @Override
+                                        public void onResourceReady(GlideDrawable resource,
+                                                                    GlideAnimation<? super GlideDrawable>
+                                                                            glideAnimation) {
+                                            iconView.setImageDrawable(resource);
+                                        }
+                                    });
+                        } else {
+                            iconView.setImageDrawable(view.getResources().getDrawable(R.drawable.noimage));
+                        }
                     }
                 } else {
                     titleView.setText(cursor.getString(cursor.getColumnIndex(AppContract.DevicesEntry.COLUMN_DEVICE_NAME)));
                     subtitleView.setText(cursor.getString(cursor.getColumnIndex(AppContract.DevicesEntry.COLUMN_DEVICES_SSN)));
+
+                    //set subtitle tag to null for devices
+                    subtitleView.setTag(null);
+
                     if (type == AppContract.TYPE_ATV) {
                         banner = view.getResources().getDrawable(R.drawable.shieldtv);
                     } else {
@@ -139,8 +162,21 @@ public class ListCursorObjectAdapter extends RecyclerView.Adapter <ListCursorObj
         public void onClick(View v) {
             int adapterPosition = getAdapterPosition();
             //process the click - get what we need and then launch detail...
-            //int appColumnIndex = mCursor.getColumnIndex(AppContract.AppEntry.COLUMN_APP_LABEL);
-            //mClickHandler.onClick(mCursor.getString(appColumnIndex), this);
+            TextView title = (TextView) v.findViewById(R.id.grid_title);
+            TextView subtitle = (TextView) v.findViewById(R.id.grid_subtitle);
+
+            String display = "clicky";
+            Object serial = title.getTag();
+            Object apk = subtitle.getTag();
+            if (serial instanceof String) {
+                display = display + " " + (String)serial;
+            }
+
+            if (apk instanceof String) {
+                display = display + " " + (String)apk;
+            }
+
+            Toast.makeText(v.getContext(), display, Toast.LENGTH_SHORT).show();
         }
 
     }

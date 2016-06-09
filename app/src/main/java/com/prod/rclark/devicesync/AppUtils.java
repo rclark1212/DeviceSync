@@ -134,7 +134,18 @@ public class AppUtils {
 
         try {
             if (type == AppContract.TYPE_TABLET) {
-                retdraw = manager.getApplicationLogo(apkname);
+                retdraw = manager.getApplicationIcon(apkname);
+                Intent intent = manager.getLaunchIntentForPackage(apkname);
+                if (intent != null) {
+                    retdraw = manager.getActivityBanner(intent);
+                    if (retdraw == null) {
+                        retdraw = manager.getActivityIcon(intent);
+                    }
+                }
+
+                if (retdraw == null) {
+                    retdraw = manager.getApplicationLogo(apkname);
+                }
             } else {    //Both ATV and "BOTH"
                 retdraw = manager.getApplicationBanner(apkname);
                 if (retdraw == null) {
