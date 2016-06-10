@@ -215,29 +215,7 @@ public class DBUtils {
         if (bApp) {
             returnObject = bindCursorToAppObject(c);
         } else {
-            returnObject = new ObjectDetail();
-            //this is a device...
-            int serialIndex = c.getColumnIndex(AppContract.DevicesEntry.COLUMN_DEVICES_SSN);
-            int nameIndex = c.getColumnIndex(AppContract.DevicesEntry.COLUMN_DEVICE_NAME);
-            int modelIndex = c.getColumnIndex(AppContract.DevicesEntry.COLUMN_DEVICE_MODEL);
-            int osverIndex = c.getColumnIndex(AppContract.DevicesEntry.COLUMN_DEVICE_OSVER);
-            int dateIndex = c.getColumnIndex(AppContract.DevicesEntry.COLUMN_DATE);
-            int typeIndex = c.getColumnIndex(AppContract.DevicesEntry.COLUMN_DEVICE_TYPE);
-            int locationIndex = c.getColumnIndex(AppContract.DevicesEntry.COLUMN_DEVICE_LOCATION);
-            int timestampIndex = c.getColumnIndex(AppContract.DevicesEntry.COLUMN_DEVICE_TIMEUPDATED);
-
-            returnObject.serial = c.getString(serialIndex);
-            returnObject.label = c.getString(nameIndex);
-            returnObject.name = c.getString(modelIndex);
-            returnObject.ver = c.getString(osverIndex);
-            returnObject.location = c.getString(locationIndex);
-
-            returnObject.timestamp = c.getLong(timestampIndex);
-            returnObject.installDate = c.getLong(dateIndex);
-            returnObject.type = c.getLong(typeIndex);
-
-            //deal with some device specific items...
-            returnObject.bIsDevice = true;    //this is a device
+            returnObject = bindCursorToDevioeObject(c);
         }
 
         c.close();
@@ -246,7 +224,7 @@ public class DBUtils {
     }
 
     //creates an app object out of a cursor...
-    private static ObjectDetail bindCursorToAppObject(Cursor c) {
+    public static ObjectDetail bindCursorToAppObject(Cursor c) {
         ObjectDetail returnObject = new ObjectDetail();
 
         int labelIndex = c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_LABEL);
@@ -269,6 +247,34 @@ public class DBUtils {
         returnObject.timestamp = c.getLong(timestampIndex);
 
         returnObject.bIsDevice = false;  //app, not device
+
+        return returnObject;
+    }
+
+    //creates an app object out of a cursor...
+    public static ObjectDetail bindCursorToDevioeObject(Cursor c) {
+        ObjectDetail returnObject = new ObjectDetail();
+        //this is a device...
+        int serialIndex = c.getColumnIndex(AppContract.DevicesEntry.COLUMN_DEVICES_SSN);
+        int nameIndex = c.getColumnIndex(AppContract.DevicesEntry.COLUMN_DEVICE_NAME);
+        int modelIndex = c.getColumnIndex(AppContract.DevicesEntry.COLUMN_DEVICE_MODEL);
+        int osverIndex = c.getColumnIndex(AppContract.DevicesEntry.COLUMN_DEVICE_OSVER);
+        int dateIndex = c.getColumnIndex(AppContract.DevicesEntry.COLUMN_DATE);
+        int typeIndex = c.getColumnIndex(AppContract.DevicesEntry.COLUMN_DEVICE_TYPE);
+        int locationIndex = c.getColumnIndex(AppContract.DevicesEntry.COLUMN_DEVICE_LOCATION);
+        int timestampIndex = c.getColumnIndex(AppContract.DevicesEntry.COLUMN_DEVICE_TIMEUPDATED);
+
+        returnObject.serial = c.getString(serialIndex);
+        returnObject.label = c.getString(nameIndex);
+        returnObject.name = c.getString(modelIndex);
+        returnObject.ver = c.getString(osverIndex);
+        returnObject.location = c.getString(locationIndex);
+
+        returnObject.timestamp = c.getLong(timestampIndex);
+        returnObject.installDate = c.getLong(dateIndex);
+        returnObject.type = c.getLong(typeIndex);
+
+        returnObject.bIsDevice = true;  //device, not app
 
         return returnObject;
     }

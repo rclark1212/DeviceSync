@@ -1,27 +1,28 @@
 <resources>
-    <color name="brand_color">#244840</color>
-    <color name="remote_text">#DDDDDD</color>
+    <!-- base material palette -->
+    <color name="primary">#009688</color>
+    <color name="primary_dark">#00796B</color>
+    <color name="primary_light">#B2DFDB</color>
+    <color name="accent">#FFEB3B</color>
+    <color name="primary_text">#212121</color>
+    <color name="secondary_text">#727272</color>
+    <color name="icons">#FFFFFF</color>
+    <color name="divider">#B6B6B6</color>
+
+    <!-- ATV -->
+    <color name="brand_color">@color/primary_dark</color>
+    <color name="remote_text">@color/secondary_text</color>
     <color name="background_gradient_start">#000000</color>
     <color name="background_gradient_end">#DDDDDD</color>
     <color name="fastlane_background">@color/brand_color</color>
-    <color name="search_opaque">#ffaa3f</color>
-    <color name="selected_background">#ef9a2f</color>
-    <color name="detail_background">#0096a6</color>
-    <color name="soft_opaque">#30000000</color>
-    <color name="img_soft_opaque">#30FF0000</color>
-    <color name="img_full_opaque">#00000000</color>
-    <color name="black_opaque">#AA000000</color>
-    <color name="black">#59000000</color>
-    <color name="white">#FFFFFF</color>
-    <color name="orange_transparent">#AAFADCA7</color>
-    <color name="orange">#FADCA7</color>
-    <color name="yellow">#EEFF41</color>
+    <color name="search_opaque">@color/accent</color>
+    <color name="selected_background">@color/primary</color>
     <color name="default_background">#3d3d3d</color>
 
     <!-- phone specific FIXME -->
-    <color name="metabar_title">@android:color/white</color>
-    <color name="theme_primary">#7986CB</color>
-    <color name="theme_primary_dark">#3F51B5</color>
-    <color name="theme_accent">#FF4081</color>
+    <color name="metabar_title">@color/secondary_text</color>
+    <color name="theme_primary">@color/primary</color>
+    <color name="theme_primary_dark">@color/primary_dark</color>
+    <color name="theme_accent">@color/accent</color>
 
 </resources>

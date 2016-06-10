@@ -1,6 +1,9 @@
 package com.prod.rclark.devicesync.PhoneUI;
 
+import android.app.Activity;
+import android.app.ActivityOptions;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.support.v7.widget.RecyclerView;
@@ -31,10 +34,11 @@ import java.util.ArrayList;
 public class ListArrayObjectAdapter extends RecyclerView.Adapter <ListArrayObjectAdapter.ViewHolder> {
     private ArrayList<ObjectDetail> mArray;
     private Context mCtx;
+    private int mRowPosition;
 
     // Provide a direct reference to each of the views within a data item
     // Used to cache the views within the item layout for fast access
-    public static class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
+    public class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
         public TextView titleText;
         public TextView subTitleText;
         public ImageView image;
@@ -61,13 +65,30 @@ public class ListArrayObjectAdapter extends RecyclerView.Adapter <ListArrayObjec
                 display = "clickster of " + ((ObjectDetail) object).serial + " " + ((ObjectDetail) object).pkg;
             }
             Toast.makeText(v.getContext(), display, Toast.LENGTH_SHORT).show();
+
+            //Kick off detail activity
+            //set up the base intent
+            Intent intent = new Intent(v.getContext(), PhoneDetailActivity.class);
+
+            //add the position here as well...
+            intent.putExtra(MainPhoneActivity.EXTRA_LIST_POSITION, position);
+            intent.putExtra(MainPhoneActivity.EXTRA_ROW_POSITION, mRowPosition);
+
+            //late binding setting of transition name
+            ImageView iconView = (ImageView) v.findViewById(R.id.grid_item_image);
+            iconView.setTransitionName(v.getResources().getString(R.string.transition) + position);
+            ActivityOptions options = ActivityOptions.makeSceneTransitionAnimation((Activity)mCtx, iconView,
+                    iconView.getTransitionName());
+
+            v.getContext().startActivity(intent, options.toBundle());
         }
     }
 
     // Provide a constructor
-    public ListArrayObjectAdapter(Context ctx, ArrayList<ObjectDetail> array) {
+    public ListArrayObjectAdapter(Context ctx, ArrayList<ObjectDetail> array, int rowposition) {
         mCtx = ctx;
         mArray = array;
+        mRowPosition = rowposition;
     }
 
 

@@ -27,7 +27,6 @@ more?
 
 */
 
-import android.annotation.TargetApi;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.SharedElementCallback;
@@ -57,11 +56,7 @@ import android.view.ViewGroup;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
-import android.widget.ImageView;
-import android.widget.TextView;
-import android.widget.Toast;
 
-import com.prod.rclark.devicesync.ATVUI.AppObserver;
 import com.prod.rclark.devicesync.DBUtils;
 import com.prod.rclark.devicesync.InitActivity;
 import com.prod.rclark.devicesync.ObjectDetail;
@@ -69,7 +64,6 @@ import com.prod.rclark.devicesync.R;
 import com.prod.rclark.devicesync.UIDataSetup;
 import com.prod.rclark.devicesync.Utils;
 import com.prod.rclark.devicesync.cloud.FirebaseMessengerService;
-import com.prod.rclark.devicesync.data.AppContract;
 import com.prod.rclark.devicesync.sync.GCESync;
 
 import java.util.ArrayList;
@@ -101,6 +95,7 @@ public class MainPhoneActivity extends AppCompatActivity
     static final String EXTRA_STARTING_POS = "extra_starting_pos";
     static final String EXTRA_CURRENT_POS = "extra_current_pos";
     static final String EXTRA_LIST_POSITION = "extra_view_position";
+    static final String EXTRA_ROW_POSITION = "extra_row_position";
 
     //  Service
     boolean mBoundToService;
@@ -110,14 +105,15 @@ public class MainPhoneActivity extends AppCompatActivity
     boolean mbPendingCompleteSetup = false;
     static boolean mbInitDone = false;
 
+    // Method globals
     private Bundle mReenterStateBundle = null;
-
+    private PlaceholderFragment mCurrentPlaceholderFrag = null;
 
     // Shared element transition
     //Set a callback for shared element transition
-    private SharedElementCallback mCallback = null;
+    private SharedElementCallback mShareCallback = null;
     {
-        mCallback = new SharedElementCallback() {
+        mShareCallback = new SharedElementCallback() {
             @Override
             public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
                 //are we coming back from a detail view?
@@ -218,8 +214,6 @@ public class MainPhoneActivity extends AppCompatActivity
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        String[] headers;
-
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main_phone);
 
@@ -403,8 +397,9 @@ public class MainPhoneActivity extends AppCompatActivity
         }
 
         FragmentManager fragmentManager = getFragmentManager();
+        mCurrentPlaceholderFrag = PlaceholderFragment.newInstance(position);
         fragmentManager.beginTransaction()
-                .replace(R.id.container, PlaceholderFragment.newInstance(position))
+                .replace(R.id.container, mCurrentPlaceholderFrag)
                 .commit();
     }
 
@@ -510,7 +505,8 @@ public class MainPhoneActivity extends AppCompatActivity
                             mArray = mUIDataSetup.getArrayAdapter(mPosition);
                         }
 
-                        mAAdapter = new ListArrayObjectAdapter(getActivity(), mArray);
+                        //Pass in position as it is used by detail activity
+                        mAAdapter = new ListArrayObjectAdapter(getActivity(), mArray, mPosition);
                     }
                 } else {
                     //use a cursor object
@@ -524,7 +520,8 @@ public class MainPhoneActivity extends AppCompatActivity
                         Cursor c = getActivity().getContentResolver().query(uri, null, selection, selection_args, null);
 
                         // and set the adapter with a null cursor
-                        mCAdapter = new ListCursorObjectAdapter(getActivity(), c, mUIDataSetup.isDeviceRow(mPosition));
+                        //Pass in position as it is used by detail activity
+                        mCAdapter = new ListCursorObjectAdapter(getActivity(), c, mUIDataSetup.isDeviceRow(mPosition), mPosition);
                     }
                 }
             } else {

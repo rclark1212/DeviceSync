@@ -54,14 +54,14 @@ import com.prod.rclark.devicesync.data.AppContract;
 public class ListCursorObjectAdapter extends RecyclerView.Adapter <ListCursorObjectAdapter.ViewHolder> {
     private CursorAdapter mCursorAdapter;
     private Context mCtx;
-    private Activity mActivity;
     private boolean mbIsDevice;
+    private int mRowPosition;
 
     // Provide a constructor
-    public ListCursorObjectAdapter(Context ctx, Cursor c, boolean isDevice) {
+    public ListCursorObjectAdapter(Context ctx, Cursor c, boolean isDevice, int rowposition) {
         mCtx = ctx;
-        mActivity = (Activity) ctx;
         mbIsDevice = isDevice;
+        mRowPosition = rowposition;
         mCursorAdapter = new CursorAdapter(mCtx, c, 0) {
             @Override
             public View newView(Context context, Cursor cursor, ViewGroup parent) {
@@ -184,16 +184,18 @@ public class ListCursorObjectAdapter extends RecyclerView.Adapter <ListCursorObj
 
             Toast.makeText(v.getContext(), display, Toast.LENGTH_SHORT).show();
 
+            //Kick off detail activity
             //set up the base intent
             Intent intent = new Intent(v.getContext(), PhoneDetailActivity.class);
 
             //add the position here as well...
             intent.putExtra(MainPhoneActivity.EXTRA_LIST_POSITION, adapterPosition);
+            intent.putExtra(MainPhoneActivity.EXTRA_ROW_POSITION, mRowPosition);
 
             //late binding setting of transition name
             ImageView iconView = (ImageView) v.findViewById(R.id.grid_item_image);
             iconView.setTransitionName(v.getResources().getString(R.string.transition) + adapterPosition);
-            ActivityOptions options = ActivityOptions.makeSceneTransitionAnimation(mActivity, iconView,
+            ActivityOptions options = ActivityOptions.makeSceneTransitionAnimation((Activity)mCtx, iconView,
                     iconView.getTransitionName());
 
             v.getContext().startActivity(intent, options.toBundle());
@@ -205,6 +207,7 @@ public class ListCursorObjectAdapter extends RecyclerView.Adapter <ListCursorObj
     public int getItemCount() {
         return mCursorAdapter.getCount();
     }
+
 
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {

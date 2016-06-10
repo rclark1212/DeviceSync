@@ -1,7 +1,10 @@
 package com.prod.rclark.devicesync.PhoneUI;
 
+import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.graphics.drawable.ColorDrawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.app.Fragment;
 import android.app.FragmentManager;
@@ -10,14 +13,17 @@ import android.app.SharedElementCallback;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
+import com.prod.rclark.devicesync.DBUtils;
 import com.prod.rclark.devicesync.ObjectDetail;
 import com.prod.rclark.devicesync.R;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -37,11 +43,15 @@ public class PhoneDetailActivity extends AppCompatActivity {
     private boolean mIsReturning = false;
     private PhoneDetailFragment mCurrentDetailFragment = null;
     private boolean mIsCard = false;
+    private int mRowPosition = 0;
     private final String CURRENT_INDEX = "currentIndex";
 
-    private SharedElementCallback mCallback = null;
+    private ArrayList<ObjectDetail> mObjectArray;
+    private Cursor mObjectCursor;
+
+    private SharedElementCallback mShareCallback = null;
     {
-        mCallback = new SharedElementCallback() {
+        mShareCallback = new SharedElementCallback() {
             @Override
             public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
                 if (mIsReturning) {
@@ -77,7 +87,7 @@ public class PhoneDetailActivity extends AppCompatActivity {
 
         //Postpone transition until ready and set up callback
         postponeEnterTransition();
-        setEnterSharedElementCallback(mCallback);
+        setEnterSharedElementCallback(mShareCallback);
 
         mPagerAdapter = new MyPagerAdapter(getFragmentManager());
         mPager = (ViewPager) findViewById(R.id.pager);
@@ -131,6 +141,7 @@ public class PhoneDetailActivity extends AppCompatActivity {
             if (getIntent() != null && getIntent().getData() != null) {
                 //get starting position
                 mStartPos = getIntent().getIntExtra(MainPhoneActivity.EXTRA_LIST_POSITION, 0);
+                mRowPosition = getIntent().getIntExtra(MainPhoneActivity.EXTRA_ROW_POSITION, 0);
                 mSelectedPos = mStartPos;
             }
         } else {
@@ -138,13 +149,78 @@ public class PhoneDetailActivity extends AppCompatActivity {
             mSelectedPos = savedInstanceState.getInt(CURRENT_INDEX);
             if (getIntent() != null && getIntent().getData() != null) {
                 mStartPos = getIntent().getIntExtra(MainPhoneActivity.EXTRA_LIST_POSITION, 0);
+                mRowPosition = getIntent().getIntExtra(MainPhoneActivity.EXTRA_ROW_POSITION, 0);
             }
         }
+
+        /**
+         * Finally, and here is where it is a little ugly - set up the query/arrays into the CP for the
+         * device detail activity to scroll through. Why is this ugly/non-intuitive? Because in an ideal
+         * world, we would not have to set up parallel access to the same data that the recycler view is using.
+         * But not ideal world - reason we set up in parallel (ugg) is that this is a separate activity to
+         * the mainphone activity running recycler view. So can't leverage calls into mainphone. Don't want to set
+         * up detail as a fragment of mainactivity as it will get very complex if we are also supporting pageview
+         * (which we want to do). So why not do the obvious and pass a cursor? Well, recycler view a mix of cursor
+         * *and* arrayobjects (which is a result of content provider queries in android being somewhat restrictive).
+         * At least we only pass an ordinal and use same setup as mainphone for these queries - so alignment there.
+         * But this is a bit of a waste of memory, etc.
+         */
+        setupDataAccess(mRowPosition);
+    }
+
+    /**
+     * Sets up data access for the detail view
+     */
+    private void setupDataAccess(int rowposition) {
+        if (MainPhoneActivity.mUIDataSetup != null) {
+            if (MainPhoneActivity.mUIDataSetup.useArrayAdapter(rowposition)) {
+                //okay - use an array object...
+                mObjectArray = null;
+                if (mObjectCursor != null) {
+                    mObjectCursor.close();
+                    mObjectCursor = null;
+                }
+                //create the array...
+                Log.d(TAG, "Create adapter/array");
+                mObjectArray = MainPhoneActivity.mUIDataSetup.getArrayAdapter(rowposition);
+            } else {
+                //use a cursor object
+                mObjectArray = null;
+                if (mObjectCursor != null) {
+                    mObjectCursor.close();
+                    mObjectCursor = null;
+                }
+                Uri uri = MainPhoneActivity.mUIDataSetup.getRowUri(rowposition);
+                String selection = MainPhoneActivity.mUIDataSetup.getRowSelection(rowposition);
+                String[] selection_args = MainPhoneActivity.mUIDataSetup.getRowSelectionArgs(rowposition);
+
+                Log.d(TAG, "Create adapter/grab cursor - uri:" + uri.toString());
+
+                mObjectCursor = this.getContentResolver().query(uri, null, selection, selection_args, null);
+            }
+        } else {
+            Log.d(TAG, "yikes! mUIDataSetup not initialized in onCreate for phone detail!");
+        }
+    }
+
+    @Override
+    public void onStop() {
+        if (mObjectCursor != null) {
+            mObjectCursor.close();
+            mObjectCursor = null;
+        }
+
+        super.onStop();
     }
 
     @Override
     public void finishAfterTransition() {
         mIsReturning = true;
+
+        if (mObjectCursor != null) {
+            mObjectCursor.close();
+            mObjectCursor = null;
+        }
         //Return data to mainactivity here (i.e. return back data allowing transition to be properly
         //set up to the right element)
         Intent data = new Intent();
@@ -163,19 +239,50 @@ public class PhoneDetailActivity extends AppCompatActivity {
     }
 
     /**
-     *  Data lookup routines
-     *  FIXME
+     *  Data lookup routines for detailfragment
+     *  Returns count of objects in either the cursor or the array
      */
     public int getObjectCount() {
-        return 2;
+if (false) {
+    if (mObjectCursor != null) {
+        return mObjectCursor.getCount();
+    } else if (mObjectArray != null) {
+        return mObjectArray.size();
+    }
+    return 0;
+}
+        return 1;
     }
 
+    /**
+     * Data lookup routine for detailfragment/activity. Returns object out of array or CP
+     * @param position
+     * @return
+     */
     public ObjectDetail getObject(int position) {
-        ObjectDetail returnObject = new ObjectDetail();
-        returnObject.pkg = "com.example.dummy" + position;
-        returnObject.label = "hello world";
-        returnObject.serial = "12345A";
-        return returnObject;
+
+        if (position >= getObjectCount()) {
+            return null;
+        }
+if (false) {
+    if (mObjectArray != null) {
+        return mObjectArray.get(position);
+    } else if (mObjectCursor != null) {
+        boolean bIsDevice = MainPhoneActivity.mUIDataSetup.isDeviceRow(mRowPosition);
+        mObjectCursor.moveToPosition(position);
+        if (bIsDevice) {
+            return DBUtils.bindCursorToDevioeObject(mObjectCursor);
+        } else {
+            return DBUtils.bindCursorToAppObject(mObjectCursor);
+        }
+    }
+
+    return null;
+}
+        ObjectDetail od = new ObjectDetail();
+        od.serial = "12345A";
+        od.pkg = "com.example.dummy";
+        return od;
     }
 
     //
