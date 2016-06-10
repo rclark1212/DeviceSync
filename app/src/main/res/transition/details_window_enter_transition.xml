@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<transitionSet xmlns:android="http://schemas.android.com/apk/res/android"
+    android:transitionOrdering="together"
+    android:duration="500">
+    <changeBounds/>
+    <changeImageTransform/>
+    <slide android:slideEdge="bottom">
+        <targets>
+            <target android:targetId="@id/meta_bar" />
+            <target android:targetId="@id/article_body" />
+        </targets>
+    </slide>
+
+</transitionSet>

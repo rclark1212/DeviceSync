@@ -27,8 +27,10 @@ more?
 
 */
 
+import android.annotation.TargetApi;
 import android.app.Fragment;
 import android.app.FragmentManager;
+import android.app.SharedElementCallback;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -71,6 +73,8 @@ import com.prod.rclark.devicesync.data.AppContract;
 import com.prod.rclark.devicesync.sync.GCESync;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public class MainPhoneActivity extends AppCompatActivity
         implements NavigationDrawerFragment.NavigationDrawerCallbacks {
@@ -93,6 +97,11 @@ public class MainPhoneActivity extends AppCompatActivity
     //Pending intent returns...
     private static final int REQUEST_INIT_COMPLETE = 3022;
 
+    //Data keys used between list/detail views
+    static final String EXTRA_STARTING_POS = "extra_starting_pos";
+    static final String EXTRA_CURRENT_POS = "extra_current_pos";
+    static final String EXTRA_LIST_POSITION = "extra_view_position";
+
     //  Service
     boolean mBoundToService;
     Messenger mService = null;
@@ -100,6 +109,53 @@ public class MainPhoneActivity extends AppCompatActivity
     boolean mbServiceLoggedIn = false;
     boolean mbPendingCompleteSetup = false;
     static boolean mbInitDone = false;
+
+    private Bundle mReenterStateBundle = null;
+
+
+    // Shared element transition
+    //Set a callback for shared element transition
+    private SharedElementCallback mCallback = null;
+    {
+        mCallback = new SharedElementCallback() {
+            @Override
+            public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
+                //are we coming back from a detail view?
+                if (mReenterStateBundle != null) {
+                    //Check here if we are coming back to a different story than when we started. And fix up.
+                    int startingPos = mReenterStateBundle.getInt(EXTRA_STARTING_POS);
+                    int currentPos = mReenterStateBundle.getInt(EXTRA_CURRENT_POS);
+                    if (startingPos != currentPos) {
+                        // If startingPosition != currentPosition the user must have swiped to a
+                        // different page in the DetailsActivity. We must update the shared element
+                        // so that the correct one falls into place.
+                        String newTransitionName = getResources().getString(R.string.transition) + currentPos;
+                        View newSharedElement = null; //FIXME mRecyclerView.findViewWithTag(currentPos);
+                        if (newSharedElement != null) {
+                            names.clear();
+                            names.add(newTransitionName);
+                            sharedElements.clear();
+                            sharedElements.put(newTransitionName, newSharedElement);
+                        }
+                    }
+
+                    mReenterStateBundle = null;
+                } else {
+                    // If mReenterStateBundle is null, then the activity is exiting.
+                    View navigationBar = findViewById(android.R.id.navigationBarBackground);
+                    View statusBar = findViewById(android.R.id.statusBarBackground);
+                    if (navigationBar != null) {
+                        names.add(navigationBar.getTransitionName());
+                        sharedElements.put(navigationBar.getTransitionName(), navigationBar);
+                    }
+                    if (statusBar != null) {
+                        names.add(statusBar.getTransitionName());
+                        sharedElements.put(statusBar.getTransitionName(), statusBar);
+                    }
+                }
+            }
+        };
+    }
 
     //  Class for interacting with our firebase service...
     private ServiceConnection mConnection = new ServiceConnection() {

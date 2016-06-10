@@ -14,7 +14,10 @@
 
 package com.prod.rclark.devicesync.PhoneUI;
 
+import android.app.Activity;
+import android.app.ActivityOptions;
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -35,6 +38,7 @@ import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
 import com.prod.rclark.devicesync.AppUtils;
 import com.prod.rclark.devicesync.DBUtils;
+import com.prod.rclark.devicesync.HelpActivity;
 import com.prod.rclark.devicesync.ImageDetail;
 import com.prod.rclark.devicesync.ObjectDetail;
 import com.prod.rclark.devicesync.R;
@@ -50,11 +54,13 @@ import com.prod.rclark.devicesync.data.AppContract;
 public class ListCursorObjectAdapter extends RecyclerView.Adapter <ListCursorObjectAdapter.ViewHolder> {
     private CursorAdapter mCursorAdapter;
     private Context mCtx;
+    private Activity mActivity;
     private boolean mbIsDevice;
 
     // Provide a constructor
     public ListCursorObjectAdapter(Context ctx, Cursor c, boolean isDevice) {
         mCtx = ctx;
+        mActivity = (Activity) ctx;
         mbIsDevice = isDevice;
         mCursorAdapter = new CursorAdapter(mCtx, c, 0) {
             @Override
@@ -177,6 +183,20 @@ public class ListCursorObjectAdapter extends RecyclerView.Adapter <ListCursorObj
             }
 
             Toast.makeText(v.getContext(), display, Toast.LENGTH_SHORT).show();
+
+            //set up the base intent
+            Intent intent = new Intent(v.getContext(), PhoneDetailActivity.class);
+
+            //add the position here as well...
+            intent.putExtra(MainPhoneActivity.EXTRA_LIST_POSITION, adapterPosition);
+
+            //late binding setting of transition name
+            ImageView iconView = (ImageView) v.findViewById(R.id.grid_item_image);
+            iconView.setTransitionName(v.getResources().getString(R.string.transition) + adapterPosition);
+            ActivityOptions options = ActivityOptions.makeSceneTransitionAnimation(mActivity, iconView,
+                    iconView.getTransitionName());
+
+            v.getContext().startActivity(intent, options.toBundle());
         }
 
     }

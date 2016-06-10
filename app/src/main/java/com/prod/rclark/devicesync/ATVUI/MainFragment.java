@@ -84,7 +84,7 @@ import java.util.ArrayList;
 
 
 public class MainFragment extends BrowseFragment implements LoaderManager.LoaderCallbacks<Cursor>,
-        ContentObserverCallback, ActivityCompat.OnRequestPermissionsResultCallback {
+        ContentObserverCallback {
     private static final String TAG = "MainFragment";
 
     private static final int PREFERENCE_REQUEST_CODE = 1967;

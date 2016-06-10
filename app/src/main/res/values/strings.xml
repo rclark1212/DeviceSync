@@ -1,4 +1,6 @@
 <resources>
+    <string name="transition" translatable="false">devicesync</string>
+
     <string name="unknown">Unknown</string>
     <string name="dateFormatId">%1$s, %2$s</string>
     <string name="app_name">AppSyncr</string>
@@ -96,4 +98,8 @@
     <string name="restore_disable_syncs">Disable Syncing</string>
     <string name="restore_no">No</string>
     <string name="restore_yes">Restore Apps</string>
+
+    <!-- control content descriptions -->
+    <string name="device_photo">Photo of device or application</string>
+
 </resources>
