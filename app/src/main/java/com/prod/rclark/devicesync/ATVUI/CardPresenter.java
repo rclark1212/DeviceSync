@@ -220,10 +220,10 @@ public class CardPresenter extends Presenter {
             TextView title = (TextView) cardView.findViewById(R.id.title_text);
             TextView subtitle = (TextView) cardView.findViewById(R.id.content_text);
             if (title != null) {
-                title.setTextColor(Color.WHITE);
+                title.setTextColor(ContextCompat.getColor(cardView.getContext(), R.color.primary_text));
             }
             if (subtitle != null) {
-                title.setTextColor(Color.WHITE);
+                title.setTextColor(ContextCompat.getColor(cardView.getContext(), R.color.primary_text));
             }
         }
     }

@@ -53,6 +53,7 @@ import com.prod.rclark.devicesync.ImageDetail;
 import com.prod.rclark.devicesync.InstallUtil;
 import com.prod.rclark.devicesync.ObjectDetail;
 import com.prod.rclark.devicesync.R;
+import com.prod.rclark.devicesync.UIUtils;
 import com.prod.rclark.devicesync.Utils;
 import com.prod.rclark.devicesync.data.AppContract;
 
@@ -293,8 +294,8 @@ public class ObjectDetailsFragment extends DetailsFragment {
                         getActivity().onBackPressed();
                         break;
                     case ACTION_CHANGE_NAME:
-                        //FIXME - actually just change the name right here and don't leave.
-                        //Remember to update CP as well as set the name
+                        //FIXME - ugly dialog...
+                        UIUtils.changeBTName(getActivity(), mSelectedObject.label);
                         break;
                 }
             }

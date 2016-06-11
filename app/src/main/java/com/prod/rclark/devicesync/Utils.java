@@ -30,6 +30,7 @@ package com.prod.rclark.devicesync;
 import android.Manifest;
 import android.app.AlertDialog;
 import android.app.UiModeManager;
+import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -48,7 +49,9 @@ import android.location.Location;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
+import android.os.Build;
 import android.preference.PreferenceManager;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.text.format.Time;
@@ -101,19 +104,6 @@ public class Utils {
         return size;
     }
 
-    /**
-     * Shows a (long) toast
-     */
-    public static void showToast(Context context, String msg) {
-        Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
-    }
-
-    /**
-     * Shows a (long) toast.
-     */
-    public static void showToast(Context context, int resourceId) {
-        Toast.makeText(context, context.getString(resourceId), Toast.LENGTH_LONG).show();
-    }
 
     public static int convertDpToPixel(Context ctx, int dp) {
         float density = ctx.getResources().getDisplayMetrics().density;
@@ -169,22 +159,6 @@ public class Utils {
         return yearMonthDayString;
     }
 
-    /*
-        checkPlayServices
-     */
-    public static boolean checkPlayServices(AppCompatActivity activity) {
-        GoogleApiAvailability apiAvailability = GoogleApiAvailability.getInstance();
-        int resultCode = apiAvailability.isGooglePlayServicesAvailable(activity.getApplicationContext());
-        if (resultCode != ConnectionResult.SUCCESS) {
-            if (apiAvailability.isUserResolvableError(resultCode)) {
-                apiAvailability.getErrorDialog(activity, resultCode, PLAY_SERVICES_RESOLUTION_REQUEST).show();
-            } else {
-                Log.i(TAG, "This device does not support GMS services");
-            }
-            return false;
-        }
-        return true;
-    }
 
     /**
      * Routine that does what it says...
@@ -452,55 +426,6 @@ public class Utils {
         }
     }
 
-    /**
-     * Used to ask user if they want to download apps found on network for the device (in case of a device wipe)
-     */
-    public static void askDownloadExistingApps(final Context ctx, final ArrayList<ObjectDetail> missing) {
-
-        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(ctx);
-
-        alertDialogBuilder.setTitle(ctx.getString(R.string.restore_apps_title));
-
-        String msg = String.format(ctx.getString(R.string.restore_apps_msg), missing.size());
-        alertDialogBuilder
-                .setMessage(msg)
-                .setCancelable(false)
-                .setNeutralButton(ctx.getResources().getString(R.string.restore_disable_syncs), new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.cancel();
-                        //disable syncs
-                        Utils.setSyncDisabled(ctx, true);
-                        //FIXME - note this leaves apps in a weird state. Will show apps as local to device but no option
-                        //to install, etc...
-                    }
-                })
-                .setNegativeButton(ctx.getResources().getString(R.string.restore_no), new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.cancel();
-                        GCESync.startActionUpdateLocal(ctx, null, null);
-                    }
-                })
-                .setPositiveButton(ctx.getResources().getString(R.string.restore_yes), new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.cancel();
-                        //build the install list...
-                        ArrayList<String> apklist = new ArrayList<String>();
-                        for (int i=0; i < missing.size(); i++) {
-                            apklist.add(missing.get(i).pkg);
-                        }
-                        //let the updates go through
-                        GCESync.startActionUpdateLocal(ctx, null, null);
-                        //and kick off the batch install
-                        InstallUtil.batchInstallAPK(ctx, apklist);
-                    }
-                });
-
-        AlertDialog alertDialog = alertDialogBuilder.create();
-        alertDialog.show();
-    }
 
     /**
      * Routine to deliver back appropriate tablet image - logic is if >6", tablet. Else phone.
@@ -515,22 +440,79 @@ public class Utils {
         }
     }
 
-    /**
-     * Routine to provide back the common description text used in detail for the object
-     * AND FIXME - we could do a much better job here...
-     * @param object
-     * @return
-     */
-    public static String getObjectDetailDescription(Context ctx, ObjectDetail element) {
-        String body = "";
 
-        if (element.bIsDevice) {
-            body = "Serial: " + element.serial + "\nLocation: " + element.location +
-                    "\nOSVer: " + element.ver + "\nUpdated: " + unNormalizeDate(ctx, element.installDate);
+    /**
+     * Sets the local device name.
+     * BluetoothAdapter myDevice = BluetoothAdapter.getDefaultAdapter();
+     * String deviceName = myDevice.getName();
+     */
+    public static void setLocalDeviceName(Context ctx, String name) {
+        BluetoothAdapter myDevice = BluetoothAdapter.getDefaultAdapter();
+        //Make sure we permission to do this
+        int permissionCheck = ActivityCompat.checkSelfPermission(ctx, Manifest.permission.BLUETOOTH_ADMIN);
+        if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
+            myDevice.setName(name);
+            //And need to update the local device CP...
+            ObjectDetail local = DBUtils.getDeviceFromCP(ctx, Build.SERIAL);
+            local.label = name;
+            local.timestamp = System.currentTimeMillis();
+            DBUtils.saveDeviceToCP(ctx, local);
         } else {
-            body = "Version: " + element.ver + "\nInstallDate: " + unNormalizeDate(ctx, element.installDate) + "\nCount: " + DBUtils.countApp(ctx, element.pkg);
+            Toast.makeText(ctx, ctx.getResources().getString(R.string.no_bt_admin), Toast.LENGTH_SHORT).show();
         }
-        return body;
     }
 
+
+    /**
+     * As this action a little more in-depth, put in utility class so both phone/ATVUI can leverage.
+     * Sets up install/uninstall lists to bring local device to same state as remote serial.
+     * @param ctx
+     * @param serial
+     */
+    public static void cloneDevice(Context ctx, String serial) {
+        //This is the fun and useful one... Generate both an install and uninstall list.
+        //Get the list of apps on the remote device.
+        ArrayList<ObjectDetail> remote = DBUtils.getAppsOnDevice(ctx, serial);
+        //Convert these object details to a simple string list. We don't want to be comparing objects, only apks
+        ArrayList<String> remote_apk = new ArrayList<String>();
+        for (int i=0; i < remote.size(); i++) {
+            remote_apk.add(remote.get(i).pkg);
+        }
+        remote.clear();
+        remote = null;  //release the list
+
+        //Get the list of apps on our device
+        ArrayList<ObjectDetail> local = DBUtils.getAppsOnDevice(ctx, Build.SERIAL);
+        ArrayList<String> local_apk = new ArrayList<String>();
+        for (int i=0; i < local.size(); i++) {
+            local_apk.add(local.get(i).pkg);
+        }
+        local.clear();
+        local = null;  //release the list
+
+        //Create an install apk list...
+        ArrayList<String> apk_install = new ArrayList<String>();
+        for (int i=0; i < remote_apk.size(); i++) {
+            //loop through - if app not already on local
+            if (!local_apk.contains(remote_apk.get(i))) {
+                //add it to the install list
+                apk_install.add(remote_apk.get(i));
+            }
+        }
+
+        //Create the uninstall list (in reverse)
+        ArrayList<String> apk_uninstall = new ArrayList<String>();
+        for (int i=0; i < local_apk.size(); i++) {
+            //loop through - if app not already on local
+            if (!remote_apk.contains(local_apk.get(i))) {
+                //add it to the uninstall list
+                apk_uninstall.add(local_apk.get(i));
+            }
+        }
+
+        //Okay - we have the 2 lists... Call our APK routines
+        InstallUtil.batchInstallAPK(ctx, apk_install);
+        //and now uninstall
+        InstallUtil.batchUninstallAPK(ctx, apk_uninstall);
+    }
 }

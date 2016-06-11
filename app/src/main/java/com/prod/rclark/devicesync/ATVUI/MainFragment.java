@@ -70,6 +70,7 @@ import com.prod.rclark.devicesync.InstallUtil;
 import com.prod.rclark.devicesync.UIDataSetup;
 import com.prod.rclark.devicesync.ObjectDetail;
 import com.prod.rclark.devicesync.R;
+import com.prod.rclark.devicesync.UIUtils;
 import com.prod.rclark.devicesync.Utils;
 import com.prod.rclark.devicesync.data.AppContract;
 import com.prod.rclark.devicesync.sync.GCESync;
@@ -217,7 +218,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
             if (missing.size() > 0) {
                 //Okay - put up a dialog here...
                 //Give 3 options - no, copyall, or disable uploads
-                Utils.askDownloadExistingApps(getActivity(), missing);
+                UIUtils.askDownloadExistingApps(getActivity(), missing);
                 //askDownloadExistingApps(missing);
             } else {
                 GCESync.startActionUpdateLocal(getActivity(), null, null);
@@ -358,9 +359,11 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                     InstallUtil.batchInstallAPK(getActivity(), apklist);
                 } else if (action == DetailsActivity.DETAIL_RETCODE_REMOVEDEVICE) {
                     //Okay, remove device
-                    //FIXME - implement
+                    //To delete device, just have to delete from the CP. That deletes from firebase. Which then
+                    //mirrors down to everyone else.
+                    DBUtils.deleteDeviceFromCP(getActivity(), serial);
                 } else if (action == DetailsActivity.DETAIL_RETCODE_CLONEFROM) {
-                    //FIXME - implement the clone
+                    Utils.cloneDevice(getActivity(), serial);
                 }
             }
         }

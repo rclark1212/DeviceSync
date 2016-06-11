@@ -69,6 +69,8 @@
     <string name="app_err_title">Application Error</string>
     <string name="gms_missing_msg">AppSyncr requires an internet connection, a valid google login, and Google Play Services. One or more of these not available. Exiting.</string>
     <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="setname_title">Change Device (BT) Name</string>
 
     <string name="exit_fail">Exiting - You need google Play Services to use this app.</string>
     <string name="preferences">Preferences</string>
@@ -81,6 +83,7 @@
     <string name="dismiss_error">Dismiss</string>
     <string name="oops">Oops</string>
     <string name="title_activity_main_phone">MainPhoneActivity</string>
+    <string name="no_bt_admin">Cannot set name - requires bluetooth admin privilege which you did not allow.</string>
 
     <string name="title_section1">Section 1</string>
     <string name="title_section2">Section 2</string>

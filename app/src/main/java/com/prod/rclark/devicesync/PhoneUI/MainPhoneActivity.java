@@ -64,6 +64,7 @@ import com.prod.rclark.devicesync.InitActivity;
 import com.prod.rclark.devicesync.ObjectDetail;
 import com.prod.rclark.devicesync.R;
 import com.prod.rclark.devicesync.UIDataSetup;
+import com.prod.rclark.devicesync.UIUtils;
 import com.prod.rclark.devicesync.Utils;
 import com.prod.rclark.devicesync.cloud.FirebaseMessengerService;
 import com.prod.rclark.devicesync.sync.GCESync;
@@ -246,7 +247,7 @@ public class MainPhoneActivity extends AppCompatActivity
             if (missing.size() > 0) {
                 //Okay - put up a dialog here...
                 //Give 3 options - no, copyall, or disable uploads
-                Utils.askDownloadExistingApps(this, missing);
+                UIUtils.askDownloadExistingApps(this, missing);
                 //askDownloadExistingApps(missing);
             } else {
                 GCESync.startActionUpdateLocal(this, null, null);
@@ -373,29 +374,34 @@ public class MainPhoneActivity extends AppCompatActivity
 
 
             //so, always force an invalidate to force a predraw below
-            mCurrentPlaceholderFrag.mRecyclerView.invalidate();
+            if (mCurrentPlaceholderFrag.mRecyclerView != null) {
+                mCurrentPlaceholderFrag.mRecyclerView.invalidate();
 
-            mCurrentPlaceholderFrag.mRecyclerView.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
-                @SuppressLint("NewApi")
-                @Override
-                public boolean onPreDraw() {
-                    mCurrentPlaceholderFrag.mRecyclerView.getViewTreeObserver().removeOnPreDrawListener(this);
-                    //
-                    // And one bug here. If no adapter, no scrolling. And if view on on page, can't transition.
-                    if (mCurrentPlaceholderFrag.mRecyclerView.getAdapter() != null) {
-                        mCurrentPlaceholderFrag.mRecyclerView.requestLayout();
-                        if (mScrollPos >= 0) {
-                            //And it turns out you need to scroll again to proper position after requesting layout.
-                            mCurrentPlaceholderFrag.mRecyclerView.scrollToPosition(mScrollPos);
-                            mScrollPos = -1;
+                mCurrentPlaceholderFrag.mRecyclerView.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+                    @SuppressLint("NewApi")
+                    @Override
+                    public boolean onPreDraw() {
+                        mCurrentPlaceholderFrag.mRecyclerView.getViewTreeObserver().removeOnPreDrawListener(this);
+                        //
+                        // And one bug here. If no adapter, no scrolling. And if view on on page, can't transition.
+                        if (mCurrentPlaceholderFrag.mRecyclerView.getAdapter() != null) {
+                            mCurrentPlaceholderFrag.mRecyclerView.requestLayout();
+                            if (mScrollPos >= 0) {
+                                //And it turns out you need to scroll again to proper position after requesting layout.
+                                mCurrentPlaceholderFrag.mRecyclerView.scrollToPosition(mScrollPos);
+                                mScrollPos = -1;
+                            }
+
+                            //ready to start the transition
+                            startPostponedEnterTransition();
                         }
-
-                        //ready to start the transition
-                        startPostponedEnterTransition();
+                        return true;
                     }
-                    return true;
-                }
-            });
+                });
+            } else {
+                //and if we run into a null recycler view, better let the transition just go forward.
+                startPostponedEnterTransition();
+            }
         }
     }
 

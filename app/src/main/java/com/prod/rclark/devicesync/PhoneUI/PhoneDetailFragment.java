@@ -32,6 +32,7 @@ import com.prod.rclark.devicesync.DBUtils;
 import com.prod.rclark.devicesync.ImageDetail;
 import com.prod.rclark.devicesync.ObjectDetail;
 import com.prod.rclark.devicesync.R;
+import com.prod.rclark.devicesync.UIUtils;
 import com.prod.rclark.devicesync.Utils;
 import com.prod.rclark.devicesync.data.AppContract;
 
@@ -221,7 +222,7 @@ public class PhoneDetailFragment extends Fragment {
                 subTitleView2.setText(object.serial);
             }
 
-            bodyView.setText(Utils.getObjectDetailDescription(getActivity(), object));
+            bodyView.setText(UIUtils.getObjectDetailDescription(getActivity(), object));
 
             //and glide it in...
             //See if there is a local banner...

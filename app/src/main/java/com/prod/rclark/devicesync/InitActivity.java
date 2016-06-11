@@ -1,6 +1,7 @@
 package com.prod.rclark.devicesync;
 
 import android.*;
+import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ComponentName;
@@ -56,7 +57,7 @@ public class InitActivity extends Activity implements
     private final static int STATE_EVENT_GMS_CONNECTED = 8;
     private final static int STATE_EVENT_WAITING_FOR_BINDING_LOGIN = 9;
     private final static int STATE_EVENT_WAITING_FOR_BINDING_QUERY = 10;
-
+    private final static int STATE_EVENT_BTPERMISSION_CHECKED = 11;
 
     //Initialization state machine params/variables
     private final static int STATE_LAUNCH = 0;
@@ -65,8 +66,9 @@ public class InitActivity extends Activity implements
     private final static int STATE_FIXING_GMS = 3;
     private final static int STATE_LOGGING_ON = 4;
     private final static int STATE_CHECKING_PERMISSIONS = 5;
-    private final static int STATE_SHOWING_TUTORIAL = 6;
-    private final static int STATE_APPINIT_COMPLETE = 7;
+    private final static int STATE_CHECKING_BTPERMISSIONS = 6;
+    private final static int STATE_SHOWING_TUTORIAL = 7;
+    private final static int STATE_APPINIT_COMPLETE = 8;
 
     private int mInitCurrentState = STATE_LAUNCH;
 
@@ -80,6 +82,7 @@ public class InitActivity extends Activity implements
     private boolean mbTutorialShown = false;
     private boolean mbFirebaseLoggedOn = false;
     private boolean mbHaveLocationPermission = false;
+    private boolean mbHaveBTPermission = false;
     private boolean mbStateWaitingForBindingLogin = false;
     private boolean mbStateWaitingForBindingQuery = false;
 
@@ -90,6 +93,7 @@ public class InitActivity extends Activity implements
     private static final int REQUEST_GOOGLE_PLAY_SERVICES = 3019;
     private static final int REQUEST_FIREBASE_SIGN_IN = 3020;
     private static final int MY_PERMISSIONS_REQUEST_LOCATION = 3021;
+    private static final int MY_PERMISSIONS_REQUEST_BT = 3022;
 
     //GMS client
     private static GoogleApiClient mActivityGoogleApiClient = null;
@@ -229,6 +233,9 @@ public class InitActivity extends Activity implements
             case STATE_EVENT_PERMISSION_CHECKED:
                 mbHaveLocationPermission = true;
                 break;
+            case STATE_EVENT_BTPERMISSION_CHECKED:
+                mbHaveBTPermission = true;
+                break;
             case STATE_EVENT_WAITING_FOR_BINDING_LOGIN:          //This is a special case - onStart called after fragment activity attaches
                 mbStateWaitingForBindingLogin = true;           //need to post the query and deliver once bind occurs
                 break;
@@ -303,10 +310,20 @@ public class InitActivity extends Activity implements
             Log.d(TAG, "Init routine - STATE_CHECK_PERMISSIONS");
             if (mbHaveLocationPermission) {
                 //Okay - got permission result (positive or negative) for location
+                mInitCurrentState = STATE_CHECKING_BTPERMISSIONS;
+                mbHaveBTPermission = checkForBTPermission();
+            }
+        }
+
+        if (mInitCurrentState == STATE_CHECKING_BTPERMISSIONS) {
+            Log.d(TAG, "Init routine - STATE_CHECK_BTPERMISSIONS");
+            if (mbHaveBTPermission) {
+                //Okay - got permission result (positive or negative) for location
                 mInitCurrentState = STATE_SHOWING_TUTORIAL;
                 mbTutorialShown = showTutorial();
             }
         }
+
 
         if (mInitCurrentState == STATE_SHOWING_TUTORIAL) {
             Log.d(TAG, "Init routine - STATE_SHOW_TUTORIAL");
@@ -467,7 +484,7 @@ public class InitActivity extends Activity implements
     }
 
     /**
-     * Checks for permission
+     * Checks for location permission
      * @return
      */
     private boolean checkForLocationPermission() {
@@ -497,6 +514,31 @@ public class InitActivity extends Activity implements
         return bret;
     }
 
+    /**
+     * Checks for location permission
+     * @return
+     */
+    private boolean checkForBTPermission() {
+        boolean bret = false;
+
+        //Make sure we have location permissions at start
+        int permissionCheck = ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_ADMIN);
+
+        if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
+            if (!ActivityCompat.shouldShowRequestPermissionRationale(this, android.Manifest.permission.BLUETOOTH_ADMIN)) {
+                String[] permissions = {Manifest.permission.BLUETOOTH_ADMIN};
+                //and only need to do this for SDK23...
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    //below line will cause dialog to come up and pause/resume this activity...
+                    requestPermissions(permissions, MY_PERMISSIONS_REQUEST_BT);
+                }
+            }
+        } else {
+            bret = true;
+        }
+        return bret;
+    }
+
 
     /**
      * Okay - on first install, need to ask for permission for location. By that time, CP already updated.
@@ -520,6 +562,16 @@ public class InitActivity extends Activity implements
                 Utils.setCachedLocation(this, null);
             }
             appInitStateMachine(STATE_EVENT_PERMISSION_CHECKED);
+        } else if (MY_PERMISSIONS_REQUEST_BT == requestCode) {
+            // Is there a result array? (should be if okay chosen)
+            if ((grantResults.length > 0)
+                    && (grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
+                // Yay! We get admin! Note we don't use except for name changes - so this is for later
+                Log.d(TAG, "btadmin priviledge granted");
+            } else {
+                Log.d(TAG, "btadmin priviledge DENIED. Grr...");
+            }
+            appInitStateMachine(STATE_EVENT_BTPERMISSION_CHECKED);
         }
     }
 

@@ -32,6 +32,7 @@ import android.support.v17.leanback.widget.AbstractDetailsDescriptionPresenter;
 import com.prod.rclark.devicesync.DBUtils;
 import com.prod.rclark.devicesync.ObjectDetail;
 import com.prod.rclark.devicesync.R;
+import com.prod.rclark.devicesync.UIUtils;
 import com.prod.rclark.devicesync.Utils;
 
 public class DetailsDescriptionPresenter extends AbstractDetailsDescriptionPresenter {
@@ -51,11 +52,11 @@ public class DetailsDescriptionPresenter extends AbstractDetailsDescriptionPrese
             if (element.bIsDevice) {
                 viewHolder.getTitle().setText(title);
                 viewHolder.getSubtitle().setText(element.name);
-                viewHolder.getBody().setText(Utils.getObjectDetailDescription(viewHolder.view.getContext(), element));
+                viewHolder.getBody().setText(UIUtils.getObjectDetailDescription(viewHolder.view.getContext(), element));
             } else {
                 viewHolder.getTitle().setText(title);
                 viewHolder.getSubtitle().setText(element.pkg);
-                viewHolder.getBody().setText(Utils.getObjectDetailDescription(viewHolder.view.getContext(), element));
+                viewHolder.getBody().setText(UIUtils.getObjectDetailDescription(viewHolder.view.getContext(), element));
             }
         }
     }
