@@ -118,6 +118,9 @@ public class ListArrayObjectAdapter extends RecyclerView.Adapter <ListArrayObjec
         //tag this view - object or position? object safest...
         iconView.setTag(app);
 
+        //But we can tag the top level view itself with position
+        viewHolder.itemView.setTag(position);
+
         titleView.setText(app.label);
         subtitleView.setText(app.pkg);
 

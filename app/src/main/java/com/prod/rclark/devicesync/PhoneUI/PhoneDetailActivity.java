@@ -225,6 +225,13 @@ public class PhoneDetailActivity extends AppCompatActivity {
     public void finishAfterTransition() {
         mIsReturning = true;
 
+        //Return data to mainactivity here (i.e. return back data allowing transition to be properly
+        //set up to the right element)
+        Intent data = new Intent();
+        data.putExtra(MainPhoneActivity.EXTRA_STARTING_POS, mStartPos);
+        data.putExtra(MainPhoneActivity.EXTRA_CURRENT_POS, mSelectedPos);
+        setResult(RESULT_OK, data);
+
         super.finishAfterTransition();
 
         if (mObjectCursor != null) {
@@ -232,13 +239,6 @@ public class PhoneDetailActivity extends AppCompatActivity {
             mObjectCursor = null;
             mPagerAdapter.notifyDataSetChanged();
         }
-
-        //Return data to mainactivity here (i.e. return back data allowing transition to be properly
-        //set up to the right element)
-        Intent data = new Intent();
-        data.putExtra(MainPhoneActivity.EXTRA_STARTING_POS, mStartPos);
-        data.putExtra(MainPhoneActivity.EXTRA_CURRENT_POS, mSelectedPos);
-        setResult(RESULT_OK, data);
     }
 
     //Save the current position on activity destroy (rotate, etc)

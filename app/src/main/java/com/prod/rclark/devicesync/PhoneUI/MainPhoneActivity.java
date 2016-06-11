@@ -27,6 +27,7 @@ more?
 
 */
 
+import android.annotation.SuppressLint;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.SharedElementCallback;
@@ -56,6 +57,7 @@ import android.view.ViewGroup;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
+import android.view.ViewTreeObserver;
 
 import com.prod.rclark.devicesync.DBUtils;
 import com.prod.rclark.devicesync.InitActivity;
@@ -108,6 +110,8 @@ public class MainPhoneActivity extends AppCompatActivity
     // Method globals
     private Bundle mReenterStateBundle = null;
     private PlaceholderFragment mCurrentPlaceholderFrag = null;
+    private int mReturnPos = 0;
+    private int mScrollPos = 0;
 
     // Shared element transition
     //Set a callback for shared element transition
@@ -125,13 +129,15 @@ public class MainPhoneActivity extends AppCompatActivity
                         // If startingPosition != currentPosition the user must have swiped to a
                         // different page in the DetailsActivity. We must update the shared element
                         // so that the correct one falls into place.
-                        String newTransitionName = getResources().getString(R.string.transition) + currentPos;
-                        View newSharedElement = null; //FIXME mRecyclerView.findViewWithTag(currentPos);
-                        if (newSharedElement != null) {
-                            names.clear();
-                            names.add(newTransitionName);
-                            sharedElements.clear();
-                            sharedElements.put(newTransitionName, newSharedElement);
+                        if (mCurrentPlaceholderFrag != null) {
+                            String newTransitionName = getResources().getString(R.string.transition) + currentPos;
+                            View newSharedElement = mCurrentPlaceholderFrag.mRecyclerView.findViewWithTag(currentPos);
+                            if (newSharedElement != null) {
+                                names.clear();
+                                names.add(newTransitionName);
+                                sharedElements.clear();
+                                sharedElements.put(newTransitionName, newSharedElement);
+                            }
                         }
                     }
 
@@ -277,6 +283,9 @@ public class MainPhoneActivity extends AppCompatActivity
                 R.id.navigation_drawer,
                 (DrawerLayout) findViewById(R.id.drawer_layout),
                 headers);
+
+        //Set a shared element callback for the case where we may be exiting to a different element than we start from
+        setExitSharedElementCallback(mShareCallback);
     }
 
 
@@ -339,6 +348,55 @@ public class MainPhoneActivity extends AppCompatActivity
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mMessageReceiver);
 
         super.onPause();
+    }
+
+
+    @Override
+    public void onActivityReenter(int requestCode, Intent data) {
+        super.onActivityReenter(requestCode, data);
+        //Get bundle from detail activity (pass back parameters on what the currently selected item might be)
+        mReenterStateBundle = new Bundle(data.getExtras());
+        int startingPos = mReenterStateBundle.getInt(EXTRA_STARTING_POS);
+        int currentPos = mReenterStateBundle.getInt(EXTRA_CURRENT_POS);
+        mScrollPos = -1;
+        if (startingPos != currentPos) {
+            //scroll to currentId - note, convert the ID to position...
+            mScrollPos = currentPos;
+            //scroll here (need to get the element visible for transitions to work)
+            if (mCurrentPlaceholderFrag != null) {
+                mCurrentPlaceholderFrag.mRecyclerView.scrollToPosition(mScrollPos);
+            }
+        }
+
+        if ((mCurrentPlaceholderFrag != null) && (mReenterStateBundle != null)){
+            postponeEnterTransition();
+
+
+            //so, always force an invalidate to force a predraw below
+            mCurrentPlaceholderFrag.mRecyclerView.invalidate();
+
+            mCurrentPlaceholderFrag.mRecyclerView.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+                @SuppressLint("NewApi")
+                @Override
+                public boolean onPreDraw() {
+                    mCurrentPlaceholderFrag.mRecyclerView.getViewTreeObserver().removeOnPreDrawListener(this);
+                    //
+                    // And one bug here. If no adapter, no scrolling. And if view on on page, can't transition.
+                    if (mCurrentPlaceholderFrag.mRecyclerView.getAdapter() != null) {
+                        mCurrentPlaceholderFrag.mRecyclerView.requestLayout();
+                        if (mScrollPos >= 0) {
+                            //And it turns out you need to scroll again to proper position after requesting layout.
+                            mCurrentPlaceholderFrag.mRecyclerView.scrollToPosition(mScrollPos);
+                            mScrollPos = -1;
+                        }
+
+                        //ready to start the transition
+                        startPostponedEnterTransition();
+                    }
+                    return true;
+                }
+            });
+        }
     }
 
     /**
@@ -421,7 +479,7 @@ public class MainPhoneActivity extends AppCompatActivity
      * A placeholder fragment containing a simple view.
      */
     public static class PlaceholderFragment extends Fragment {
-        private RecyclerView mRecyclerView;
+        public RecyclerView mRecyclerView;
         private ListCursorObjectAdapter mCAdapter;
         private ListArrayObjectAdapter mAAdapter;
         private ArrayList<ObjectDetail> mArray;

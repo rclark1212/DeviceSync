@@ -214,7 +214,7 @@ public class ListCursorObjectAdapter extends RecyclerView.Adapter <ListCursorObj
         // Passing the binding operation to cursor loader
         mCursorAdapter.getCursor().moveToPosition(position);
         mCursorAdapter.bindView(holder.itemView, mCtx, mCursorAdapter.getCursor());
-
+        holder.itemView.setTag(position);
     }
 
     @Override
