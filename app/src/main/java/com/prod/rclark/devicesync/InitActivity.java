@@ -431,6 +431,9 @@ public class InitActivity extends Activity implements
                     .build();
 
             mActivityGoogleApiClient.connect();
+        } else {
+            //if activity not null, can assume we are connected...
+            appInitStateMachine(STATE_EVENT_GMS_CONNECTED);
         }
     }
 

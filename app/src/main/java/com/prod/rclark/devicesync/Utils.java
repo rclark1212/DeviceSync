@@ -501,4 +501,22 @@ public class Utils {
         alertDialog.show();
     }
 
+    /**
+     * Routine to provide back the common description text used in detail for the object
+     * AND FIXME - we could do a much better job here...
+     * @param object
+     * @return
+     */
+    public static String getObjectDetailDescription(Context ctx, ObjectDetail element) {
+        String body = "";
+
+        if (element.bIsDevice) {
+            body = "Serial: " + element.serial + "\nLocation: " + element.location +
+                    "\nOSVer: " + element.ver + "\nUpdated: " + unNormalizeDate(ctx, element.installDate);
+        } else {
+            body = "Version: " + element.ver + "\nInstallDate: " + unNormalizeDate(ctx, element.installDate) + "\nCount: " + DBUtils.countApp(ctx, element.pkg);
+        }
+        return body;
+    }
+
 }

@@ -1,26 +1,13 @@
 package com.prod.rclark.devicesync.PhoneUI;
 
-import android.annotation.TargetApi;
 import android.app.Fragment;
-import android.content.Context;
-import android.content.Intent;
-import android.content.Loader;
-import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Color;
 import android.graphics.Rect;
-import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
-import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v4.app.ShareCompat;
-import android.text.Html;
-import android.text.format.DateUtils;
-import android.text.method.LinkMovementMethod;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -38,6 +25,7 @@ import com.prod.rclark.devicesync.ImageDetail;
 import com.prod.rclark.devicesync.ObjectDetail;
 import com.prod.rclark.devicesync.R;
 import com.prod.rclark.devicesync.Utils;
+import com.prod.rclark.devicesync.data.AppContract;
 
 /**
  * Created by rclark on 6/9/2016.
@@ -175,27 +163,50 @@ public class PhoneDetailFragment extends Fragment {
         }
 
         TextView titleView = (TextView) mRootView.findViewById(R.id.article_title);
-        TextView bylineView = (TextView) mRootView.findViewById(R.id.article_byline);
-        bylineView.setMovementMethod(new LinkMovementMethod());
+        TextView subTitleView1 = (TextView) mRootView.findViewById(R.id.article_subtitle1);
+        TextView subTitleView2 = (TextView) mRootView.findViewById(R.id.article_subtitle2);
+        //subTitleView.setMovementMethod(new LinkMovementMethod());
         TextView bodyView = (TextView) mRootView.findViewById(R.id.article_body);
 
-        //FIXME but for now, set serial/apk
-        //get object.
+        //Could do a callback but also could just query database for the bind..
+        ObjectDetail object = null;
+        if (mbIsDevice) {
+            object = DBUtils.getDeviceFromCP(getActivity(), mSerial);
+        } else {
+            object = DBUtils.getAppFromCP(getActivity(), mSerial, mAPK);
+        }
 
-        if (true) { //(object != null) {
+        if (object != null) {
             mRootView.setAlpha(0);
             mRootView.setVisibility(View.VISIBLE);
             mRootView.animate().alpha(1);
-            titleView.setText(mSerial);
-            //fix string for localization
-            bylineView.setText(mAPK);
-            bodyView.setText("Hello World");
+
+            if (object.bIsDevice) {
+                titleView.setText(object.label);
+                subTitleView1.setText(object.name);
+                subTitleView2.setText(object.serial);
+            } else {
+                titleView.setText(object.label);
+                subTitleView1.setText(object.pkg);
+                subTitleView2.setText(object.serial);
+            }
+
+            bodyView.setText(Utils.getObjectDetailDescription(getActivity(), object));
 
             //and glide it in...
             //See if there is a local banner...
-            //FIXME FOR DEVICE
-            Drawable banner = null; //AppUtils.getLocalApkImage(getActivity(), mAPK, type);
-            if (banner == null) {
+            Drawable banner = null;
+            if (object.bIsDevice) {
+                if (object.type == AppContract.TYPE_TABLET) {
+                    banner = getResources().getDrawable(R.drawable.shieldtablet);
+                } else {
+                    banner = getResources().getDrawable(R.drawable.shieldtv);
+                }
+            } else {
+                banner = AppUtils.getLocalApkImage(getActivity(), mAPK, object.type);
+            }
+
+            if (banner != null) {
                 //local app has image...
                 mPhotoView.setImageDrawable(banner);
                 setMetabarColor(R.drawable.noimage);
@@ -229,7 +240,7 @@ public class PhoneDetailFragment extends Fragment {
         } else {
             mRootView.setVisibility(View.GONE);
             titleView.setText("N/A");
-            bylineView.setText("N/A" );
+            subTitleView1.setText("N/A" );
             bodyView.setText("N/A");
         }
     }

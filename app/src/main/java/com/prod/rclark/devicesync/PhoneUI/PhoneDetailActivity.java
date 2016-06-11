@@ -138,7 +138,8 @@ public class PhoneDetailActivity extends AppCompatActivity {
         });
 
         if (savedInstanceState == null) {
-            if (getIntent() != null && getIntent().getData() != null) {
+            Intent launch = getIntent();
+            if (launch != null && launch.getExtras() != null) {
                 //get starting position
                 mStartPos = getIntent().getIntExtra(MainPhoneActivity.EXTRA_LIST_POSITION, 0);
                 mRowPosition = getIntent().getIntExtra(MainPhoneActivity.EXTRA_ROW_POSITION, 0);
@@ -147,14 +148,15 @@ public class PhoneDetailActivity extends AppCompatActivity {
         } else {
             //in case of rotate/activity destroy, need to recover current page pos
             mSelectedPos = savedInstanceState.getInt(CURRENT_INDEX);
-            if (getIntent() != null && getIntent().getData() != null) {
+            Intent launch = getIntent();
+            if (launch != null && launch.getExtras() != null) {
                 mStartPos = getIntent().getIntExtra(MainPhoneActivity.EXTRA_LIST_POSITION, 0);
                 mRowPosition = getIntent().getIntExtra(MainPhoneActivity.EXTRA_ROW_POSITION, 0);
             }
         }
 
         /**
-         * Finally, and here is where it is a little ugly - set up the query/arrays into the CP for the
+         * Okay - and here is where it is a little ugly - set up the query/arrays into the CP for the
          * device detail activity to scroll through. Why is this ugly/non-intuitive? Because in an ideal
          * world, we would not have to set up parallel access to the same data that the recycler view is using.
          * But not ideal world - reason we set up in parallel (ugg) is that this is a separate activity to
@@ -166,6 +168,9 @@ public class PhoneDetailActivity extends AppCompatActivity {
          * But this is a bit of a waste of memory, etc.
          */
         setupDataAccess(mRowPosition);
+
+        //finally, set the right page
+        mPager.setCurrentItem(mSelectedPos, false);
     }
 
     /**
@@ -198,6 +203,9 @@ public class PhoneDetailActivity extends AppCompatActivity {
 
                 mObjectCursor = this.getContentResolver().query(uri, null, selection, selection_args, null);
             }
+            if (mPagerAdapter != null) {
+                mPagerAdapter.notifyDataSetChanged();
+            }
         } else {
             Log.d(TAG, "yikes! mUIDataSetup not initialized in onCreate for phone detail!");
         }
@@ -217,18 +225,20 @@ public class PhoneDetailActivity extends AppCompatActivity {
     public void finishAfterTransition() {
         mIsReturning = true;
 
+        super.finishAfterTransition();
+
         if (mObjectCursor != null) {
             mObjectCursor.close();
             mObjectCursor = null;
+            mPagerAdapter.notifyDataSetChanged();
         }
+
         //Return data to mainactivity here (i.e. return back data allowing transition to be properly
         //set up to the right element)
         Intent data = new Intent();
         data.putExtra(MainPhoneActivity.EXTRA_STARTING_POS, mStartPos);
         data.putExtra(MainPhoneActivity.EXTRA_CURRENT_POS, mSelectedPos);
         setResult(RESULT_OK, data);
-
-        super.finishAfterTransition();
     }
 
     //Save the current position on activity destroy (rotate, etc)
@@ -243,15 +253,13 @@ public class PhoneDetailActivity extends AppCompatActivity {
      *  Returns count of objects in either the cursor or the array
      */
     public int getObjectCount() {
-if (false) {
-    if (mObjectCursor != null) {
-        return mObjectCursor.getCount();
-    } else if (mObjectArray != null) {
-        return mObjectArray.size();
-    }
-    return 0;
-}
-        return 1;
+        int retcount = 0;
+        if (mObjectCursor != null) {
+            retcount = mObjectCursor.getCount();
+        } else if (mObjectArray != null) {
+            retcount = mObjectArray.size();
+        }
+        return retcount;
     }
 
     /**
@@ -261,28 +269,25 @@ if (false) {
      */
     public ObjectDetail getObject(int position) {
 
+        ObjectDetail retObject = null;
+
         if (position >= getObjectCount()) {
             return null;
         }
-if (false) {
-    if (mObjectArray != null) {
-        return mObjectArray.get(position);
-    } else if (mObjectCursor != null) {
-        boolean bIsDevice = MainPhoneActivity.mUIDataSetup.isDeviceRow(mRowPosition);
-        mObjectCursor.moveToPosition(position);
-        if (bIsDevice) {
-            return DBUtils.bindCursorToDevioeObject(mObjectCursor);
-        } else {
-            return DBUtils.bindCursorToAppObject(mObjectCursor);
-        }
-    }
 
-    return null;
-}
-        ObjectDetail od = new ObjectDetail();
-        od.serial = "12345A";
-        od.pkg = "com.example.dummy";
-        return od;
+        if (mObjectArray != null) {
+            retObject = mObjectArray.get(position);
+        } else if (mObjectCursor != null) {
+            boolean bIsDevice = MainPhoneActivity.mUIDataSetup.isDeviceRow(mRowPosition);
+            mObjectCursor.moveToPosition(position);
+            if (bIsDevice) {
+                retObject = DBUtils.bindCursorToDevioeObject(mObjectCursor);
+            } else {
+                retObject = DBUtils.bindCursorToAppObject(mObjectCursor);
+            }
+        }
+
+        return retObject;
     }
 
     //
