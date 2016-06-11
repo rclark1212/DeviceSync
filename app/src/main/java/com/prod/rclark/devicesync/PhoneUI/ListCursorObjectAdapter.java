@@ -144,7 +144,7 @@ public class ListCursorObjectAdapter extends RecyclerView.Adapter <ListCursorObj
                     if (type == AppContract.TYPE_ATV) {
                         banner = view.getResources().getDrawable(R.drawable.shieldtv);
                     } else {
-                        banner = view.getResources().getDrawable(R.drawable.shieldtablet);
+                        banner = view.getResources().getDrawable(Utils.getTabletResource(view.getContext()));
                     }
                     iconView.setImageDrawable(banner);
                 }

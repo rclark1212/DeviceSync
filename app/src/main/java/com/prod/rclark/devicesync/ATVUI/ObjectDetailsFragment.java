@@ -166,7 +166,7 @@ public class ObjectDetailsFragment extends DetailsFragment {
             if (mSelectedObject.type == AppContract.TYPE_ATV) {
                 row.setImageDrawable(getResources().getDrawable(R.drawable.shieldtv));
             } else {
-                row.setImageDrawable(getResources().getDrawable(R.drawable.shieldtablet));
+                row.setImageDrawable(getResources().getDrawable(Utils.getTabletResource(getActivity())));
             }
             //and setup the actions...
             if (DBUtils.isObjectLocal(getActivity(), mSelectedObject)) {

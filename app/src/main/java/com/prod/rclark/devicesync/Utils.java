@@ -52,6 +52,7 @@ import android.preference.PreferenceManager;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.text.format.Time;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
 import android.view.WindowManager;
@@ -499,6 +500,19 @@ public class Utils {
 
         AlertDialog alertDialog = alertDialogBuilder.create();
         alertDialog.show();
+    }
+
+    /**
+     * Routine to deliver back appropriate tablet image - logic is if >6", tablet. Else phone.
+     */
+    public static int getTabletResource(Context ctx) {
+        //Are we a large or xlarge device?
+        if ((ctx.getResources().getConfiguration().screenLayout & Configuration.SCREENLAYOUT_SIZE_MASK)
+                >= Configuration.SCREENLAYOUT_SIZE_LARGE) {
+            return R.drawable.shieldtablet;
+        } else {
+            return R.drawable.nexus5;
+        }
     }
 
     /**

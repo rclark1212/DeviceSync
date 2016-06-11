@@ -222,6 +222,12 @@ public class PhoneDetailActivity extends AppCompatActivity {
     }
 
     @Override
+    public void onStart() {
+        super.onStart();
+        setupDataAccess(mRowPosition);
+    }
+
+    @Override
     public void finishAfterTransition() {
         mIsReturning = true;
 

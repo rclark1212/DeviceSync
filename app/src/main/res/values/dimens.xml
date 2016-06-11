@@ -52,4 +52,12 @@
     <dimen name="toolbar_elevation">4dp</dimen>
     <dimen name="resting_card_elevation">2dp</dimen>
 
+    <!-- flat button dims -->
+    <dimen name="btn_flat_min_width">200dp</dimen>
+    <dimen name="btn_flat_min_height">70dp</dimen>
+    <dimen name="btn_flat_padding">15dp</dimen>
+    <dimen name="btn_flat_margin">20dp</dimen>
+    <dimen name="btn_flat_radius">20dp</dimen>
+    <!-- and column width for gridview container -->
+    <dimen name="detail_button_column_width">200dp</dimen>
 </resources>

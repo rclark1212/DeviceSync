@@ -1,6 +1,7 @@
 package com.prod.rclark.devicesync.PhoneUI;
 
 import android.app.Fragment;
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Rect;
@@ -12,9 +13,16 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.GridLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.support.v7.graphics.Palette;
+import android.widget.Toast;
+
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.resource.drawable.GlideDrawable;
 import com.bumptech.glide.request.animation.GlideAnimation;
@@ -26,6 +34,8 @@ import com.prod.rclark.devicesync.ObjectDetail;
 import com.prod.rclark.devicesync.R;
 import com.prod.rclark.devicesync.Utils;
 import com.prod.rclark.devicesync.data.AppContract;
+
+import java.util.ArrayList;
 
 /**
  * Created by rclark on 6/9/2016.
@@ -39,11 +49,24 @@ public class PhoneDetailFragment extends Fragment {
     public static final String ARG_ITEM_APK = "item_apk";
     public static final String ARG_ITEM_POSITION = "item_position";
 
+    //Set up dynamic button ID codes
+    public static final int BUTTON_BASE = 20300;
+    public static final int BUTTON_LISTSIZE = 8;
+    public static final int BUTTON_SHOWAPPS = 0;
+    public static final int BUTTON_ADD_MISSING = 1;
+    public static final int BUTTON_CHANGENAME = 2;
+    public static final int BUTTON_REMOVE = 3;
+    public static final int BUTTON_CLONEFROM = 4;
+    public static final int BUTTON_RUN = 5;
+    public static final int BUTTON_UNINSTALL = 6;
+    public static final int BUTTON_INSTALL = 7;
+
     private int mPosition;
     private boolean mbIsDevice;
     private String mSerial;
     private String mAPK;
     private View mRootView;
+    private GridLayout mButtonView;
     private TextView mTitleView;
     private ImageView mPhotoView;
     private int mNoImageMuted = 0;
@@ -108,6 +131,9 @@ public class PhoneDetailFragment extends Fragment {
                              Bundle savedInstanceState) {
         mRootView = inflater.inflate(R.layout.phone_detail_fragment, container, false);
 
+        //Yes - could do this with a gridview
+        mButtonView = (GridLayout) mRootView.findViewById(R.id.button_container);
+
         mPhotoView = (ImageView) mRootView.findViewById(R.id.photo);
 
         //set transition name
@@ -125,6 +151,7 @@ public class PhoneDetailFragment extends Fragment {
 
         return mRootView;
     }
+
 
     //Do transition here
     private void startPostponedEnterTransition() {
@@ -176,6 +203,9 @@ public class PhoneDetailFragment extends Fragment {
             object = DBUtils.getAppFromCP(getActivity(), mSerial, mAPK);
         }
 
+        //Set up buttons here
+        setUpButtons(object);
+
         if (object != null) {
             mRootView.setAlpha(0);
             mRootView.setVisibility(View.VISIBLE);
@@ -198,7 +228,7 @@ public class PhoneDetailFragment extends Fragment {
             Drawable banner = null;
             if (object.bIsDevice) {
                 if (object.type == AppContract.TYPE_TABLET) {
-                    banner = getResources().getDrawable(R.drawable.shieldtablet);
+                    banner = getResources().getDrawable(Utils.getTabletResource(getActivity()));
                 } else {
                     banner = getResources().getDrawable(R.drawable.shieldtv);
                 }
@@ -244,6 +274,139 @@ public class PhoneDetailFragment extends Fragment {
             bodyView.setText("N/A");
         }
     }
+
+    /**
+     * Sets up the detail buttons - button setup will depend upon whether a device or app and whether
+     * it is local or remote... Note, should keep this in sync with ATV functionality
+     * Device:Local = ACTION_SHOWAPPS, ACTION_ADD_MISSING, ACTION_CHANGE_NAME
+     * Device:Remote = ACTION_SHOWAPPS, ACTION_REMOVEDEVICE, ACTION_CLONEFROM
+     * App:Local = ACTION_RUNAPP, ACTION_UNINSTALL
+     * App:Remote = ACTION_INSTALL
+     */
+    private void setUpButtons(ObjectDetail object) {
+        //Step0 - see if this is right type... By definition, this code only runs on phones/tablets...
+        if (!mbIsDevice) {
+            if (object.type == AppContract.TYPE_TABLET) {
+                return;
+            }
+        }
+        //Okay - step 1, figure out what buttons to show
+        ArrayList<Integer> showButtons = new ArrayList<Integer>();
+        boolean isLocal = DBUtils.isObjectLocal(getActivity(), object);
+
+        if (mbIsDevice) {
+            if (isLocal) {
+                showButtons.add(BUTTON_SHOWAPPS);
+                showButtons.add(BUTTON_ADD_MISSING);
+                showButtons.add(BUTTON_CHANGENAME);
+            } else {
+                showButtons.add(BUTTON_SHOWAPPS);
+                showButtons.add(BUTTON_REMOVE);
+                showButtons.add(BUTTON_CLONEFROM);
+            }
+        } else {
+            if (isLocal) {
+                showButtons.add(BUTTON_RUN);
+                showButtons.add(BUTTON_UNINSTALL);
+            } else {
+                showButtons.add(BUTTON_INSTALL);
+            }
+        }
+
+        //Step2 - optimize by figuring out which views already there
+        for (int i=0; i < BUTTON_LISTSIZE; i++) {
+            int buttonId = BUTTON_BASE+i;
+            if (mButtonView.findViewById(buttonId) != null) {
+                //found a button
+                //if button in showButtons list, remove it (it already exists)
+                if (showButtons.contains((Integer)i)) {
+                    showButtons.remove((Integer)i);
+                }
+            }
+        }
+
+        //Step3 - build if we need to
+        if (showButtons.size() != 0) {
+            //oh - some changes...
+            //just remove all views and then rebuild
+            mButtonView.removeAllViews();
+
+            int cols = mButtonView.getColumnCount();
+            if (cols == 0) {
+                //have to fix up... Get the width per button...
+                float width = (getResources().getDimension(R.dimen.btn_flat_min_width) +
+                        2*getResources().getDimension(R.dimen.btn_flat_margin) +
+                        2*getResources().getDimension(R.dimen.btn_flat_padding))/getResources().getDisplayMetrics().density;
+                cols = mButtonView.getWidth() / (int)width;
+                if (cols == 0) {
+                    int screenwidth = getActivity().getResources().getConfiguration().screenWidthDp;
+                    cols = screenwidth / (int)width;
+                }
+            }
+            int rowcount = showButtons.size() / cols;
+            if ((showButtons.size() % cols) != 0) rowcount++;
+
+            mButtonView.setRowCount(rowcount);
+            mButtonView.setColumnCount(cols);
+
+            //Step4 - we are now at point where button list and view cleaned up. Only remaining
+            //task is to add the buttons still remaining in our list...
+            for (int i = 0; i < showButtons.size(); i++) {
+                Button action = new Button(getActivity());
+                int buttonId = BUTTON_BASE + showButtons.get(i);
+                //now get the name...
+                action.setText(getButtonName(showButtons.get(i)));
+                action.setId(buttonId);
+                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT);
+                action.setLayoutParams(params);
+                action.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Toast.makeText(getActivity(), "Hi there " + (v.getId() - BUTTON_BASE), Toast.LENGTH_SHORT).show();
+                    }
+                });
+                mButtonView.addView(action);
+            }
+        }
+    }
+
+    /**
+     * Returns string resource for the button action
+     * @param buttonId
+     * @return
+     */
+    private String getButtonName(int buttonId) {
+        String description = "unknown";
+        switch (buttonId) {
+            case BUTTON_SHOWAPPS:
+                description = getActivity().getResources().getString(R.string.show_apps);
+                break;
+            case BUTTON_ADD_MISSING:
+                description = getActivity().getResources().getString(R.string.add_missing);
+                break;
+            case BUTTON_CHANGENAME:
+                description = getActivity().getResources().getString(R.string.change_name);
+                break;
+            case BUTTON_REMOVE:
+                description = getActivity().getResources().getString(R.string.remove_device);
+                break;
+            case BUTTON_CLONEFROM:
+                description = getActivity().getResources().getString(R.string.clonefrom);
+                break;
+            case BUTTON_RUN:
+                description = getActivity().getResources().getString(R.string.run_app);
+                break;
+            case BUTTON_UNINSTALL:
+                description = getActivity().getResources().getString(R.string.uninstall);
+                break;
+            case BUTTON_INSTALL:
+                description = getActivity().getResources().getString(R.string.install);
+                break;
+        }
+        return description;
+    }
+
 
     private void setMetabarColor(int resid) {
         if (resid == 0) {

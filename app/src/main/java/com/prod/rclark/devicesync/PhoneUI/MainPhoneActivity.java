@@ -462,6 +462,10 @@ public class MainPhoneActivity extends AppCompatActivity
     }
 
     public void onSectionAttached(int number) {
+        if (mUIDataSetup == null) {
+            mUIDataSetup = new UIDataSetup(getApplicationContext());
+        }
+
         mTitle = "AppSyncr - " + mUIDataSetup.getRowHeader(number);
 
         restoreActionBar();
@@ -546,6 +550,10 @@ public class MainPhoneActivity extends AppCompatActivity
         @Override
         public void onAttach(Context ctx) {
             super.onAttach(ctx);
+
+            if (mUIDataSetup == null) {
+                mUIDataSetup = new UIDataSetup(ctx);
+            }
 
             mPosition = getArguments().getInt(ARG_SECTION_NUMBER);
 

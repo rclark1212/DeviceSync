@@ -108,7 +108,7 @@ public class CardPresenter extends Presenter {
                 if (element.type == AppContract.TYPE_ATV) {
                     drawable = cardView.getResources().getDrawable(R.drawable.shieldtv);
                 } else {
-                    drawable = cardView.getResources().getDrawable(R.drawable.shieldtablet);
+                    drawable = cardView.getResources().getDrawable(Utils.getTabletResource(cardView.getContext()));
                 }
                 //Use glide for all image sets...
                 Glide.with(cardView.getContext())
