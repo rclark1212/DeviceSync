@@ -511,8 +511,10 @@ public class Utils {
         }
 
         //Okay - we have the 2 lists... Call our APK routines
-        InstallUtil.batchInstallAPK(ctx, apk_install);
-        //and now uninstall
-        InstallUtil.batchUninstallAPK(ctx, apk_uninstall);
+        //and now uninstall. Do uninstall first for space reasons... Ha, put uninstall second for it to come up last (i.e. first)
+        //InstallUtil.batchInstallAPK(ctx, apk_install);
+        UIUtils.confirmBatchOperation(ctx, apk_install, true);
+        //InstallUtil.batchUninstallAPK(ctx, apk_uninstall);
+        UIUtils.confirmBatchOperation(ctx, apk_uninstall, false);
     }
 }

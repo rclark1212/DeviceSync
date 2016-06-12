@@ -101,6 +101,9 @@
     <string name="restore_disable_syncs">Disable Syncing</string>
     <string name="restore_no">No</string>
     <string name="restore_yes">Restore Apps</string>
+    <string name="batch_install_title">Confirm Batch App Install</string>
+    <string name="batch_uninstall_title">Confirm Batch App UnInstall</string>
+    <string name="confirm">Confirm</string>
 
     <!-- control content descriptions -->
     <string name="device_photo">Photo of device or application</string>

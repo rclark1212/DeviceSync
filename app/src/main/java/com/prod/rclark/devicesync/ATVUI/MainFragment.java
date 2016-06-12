@@ -356,7 +356,8 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                         }
                     }
                     //Okay - created list - go install!
-                    InstallUtil.batchInstallAPK(getActivity(), apklist);
+                    //InstallUtil.batchInstallAPK(getActivity(), apklist);
+                    UIUtils.confirmBatchOperation(getActivity(), apklist, true);
                 } else if (action == DetailsActivity.DETAIL_RETCODE_REMOVEDEVICE) {
                     //Okay, remove device
                     //To delete device, just have to delete from the CP. That deletes from firebase. Which then
@@ -642,7 +643,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
             rowAdapter.swapCursor(null);
         }
     }
-    
+
 
 
     private void setupUIElements() {

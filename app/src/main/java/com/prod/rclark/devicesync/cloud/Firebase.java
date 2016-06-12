@@ -537,7 +537,7 @@ public class Firebase {
 
         //Get the source databuffer
         ByteArrayOutputStream bitmapStream = new ByteArrayOutputStream();
-        bmap.compress(Bitmap.CompressFormat.JPEG, 100, bitmapStream);
+        bmap.compress(Bitmap.CompressFormat.JPEG, 50, bitmapStream);            //try to save on space - 50% quality
         byte[] data = bitmapStream.toByteArray();
         UploadTask uploadTask = fileRef.putBytes(data);
 

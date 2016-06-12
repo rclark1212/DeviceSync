@@ -487,7 +487,8 @@ public class MainPhoneActivity extends AppCompatActivity
                         apklist.add(missing.get(i).pkg);
                     }
                     //Okay - created list - go install!
-                    InstallUtil.batchInstallAPK(this, apklist);
+                    //InstallUtil.batchInstallAPK(this, apklist);
+                    UIUtils.confirmBatchOperation(this, apklist, true);
                 } else if (action == DetailsActivity.DETAIL_RETCODE_REMOVEDEVICE) {
                     //Okay, remove device
                     //To delete device, just have to delete from the CP. That deletes from firebase. Which then

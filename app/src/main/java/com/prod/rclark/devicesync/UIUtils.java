@@ -84,7 +84,7 @@ public class UIUtils {
                         //let the updates go through
                         GCESync.startActionUpdateLocal(ctx, null, null);
                         //and kick off the batch install
-                        InstallUtil.batchInstallAPK(ctx, apklist);
+                        confirmBatchOperation(ctx, apklist, true);
                     }
                 });
 
@@ -158,4 +158,47 @@ public class UIUtils {
         alertDialog.show();
     }
 
+    /**
+     * Used to confirm with user the batch install/uninstalls before executing.
+     * Will call either batch install or batch uninstall
+     */
+    public static void confirmBatchOperation(final Context ctx, final ArrayList<String> apklist, final boolean bInstall) {
+
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(ctx);
+
+        if (bInstall) {
+            alertDialogBuilder.setTitle(ctx.getString(R.string.batch_install_title));
+        } else {
+            alertDialogBuilder.setTitle(ctx.getString(R.string.batch_uninstall_title));
+        }
+
+        String msg = "";
+        for (int i=0; i<apklist.size(); i++) {
+            msg = msg + apklist.get(i) + ", ";
+        }
+
+        alertDialogBuilder
+                .setMessage(msg)
+                .setNegativeButton(ctx.getResources().getString(R.string.cancel), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                        //Do nothing
+                    }
+                })
+                .setPositiveButton(ctx.getResources().getString(R.string.confirm), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                        if (bInstall) {
+                            InstallUtil.batchInstallAPK(ctx, apklist);
+                        } else {
+                            InstallUtil.batchUninstallAPK(ctx, apklist);
+                        }
+                    }
+                });
+
+        AlertDialog alertDialog = alertDialogBuilder.create();
+        alertDialog.show();
+    }
 }
