@@ -438,14 +438,20 @@ public class MainPhoneActivity extends AppCompatActivity
         if (requestCode == REQUEST_INIT_COMPLETE) {
             //init is done!
             Log.d(TAG, "InitService complete");
-            //set up flag to complete setup
-            mbPendingCompleteSetup = true;
-            //make sure we are logged in by service...
-            //below message will generate a broadcast message back which will then finish setup
-            if (!sendMessageToService(FirebaseMessengerService.MSG_ATTEMPT_LOGON, null)) {
-                //We have a problem
-                //Toast.makeText(getApplicationContext(), "Service not bound", Toast.LENGTH_SHORT).show();
-                mPendingSvsMessage = FirebaseMessengerService.MSG_ATTEMPT_LOGON;
+            Log.d(TAG, "InitService complete");
+            //was it successful?
+            if (resultCode == RESULT_OK) {
+                //set up flag to complete setup
+                mbPendingCompleteSetup = true;
+                //make sure we are logged in by service...
+                //below message will generate a broadcast message back which will then finish setup
+                if (!sendMessageToService(FirebaseMessengerService.MSG_ATTEMPT_LOGON, null)) {
+                    //We have a problem
+                    //Toast.makeText(getApplicationContext(), "Service not bound", Toast.LENGTH_SHORT).show();
+                    mPendingSvsMessage = FirebaseMessengerService.MSG_ATTEMPT_LOGON;
+                }
+            } else {
+                UIUtils.finishIt(this);
             }
         }
     }

@@ -9,6 +9,7 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v7.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -353,7 +354,7 @@ public class PhoneDetailFragment extends Fragment {
             //Step4 - we are now at point where button list and view cleaned up. Only remaining
             //task is to add the buttons still remaining in our list...
             for (int i = 0; i < showButtons.size(); i++) {
-                Button action = new Button(getActivity());
+                Button action = new Button(new ContextThemeWrapper(getActivity(), R.style.PhoneDetailButton), null, R.style.PhoneDetailButton);
                 int buttonId = BUTTON_BASE + showButtons.get(i);
                 //now get the name...
                 action.setText(getButtonName(showButtons.get(i)));

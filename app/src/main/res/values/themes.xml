@@ -7,7 +7,7 @@
         <item name="colorAccent">@color/theme_accent</item>
 
         <!-- make buttons flat -->
-        <item name="android:buttonStyle">@style/PhoneButton</item>
+        <!-- <item name="android:buttonStyle">@style/PhoneButton</item> -->
 
         <!-- transition styles -->
         <item name="android:windowEnterTransition">@transition/details_window_enter_transition</item>
@@ -17,7 +17,7 @@
 
     <!-- <item name="android:textStyle">bold</item> -->
     <!-- <item name="android:background">@color/theme_primary</item> -->
-    <style name="PhoneButton" parent="Base.Widget.AppCompat.Button">
+    <style name="PhoneDetailButton" parent="Base.Widget.AppCompat.Button">
         <item name="android:minWidth">@dimen/btn_flat_min_width</item>
         <item name="android:minHeight">@dimen/btn_flat_min_height</item>
         <item name="android:textAllCaps">true</item>

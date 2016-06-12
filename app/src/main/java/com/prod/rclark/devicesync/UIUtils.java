@@ -134,4 +134,28 @@ public class UIUtils {
         alertDialog.show();
     }
 
+    /**
+     * Used to exit app when there is an error. Really GMS services the only error that will cause controlled exit :)
+     */
+    public static void finishIt(final Activity activity) {
+
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(activity);
+
+        alertDialogBuilder.setTitle(activity.getResources().getString(R.string.app_err_title));
+
+        alertDialogBuilder
+                .setMessage(activity.getResources().getString(R.string.gms_missing_msg))
+                .setCancelable(false)
+                .setNeutralButton(activity.getResources().getString(R.string.ok), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                        activity.finish();
+                    }
+                });
+
+        AlertDialog alertDialog = alertDialogBuilder.create();
+        alertDialog.show();
+    }
+
 }

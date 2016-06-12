@@ -74,6 +74,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.prod.rclark.devicesync.HelpActivity;
 import com.prod.rclark.devicesync.InitActivity;
 import com.prod.rclark.devicesync.R;
+import com.prod.rclark.devicesync.UIUtils;
 import com.prod.rclark.devicesync.Utils;
 import com.prod.rclark.devicesync.cloud.FirebaseMessengerService;
 import com.prod.rclark.devicesync.sync.GCESync;
@@ -251,7 +252,12 @@ public class MainActivity extends Activity implements
         if (requestCode == REQUEST_INIT_COMPLETE) {
             //init done!
             Log.d(TAG, "InitService complete");
-            finishSetup();
+            //was it successful?
+            if (resultCode == RESULT_OK) {
+                finishSetup();
+            } else {
+                UIUtils.finishIt(this);
+            }
         }
     }
 }

@@ -135,7 +135,8 @@ public class InitActivity extends Activity implements
         Log.d(TAG, "Checking internet");
         //First check internet connectivity
         if (!Utils.isOnline(this)) {
-            finishIt();
+            this.setResult(RESULT_CANCELED);
+            finish();
         } else {
             appInitStateMachine(STATE_EVENT_INET_OKAY);
         }
@@ -330,7 +331,7 @@ public class InitActivity extends Activity implements
             if (mbTutorialShown) {
                 Log.d(TAG, "Init routine - all done");
                 mInitCurrentState = STATE_APPINIT_COMPLETE;
-                setResult(RESULT_OK);
+                this.setResult(RESULT_OK);
                 finish();
             }
         }
@@ -387,30 +388,6 @@ public class InitActivity extends Activity implements
     }
 
     /**
-     * Used to exit app when there is an error. Really GMS services the only error that will cause controlled exit :)
-     */
-    private void finishIt() {
-
-        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
-
-        alertDialogBuilder.setTitle(getResources().getString(R.string.app_err_title));
-
-        alertDialogBuilder
-                .setMessage(getResources().getString(R.string.gms_missing_msg))
-                .setCancelable(false)
-                .setNeutralButton(getResources().getString(R.string.ok), new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.cancel();
-                        finish();
-                    }
-                });
-
-        AlertDialog alertDialog = alertDialogBuilder.create();
-        alertDialog.show();
-    }
-
-    /**
      * Check if GMS services are available
      */
     private boolean isGMSAvailable() {
@@ -425,7 +402,8 @@ public class InitActivity extends Activity implements
                 bret = false;
             } else {
                 //Just exit here...
-                finishIt();
+                this.setResult(RESULT_CANCELED);
+                finish();
             }
         }
         return bret;
@@ -591,7 +569,8 @@ public class InitActivity extends Activity implements
     public void onConnectionFailed(ConnectionResult result) {
         Log.e(TAG, "MainFragment Failed google GMS services connect - result:" + result);
         //We are not connected - exit
-        finishIt();
+        this.setResult(RESULT_CANCELED);
+        finish();
     }
 
     @Override
@@ -624,7 +603,8 @@ public class InitActivity extends Activity implements
                 Log.d(TAG, "Firebase failure");
                 Toast.makeText(this, "Firebase failure...", Toast.LENGTH_LONG);
                 // user is not signed in. We are brutal in our requirements (but app makes no sense if user not signed in)
-                finishIt();
+                this.setResult(RESULT_CANCELED);
+                finish();
             }
             appInitStateMachine(STATE_EVENT_FIREBASE_LOGON);
         }

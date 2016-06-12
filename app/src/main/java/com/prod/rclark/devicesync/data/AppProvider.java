@@ -483,6 +483,18 @@ public class AppProvider extends ContentProvider {
                 }
                 break;
             }
+            case DEVICES_WITH_DEVICE: {
+                String device = AppContract.DevicesEntry.getDeviceFromUri(uri);
+                String[] parse_selectionArgs = new String[]{device};
+                String parse_selection = sDevicesSelection;
+                deleteList = getDeviceDeleteList(uri, parse_selection, parse_selectionArgs);
+                rowsDeleted = db.delete(
+                        AppContract.DevicesEntry.TABLE_NAME, parse_selection, parse_selectionArgs);
+                if (rowsDeleted > 0) {
+                    deleteDeviceDeleteList(deleteList);
+                }
+                break;
+            }
             case DEVICES:
                 deleteList = getDeviceDeleteList(uri, selection, selectionArgs);
                 rowsDeleted = db.delete(
