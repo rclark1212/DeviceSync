@@ -362,6 +362,8 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                     //To delete device, just have to delete from the CP. That deletes from firebase. Which then
                     //mirrors down to everyone else.
                     DBUtils.deleteDeviceFromCP(getActivity(), serial);
+                    //And force a sync
+                    GCESync.startActionUpdateLocal(getActivity(), null, null);
                 } else if (action == DetailsActivity.DETAIL_RETCODE_CLONEFROM) {
                     Utils.cloneDevice(getActivity(), serial);
                 }
@@ -640,57 +642,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
             rowAdapter.swapCursor(null);
         }
     }
-
-    /**
-     * Used to ask user if they want to download apps found on network for the device (in case of a device wipe)
-     */
-    private void askDownloadExistingApps(final ArrayList<ObjectDetail> missing) {
-
-        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(getActivity());
-
-        alertDialogBuilder.setTitle(getResources().getString(R.string.restore_apps_title));
-
-        String msg = String.format(getString(R.string.restore_apps_msg), missing.size());
-        alertDialogBuilder
-                .setMessage(msg)
-                .setCancelable(false)
-                .setNeutralButton(getResources().getString(R.string.restore_disable_syncs), new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.cancel();
-                        //disable syncs
-                        Utils.setSyncDisabled(getActivity(), true);
-                        //FIXME - note this leaves apps in a weird state. Will show apps as local to device but no option
-                        //to install, etc...
-                    }
-                })
-                .setNegativeButton(getResources().getString(R.string.restore_no), new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.cancel();
-                        GCESync.startActionUpdateLocal(getActivity(), null, null);
-                    }
-                })
-                .setPositiveButton(getResources().getString(R.string.restore_yes), new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.cancel();
-                        //build the install list...
-                        ArrayList<String> apklist = new ArrayList<String>();
-                        for (int i=0; i < missing.size(); i++) {
-                            apklist.add(missing.get(i).pkg);
-                        }
-                        //let the updates go through
-                        GCESync.startActionUpdateLocal(getActivity(), null, null);
-                        //and kick off the batch install
-                        InstallUtil.batchInstallAPK(getActivity(), apklist);
-                    }
-                });
-
-        AlertDialog alertDialog = alertDialogBuilder.create();
-        alertDialog.show();
-    }
-
+    
 
 
     private void setupUIElements() {
