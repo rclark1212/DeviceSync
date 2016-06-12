@@ -28,9 +28,11 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.resource.drawable.GlideDrawable;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
+import com.prod.rclark.devicesync.ATVUI.DetailsActivity;
 import com.prod.rclark.devicesync.AppUtils;
 import com.prod.rclark.devicesync.DBUtils;
 import com.prod.rclark.devicesync.ImageDetail;
+import com.prod.rclark.devicesync.InstallUtil;
 import com.prod.rclark.devicesync.ObjectDetail;
 import com.prod.rclark.devicesync.R;
 import com.prod.rclark.devicesync.UIUtils;
@@ -285,13 +287,14 @@ public class PhoneDetailFragment extends Fragment {
      * App:Local = ACTION_RUNAPP, ACTION_UNINSTALL
      * App:Remote = ACTION_INSTALL
      */
-    private void setUpButtons(ObjectDetail object) {
+    private void setUpButtons(final ObjectDetail object) {
         //Step0 - see if this is right type... By definition, this code only runs on phones/tablets...
         if (!mbIsDevice) {
-            if (object.type == AppContract.TYPE_TABLET) {
+            if (object.type == AppContract.TYPE_ATV) {
                 return;
             }
         }
+
         //Okay - step 1, figure out what buttons to show
         ArrayList<Integer> showButtons = new ArrayList<Integer>();
         boolean isLocal = DBUtils.isObjectLocal(getActivity(), object);
@@ -304,7 +307,9 @@ public class PhoneDetailFragment extends Fragment {
             } else {
                 showButtons.add(BUTTON_SHOWAPPS);
                 showButtons.add(BUTTON_REMOVE);
-                showButtons.add(BUTTON_CLONEFROM);
+                if (object.type == AppContract.TYPE_TABLET) {
+                    showButtons.add(BUTTON_CLONEFROM);
+                }
             }
         } else {
             if (isLocal) {
@@ -365,11 +370,57 @@ public class PhoneDetailFragment extends Fragment {
                 action.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        Toast.makeText(getActivity(), "Hi there " + (v.getId() - BUTTON_BASE), Toast.LENGTH_SHORT).show();
+                        //Toast.makeText(getActivity(), "Hi there " + (v.getId() - BUTTON_BASE), Toast.LENGTH_SHORT).show();
+                        processButtonClick(v, object);
                     }
                 });
                 mButtonView.addView(action);
             }
+        }
+    }
+
+    /**
+     * Implements the actions for the various buttons
+     * @param v
+     */
+    private void processButtonClick(View v, ObjectDetail object) {
+        //Which button was pressed?
+        switch ((v.getId()-BUTTON_BASE)) {
+            case BUTTON_SHOWAPPS:
+                PhoneDetailActivity.mOpenSerial = object.serial;
+                PhoneDetailActivity.mReturnCode = DetailsActivity.DETAIL_RETCODE_OPENROW;
+                getActivity().onBackPressed();
+                break;
+            case BUTTON_ADD_MISSING:
+                PhoneDetailActivity.mOpenSerial = object.serial;
+                PhoneDetailActivity.mReturnCode = DetailsActivity.DETAIL_RETCODE_INSTALLMISSING;
+                getActivity().onBackPressed();
+                break;
+            case BUTTON_CHANGENAME:
+                UIUtils.changeBTName(getActivity(), object.label);
+                break;
+            case BUTTON_REMOVE:
+                PhoneDetailActivity.mOpenSerial = object.serial;
+                PhoneDetailActivity.mReturnCode = DetailsActivity.DETAIL_RETCODE_REMOVEDEVICE;
+                getActivity().onBackPressed();
+                break;
+            case BUTTON_CLONEFROM:
+                PhoneDetailActivity.mOpenSerial = object.serial;
+                PhoneDetailActivity.mReturnCode = DetailsActivity.DETAIL_RETCODE_CLONEFROM;
+                getActivity().onBackPressed();
+                break;
+            case BUTTON_RUN:
+                Utils.launchApp(getActivity(), object.pkg);
+                getActivity().onBackPressed();
+                break;
+            case BUTTON_UNINSTALL:
+                InstallUtil.uninstallAPK(getActivity(), object.pkg);
+                getActivity().onBackPressed();
+                break;
+            case BUTTON_INSTALL:
+                InstallUtil.installAPK(getActivity(), object.pkg);
+                getActivity().onBackPressed();
+                break;
         }
     }
 

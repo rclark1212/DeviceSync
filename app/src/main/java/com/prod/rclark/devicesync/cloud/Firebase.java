@@ -293,7 +293,7 @@ public class Firebase {
                                 Log.d(TAG, "Updating app serial/app in CP " + object.serial + " " + object.pkg);
                                 DBUtils.saveAppToCP(mCtx, object, false);
                             } else {
-                                Log.d(TAG, "Got an event for a device record with stale timestamp - must be due to our trigger. Punt on updating " + object.serial);
+                                Log.d(TAG, "Got an event for an app record with stale timestamp - must be due to our trigger. Punt on updating " + object.serial);
                             }
                         } else {
                             if (!Build.SERIAL.equals(object.serial)) {

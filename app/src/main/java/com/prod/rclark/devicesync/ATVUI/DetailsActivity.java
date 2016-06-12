@@ -41,7 +41,7 @@ public class DetailsActivity extends Activity {
     public static final String SHARED_ELEMENT_NAME = "hero";
     public static final String OBJECTURI = "ObjectUri";
     public static String mOpenSerial;               //returns the serial number of the row to open
-    public static int mReturnCode = 0; //set to true to install missing on return
+    public static int mReturnCode = 0;              //set an ordinal on return to indicate what to do
     private static final String TAG = "VideoDetailsActivity";
 
     //return codes

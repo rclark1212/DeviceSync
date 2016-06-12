@@ -53,16 +53,16 @@ import com.prod.rclark.devicesync.data.AppContract;
  */
 public class ListCursorObjectAdapter extends RecyclerView.Adapter <ListCursorObjectAdapter.ViewHolder> {
     private CursorAdapter mCursorAdapter;
-    private Context mCtx;
+    private Activity mActivity;
     private boolean mbIsDevice;
     private int mRowPosition;
 
     // Provide a constructor
-    public ListCursorObjectAdapter(Context ctx, Cursor c, boolean isDevice, int rowposition) {
-        mCtx = ctx;
+    public ListCursorObjectAdapter(Activity activity, Cursor c, boolean isDevice, int rowposition) {
+        mActivity = activity;
         mbIsDevice = isDevice;
         mRowPosition = rowposition;
-        mCursorAdapter = new CursorAdapter(mCtx, c, 0) {
+        mCursorAdapter = new CursorAdapter(mActivity, c, 0) {
             @Override
             public View newView(Context context, Cursor cursor, ViewGroup parent) {
                 if ( parent instanceof RecyclerView ) {
@@ -171,6 +171,7 @@ public class ListCursorObjectAdapter extends RecyclerView.Adapter <ListCursorObj
             TextView title = (TextView) v.findViewById(R.id.grid_title);
             TextView subtitle = (TextView) v.findViewById(R.id.grid_subtitle);
 
+            /*
             String display = "clicky";
             Object serial = title.getTag();
             Object apk = subtitle.getTag();
@@ -183,6 +184,7 @@ public class ListCursorObjectAdapter extends RecyclerView.Adapter <ListCursorObj
             }
 
             Toast.makeText(v.getContext(), display, Toast.LENGTH_SHORT).show();
+            */
 
             //Kick off detail activity
             //set up the base intent
@@ -195,10 +197,11 @@ public class ListCursorObjectAdapter extends RecyclerView.Adapter <ListCursorObj
             //late binding setting of transition name
             ImageView iconView = (ImageView) v.findViewById(R.id.grid_item_image);
             iconView.setTransitionName(v.getResources().getString(R.string.transition) + adapterPosition);
-            ActivityOptions options = ActivityOptions.makeSceneTransitionAnimation((Activity)mCtx, iconView,
+            ActivityOptions options = ActivityOptions.makeSceneTransitionAnimation(mActivity, iconView,
                     iconView.getTransitionName());
 
-            v.getContext().startActivity(intent, options.toBundle());
+            //v.getContext().startActivity(intent, options.toBundle());
+            mActivity.startActivityForResult(intent, MainPhoneActivity.PHONE_DETAILS_REQUEST_CODE, options.toBundle());
         }
 
     }
@@ -213,14 +216,14 @@ public class ListCursorObjectAdapter extends RecyclerView.Adapter <ListCursorObj
     public void onBindViewHolder(ViewHolder holder, int position) {
         // Passing the binding operation to cursor loader
         mCursorAdapter.getCursor().moveToPosition(position);
-        mCursorAdapter.bindView(holder.itemView, mCtx, mCursorAdapter.getCursor());
+        mCursorAdapter.bindView(holder.itemView, mActivity, mCursorAdapter.getCursor());
         holder.itemView.setTag(position);
     }
 
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         // Passing the inflater job to the cursor-adapter
-        View v = mCursorAdapter.newView(mCtx, mCursorAdapter.getCursor(), parent);
+        View v = mCursorAdapter.newView(mActivity, mCursorAdapter.getCursor(), parent);
         return new ViewHolder(v);
     }
 }

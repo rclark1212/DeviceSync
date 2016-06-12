@@ -19,6 +19,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
+import com.prod.rclark.devicesync.ATVUI.DetailsActivity;
+import com.prod.rclark.devicesync.ATVUI.MainFragment;
 import com.prod.rclark.devicesync.DBUtils;
 import com.prod.rclark.devicesync.ObjectDetail;
 import com.prod.rclark.devicesync.R;
@@ -37,6 +39,9 @@ public class PhoneDetailActivity extends AppCompatActivity {
 
     private int mStartPos;              //indicates starting position
     private int mSelectedPos;           //indicates selected position
+
+    public static String mOpenSerial;               //returns the serial number of the row to open
+    public static int mReturnCode = 0;              //set an ordinal on return to indicate what to do
 
     private ViewPager mPager;
     private MyPagerAdapter mPagerAdapter;
@@ -231,9 +236,30 @@ public class PhoneDetailActivity extends AppCompatActivity {
     public void finishAfterTransition() {
         mIsReturning = true;
 
-        //Return data to mainactivity here (i.e. return back data allowing transition to be properly
-        //set up to the right element)
+        //Return data to mainactivity here. Explicit data (commands) follow
+        //Note that we re-use the ordinals spec'd in ATVUI (no reason not to save typing)
         Intent data = new Intent();
+        if (mReturnCode == DetailsActivity.DETAIL_RETCODE_OPENROW) {
+            Log.d(TAG, "Setting up open serial return");
+            data.putExtra(MainFragment.DETAILS_RESULT_KEY, mOpenSerial);
+            data.putExtra(MainFragment.DETAILS_RESULT_ACTION, DetailsActivity.DETAIL_RETCODE_OPENROW);
+        } else if (mReturnCode == DetailsActivity.DETAIL_RETCODE_INSTALLMISSING) {
+            Log.d(TAG, "Setting up install missing return");
+            data.putExtra(MainFragment.DETAILS_RESULT_KEY, mOpenSerial);
+            data.putExtra(MainFragment.DETAILS_RESULT_ACTION, DetailsActivity.DETAIL_RETCODE_INSTALLMISSING);
+        } else if (mReturnCode == DetailsActivity.DETAIL_RETCODE_REMOVEDEVICE) {
+            Log.d(TAG, "Setting up remove device return");
+            data.putExtra(MainFragment.DETAILS_RESULT_KEY, mOpenSerial);
+            data.putExtra(MainFragment.DETAILS_RESULT_ACTION, DetailsActivity.DETAIL_RETCODE_REMOVEDEVICE);
+        } else if (mReturnCode == DetailsActivity.DETAIL_RETCODE_CLONEFROM) {
+            Log.d(TAG, "Setting up clone from return");
+            data.putExtra(MainFragment.DETAILS_RESULT_KEY, mOpenSerial);
+            data.putExtra(MainFragment.DETAILS_RESULT_ACTION, DetailsActivity.DETAIL_RETCODE_CLONEFROM);
+        }
+
+        mReturnCode = 0;
+
+        //Transition elements now
         data.putExtra(MainPhoneActivity.EXTRA_STARTING_POS, mStartPos);
         data.putExtra(MainPhoneActivity.EXTRA_CURRENT_POS, mSelectedPos);
         setResult(RESULT_OK, data);

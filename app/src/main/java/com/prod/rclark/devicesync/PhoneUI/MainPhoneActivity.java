@@ -46,6 +46,8 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.preference.PreferenceManager;
+import android.support.v17.leanback.widget.ArrayObjectAdapter;
+import android.support.v17.leanback.widget.ListRow;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -59,8 +61,11 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.view.ViewTreeObserver;
 
+import com.prod.rclark.devicesync.ATVUI.DetailsActivity;
+import com.prod.rclark.devicesync.ATVUI.MainFragment;
 import com.prod.rclark.devicesync.DBUtils;
 import com.prod.rclark.devicesync.InitActivity;
+import com.prod.rclark.devicesync.InstallUtil;
 import com.prod.rclark.devicesync.ObjectDetail;
 import com.prod.rclark.devicesync.R;
 import com.prod.rclark.devicesync.UIDataSetup;
@@ -93,6 +98,7 @@ public class MainPhoneActivity extends AppCompatActivity
 
     //Pending intent returns...
     private static final int REQUEST_INIT_COMPLETE = 3022;
+    public static final int PHONE_DETAILS_REQUEST_CODE = 3030;
 
     //Data keys used between list/detail views
     static final String EXTRA_STARTING_POS = "extra_starting_pos";
@@ -438,7 +444,6 @@ public class MainPhoneActivity extends AppCompatActivity
         if (requestCode == REQUEST_INIT_COMPLETE) {
             //init is done!
             Log.d(TAG, "InitService complete");
-            Log.d(TAG, "InitService complete");
             //was it successful?
             if (resultCode == RESULT_OK) {
                 //set up flag to complete setup
@@ -452,6 +457,47 @@ public class MainPhoneActivity extends AppCompatActivity
                 }
             } else {
                 UIUtils.finishIt(this);
+            }
+        } else if (PHONE_DETAILS_REQUEST_CODE == requestCode) {
+            //came back from details screen
+            //check to see if detail screen selection was to show apps for a device...
+            if (data != null) {
+                String serial = data.getStringExtra(MainFragment.DETAILS_RESULT_KEY);
+                int action = data.getIntExtra(MainFragment.DETAILS_RESULT_ACTION, 0);
+
+                if (action == DetailsActivity.DETAIL_RETCODE_OPENROW) {
+                    //find the row with this serial number...
+                    //and select it...
+                    if (serial != null) {
+                        Log.d(TAG, "DetailRet - select pos");
+
+                        //get the id...
+                        int id = mUIDataSetup.getSerialRow(serial);
+
+                        //and select it
+                        mNavigationDrawerFragment.selectItem(id);
+                    }
+                } else if (action == DetailsActivity.DETAIL_RETCODE_INSTALLMISSING) {
+                    //get to install our missing apps...
+                    //Get the missing items
+                    ArrayList<ObjectDetail> missing = DBUtils.getMissingApps(this, Build.SERIAL);
+                    //Now construct the install list...
+                    ArrayList<String> apklist = new ArrayList<String>();
+                    for (int i=0; i < missing.size(); i++) {
+                        apklist.add(missing.get(i).pkg);
+                    }
+                    //Okay - created list - go install!
+                    InstallUtil.batchInstallAPK(this, apklist);
+                } else if (action == DetailsActivity.DETAIL_RETCODE_REMOVEDEVICE) {
+                    //Okay, remove device
+                    //To delete device, just have to delete from the CP. That deletes from firebase. Which then
+                    //mirrors down to everyone else.
+                    DBUtils.deleteDeviceFromCP(this, serial);
+                    //And force a sync
+                    GCESync.startActionUpdateLocal(this, null, null);
+                } else if (action == DetailsActivity.DETAIL_RETCODE_CLONEFROM) {
+                    Utils.cloneDevice(this, serial);
+                }
             }
         }
     }

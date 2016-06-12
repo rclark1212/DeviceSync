@@ -156,6 +156,10 @@ public class NavigationDrawerFragment extends Fragment {
                 headers));
         mDrawerListView.setItemChecked(mCurrentSelectedPosition, true);
 
+        //Check if this is cardview... which indicates big tablet mode. lock drawer open in this case
+        if (getResources().getBoolean(R.bool.detail_is_card)) {
+            mDrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_OPEN);
+        }
 
         // set a custom shadow that overlays the main content when the drawer opens
         mDrawerLayout.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
@@ -221,7 +225,7 @@ public class NavigationDrawerFragment extends Fragment {
         mDrawerLayout.setDrawerListener(mDrawerToggle);
     }
 
-    private void selectItem(int position) {
+    public void selectItem(int position) {
         mCurrentSelectedPosition = position;
         if (mDrawerListView != null) {
             mDrawerListView.setItemChecked(position, true);

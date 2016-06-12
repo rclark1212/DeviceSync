@@ -33,7 +33,7 @@ import java.util.ArrayList;
 
 public class ListArrayObjectAdapter extends RecyclerView.Adapter <ListArrayObjectAdapter.ViewHolder> {
     private ArrayList<ObjectDetail> mArray;
-    private Context mCtx;
+    private Activity mActivity;
     private int mRowPosition;
 
     // Provide a direct reference to each of the views within a data item
@@ -59,12 +59,14 @@ public class ListArrayObjectAdapter extends RecyclerView.Adapter <ListArrayObjec
         public void onClick(View v) {
             int position = getAdapterPosition();
             ImageView clicked = (ImageView) v.findViewById(R.id.grid_item_image);
+            /*
             String display = "clicky";
             Object object = clicked.getTag();
             if (object instanceof ObjectDetail) {
                 display = "clickster of " + ((ObjectDetail) object).serial + " " + ((ObjectDetail) object).pkg;
             }
             Toast.makeText(v.getContext(), display, Toast.LENGTH_SHORT).show();
+            */
 
             //Kick off detail activity
             //set up the base intent
@@ -77,16 +79,17 @@ public class ListArrayObjectAdapter extends RecyclerView.Adapter <ListArrayObjec
             //late binding setting of transition name
             ImageView iconView = (ImageView) v.findViewById(R.id.grid_item_image);
             iconView.setTransitionName(v.getResources().getString(R.string.transition) + position);
-            ActivityOptions options = ActivityOptions.makeSceneTransitionAnimation((Activity)mCtx, iconView,
+            ActivityOptions options = ActivityOptions.makeSceneTransitionAnimation(mActivity, iconView,
                     iconView.getTransitionName());
 
-            v.getContext().startActivity(intent, options.toBundle());
+            //v.getContext().startActivity(intent, options.toBundle());
+            mActivity.startActivityForResult(intent, MainPhoneActivity.PHONE_DETAILS_REQUEST_CODE, options.toBundle());
         }
     }
 
     // Provide a constructor
-    public ListArrayObjectAdapter(Context ctx, ArrayList<ObjectDetail> array, int rowposition) {
-        mCtx = ctx;
+    public ListArrayObjectAdapter(Activity activity, ArrayList<ObjectDetail> array, int rowposition) {
+        mActivity = activity;
         mArray = array;
         mRowPosition = rowposition;
     }

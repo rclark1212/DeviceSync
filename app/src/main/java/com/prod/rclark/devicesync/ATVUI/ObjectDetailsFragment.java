@@ -177,7 +177,9 @@ public class ObjectDetailsFragment extends DetailsFragment {
             } else {
                 actionAdapter.add(new Action(ACTION_SHOWAPPS, getResources().getString(R.string.show_apps)));
                 actionAdapter.add(new Action(ACTION_REMOVEDEVICE, getResources().getString(R.string.remove_device)));
-                actionAdapter.add(new Action(ACTION_CLONEFROM, getResources().getString(R.string.clonefrom)));
+                if (mSelectedObject.type == AppContract.TYPE_ATV) {
+                    actionAdapter.add(new Action(ACTION_CLONEFROM, getResources().getString(R.string.clonefrom)));
+                }
             }
         } else {
             //Get local app if it exists...
@@ -212,28 +214,25 @@ public class ObjectDetailsFragment extends DetailsFragment {
                             });
                 }
             }
-            /*
-            if (mSelectedObject.banner != null) {
-                row.setImageDrawable(mSelectedObject.banner);
-            } else {
-                row.setImageDrawable(getResources().getDrawable(R.drawable.noimage));
-            }*/
+
             //and setup the actions...
-            if (DBUtils.isObjectLocal(getActivity(), mSelectedObject)) {
-                //run app and uninstall
-                actionAdapter.add(new Action(ACTION_RUNAPP, getResources().getString(R.string.run_app)));
-                actionAdapter.add(new Action(ACTION_UNINSTALL, getResources().getString(R.string.uninstall)));
-            } else {
-                //install if the device type is correct...
-                if (Utils.bIsThisATV(getActivity())) {
-                    if ((mSelectedObject.type == AppContract.TYPE_ATV)
-                        || (mSelectedObject.type == AppContract.TYPE_BOTH)) {
-                        actionAdapter.add(new Action(ACTION_INSTALL, getResources().getString(R.string.install)));
-                    }
+            if (mSelectedObject.type == AppContract.TYPE_ATV) {
+                if (DBUtils.isObjectLocal(getActivity(), mSelectedObject)) {
+                    //run app and uninstall
+                    actionAdapter.add(new Action(ACTION_RUNAPP, getResources().getString(R.string.run_app)));
+                    actionAdapter.add(new Action(ACTION_UNINSTALL, getResources().getString(R.string.uninstall)));
                 } else {
-                    if ((mSelectedObject.type == AppContract.TYPE_TABLET)
-                            || (mSelectedObject.type == AppContract.TYPE_BOTH)) {
-                        actionAdapter.add(new Action(ACTION_INSTALL, getResources().getString(R.string.install)));
+                    //install if the device type is correct...
+                    if (Utils.bIsThisATV(getActivity())) {
+                        if ((mSelectedObject.type == AppContract.TYPE_ATV)
+                                || (mSelectedObject.type == AppContract.TYPE_BOTH)) {
+                            actionAdapter.add(new Action(ACTION_INSTALL, getResources().getString(R.string.install)));
+                        }
+                    } else {
+                        if ((mSelectedObject.type == AppContract.TYPE_TABLET)
+                                || (mSelectedObject.type == AppContract.TYPE_BOTH)) {
+                            actionAdapter.add(new Action(ACTION_INSTALL, getResources().getString(R.string.install)));
+                        }
                     }
                 }
             }
