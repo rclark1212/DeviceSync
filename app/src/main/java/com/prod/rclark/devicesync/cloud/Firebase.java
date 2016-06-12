@@ -675,7 +675,7 @@ public class Firebase {
     public void deleteAppFromFirebase(String serial, String apkname) {
         DatabaseReference dataBase = mFirebaseDB.getReference();
 
-        dataBase.child(mUser).child(APPS).child(serial).child(apkname).removeValue();
+        dataBase.child(mUser).child(APPS).child(serial).child(Utils.stripForFirebase(apkname)).removeValue();
 
         //FIXME - done and verify - firebase - now make this auto-magic for image pushing
         //check if this app exists in the CP database at all for any serial number

@@ -487,7 +487,7 @@ public class AppProvider extends ContentProvider {
                 String device = AppContract.DevicesEntry.getDeviceFromUri(uri);
                 String[] parse_selectionArgs = new String[]{device};
                 String parse_selection = sDevicesSelection;
-                deleteList = getDeviceDeleteList(uri, parse_selection, parse_selectionArgs);
+                deleteList = getDeviceDeleteList(uri, selection, selectionArgs);
                 rowsDeleted = db.delete(
                         AppContract.DevicesEntry.TABLE_NAME, parse_selection, parse_selectionArgs);
                 if (rowsDeleted > 0) {
@@ -696,6 +696,7 @@ public class AppProvider extends ContentProvider {
             c.moveToPosition(i);
             item.serial = c.getString(c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_DEVSSN));
             item.apk = c.getString(c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_PKG));
+            returnList.add(item);
         }
         c.close();
         return returnList;
@@ -710,6 +711,7 @@ public class AppProvider extends ContentProvider {
             DeleteList item = new DeleteList();
             c.moveToPosition(i);
             item.serial = c.getString(c.getColumnIndex(AppContract.DevicesEntry.COLUMN_DEVICES_SSN));
+            returnList.add(item);
         }
         c.close();
         return returnList;
