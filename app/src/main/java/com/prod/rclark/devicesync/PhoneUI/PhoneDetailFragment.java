@@ -496,5 +496,9 @@ public class PhoneDetailFragment extends Fragment {
         int mMutedColor = p.getDarkVibrantColor(getResources().getColor(R.color.theme_primary_dark));
 
         mRootView.findViewById(R.id.meta_bar).setBackgroundColor(mMutedColor);
+
+        if (bm != null) {
+            bm.recycle();
+        }
     }
 }

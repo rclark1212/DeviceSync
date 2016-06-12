@@ -5,6 +5,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.text.InputType;
+import android.util.Log;
 import android.widget.EditText;
 
 import com.prod.rclark.devicesync.sync.GCESync;
@@ -16,6 +17,7 @@ import java.util.ArrayList;
  * Utility routines which generate UI elements
  */
 public class UIUtils {
+    private static final String TAG = "DS_UIUtils";
 
     /*
      * Making sure public utility methods remain static
@@ -45,34 +47,34 @@ public class UIUtils {
     /**
      * Used to ask user if they want to download apps found on network for the device (in case of a device wipe)
      */
-    public static void askDownloadExistingApps(final Context ctx, final ArrayList<ObjectDetail> missing) {
+    public static void askDownloadExistingApps(final Activity activity, final ArrayList<ObjectDetail> missing) {
 
-        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(ctx);
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(activity);
 
-        alertDialogBuilder.setTitle(ctx.getString(R.string.restore_apps_title));
+        alertDialogBuilder.setTitle(activity.getString(R.string.restore_apps_title));
 
-        String msg = String.format(ctx.getString(R.string.restore_apps_msg), missing.size());
+        String msg = String.format(activity.getString(R.string.restore_apps_msg), missing.size());
         alertDialogBuilder
                 .setMessage(msg)
                 .setCancelable(false)
-                .setNeutralButton(ctx.getResources().getString(R.string.restore_disable_syncs), new DialogInterface.OnClickListener() {
+                .setNeutralButton(activity.getResources().getString(R.string.restore_disable_syncs), new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         dialog.cancel();
                         //disable syncs
-                        Utils.setSyncDisabled(ctx, true);
+                        Utils.setSyncDisabled(activity, true);
                         //FIXME - note this leaves apps in a weird state. Will show apps as local to device but no option
                         //to install, etc...
                     }
                 })
-                .setNegativeButton(ctx.getResources().getString(R.string.restore_no), new DialogInterface.OnClickListener() {
+                .setNegativeButton(activity.getResources().getString(R.string.restore_no), new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         dialog.cancel();
-                        GCESync.startActionUpdateLocal(ctx, null, null);
+                        GCESync.startActionUpdateLocal(activity, null, null);
                     }
                 })
-                .setPositiveButton(ctx.getResources().getString(R.string.restore_yes), new DialogInterface.OnClickListener() {
+                .setPositiveButton(activity.getResources().getString(R.string.restore_yes), new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         dialog.cancel();
@@ -82,9 +84,9 @@ public class UIUtils {
                             apklist.add(missing.get(i).pkg);
                         }
                         //let the updates go through
-                        GCESync.startActionUpdateLocal(ctx, null, null);
+                        GCESync.startActionUpdateLocal(activity, null, null);
                         //and kick off the batch install
-                        confirmBatchOperation(ctx, apklist, true);
+                        confirmBatchOperation(activity, apklist, true);
                     }
                 });
 
@@ -97,14 +99,14 @@ public class UIUtils {
      * Used to ask user to change BT name
      * Pass in an activity here so on conclusion, we can issue a backpress to update the UI.
      */
-    public static void changeBTName(final Activity ctx, String name) {
+    public static void changeBTName(final Activity activity, String name) {
 
-        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(ctx);
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(activity);
 
-        alertDialogBuilder.setTitle(ctx.getString(R.string.setname_title));
+        alertDialogBuilder.setTitle(activity.getString(R.string.setname_title));
 
         // Set up the input
-        final EditText input = new EditText(ctx);
+        final EditText input = new EditText(activity);
         input.setText(name);
 
         // Specify the type of input expected; this, for example, sets the input as a password, and will mask the text
@@ -112,17 +114,17 @@ public class UIUtils {
         alertDialogBuilder.setView(input);
 
         alertDialogBuilder
-                .setPositiveButton(ctx.getString(R.string.ok), new DialogInterface.OnClickListener() {
+                .setPositiveButton(activity.getString(R.string.ok), new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         dialog.cancel();
                         //set BT name
                         String name = input.getText().toString();
-                        Utils.setLocalDeviceName(ctx, name);
-                        ctx.onBackPressed();
+                        Utils.setLocalDeviceName(activity, name);
+                        activity.onBackPressed();
                     }
                 })
-                .setNegativeButton(ctx.getString(R.string.cancel), new DialogInterface.OnClickListener() {
+                .setNegativeButton(activity.getString(R.string.cancel), new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         dialog.cancel();
@@ -162,38 +164,60 @@ public class UIUtils {
      * Used to confirm with user the batch install/uninstalls before executing.
      * Will call either batch install or batch uninstall
      */
-    public static void confirmBatchOperation(final Context ctx, final ArrayList<String> apklist, final boolean bInstall) {
+    public static void confirmBatchOperation(final Activity activity, final ArrayList<String> apklist, final boolean bInstall) {
 
-        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(ctx);
+        //first check list - if null, punt.
+        if (apklist == null) {
+            return;
+        }
+
+        if (apklist.size() == 0) {
+            return;
+        }
+
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(activity);
 
         if (bInstall) {
-            alertDialogBuilder.setTitle(ctx.getString(R.string.batch_install_title));
+            alertDialogBuilder.setTitle(activity.getString(R.string.batch_install_title));
         } else {
-            alertDialogBuilder.setTitle(ctx.getString(R.string.batch_uninstall_title));
+            alertDialogBuilder.setTitle(activity.getString(R.string.batch_uninstall_title));
         }
+
+        // Set up the input
+        final MultiListImageView mosaic = new MultiListImageView(activity);
+        //have to set a placeholder before a list...
+        mosaic.setPlaceholderImage(R.drawable.batchplaceholder);
+        mosaic.setImageFromAPKList(activity, apklist);
+        alertDialogBuilder.setView(mosaic);
 
         String msg = "";
         for (int i=0; i<apklist.size(); i++) {
             msg = msg + apklist.get(i) + ", ";
         }
+        if (bInstall) {
+            Log.d(TAG, "confirm batch install - " + msg);
+        } else {
+            Log.d(TAG, "confirm batch uninstall - " + msg);
+        }
 
         alertDialogBuilder
-                .setMessage(msg)
-                .setNegativeButton(ctx.getResources().getString(R.string.cancel), new DialogInterface.OnClickListener() {
+                .setNegativeButton(activity.getResources().getString(R.string.cancel), new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         dialog.cancel();
                         //Do nothing
+                        mosaic.clearMosaic();       //clean up after ourselves
                     }
                 })
-                .setPositiveButton(ctx.getResources().getString(R.string.confirm), new DialogInterface.OnClickListener() {
+                .setPositiveButton(activity.getResources().getString(R.string.confirm), new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         dialog.cancel();
+                        mosaic.clearMosaic();
                         if (bInstall) {
-                            InstallUtil.batchInstallAPK(ctx, apklist);
+                            InstallUtil.batchInstallAPK(activity, apklist);
                         } else {
-                            InstallUtil.batchUninstallAPK(ctx, apklist);
+                            InstallUtil.batchUninstallAPK(activity, apklist);
                         }
                     }
                 });

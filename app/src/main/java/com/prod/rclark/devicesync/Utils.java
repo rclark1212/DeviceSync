@@ -28,6 +28,7 @@
 package com.prod.rclark.devicesync;
 
 import android.Manifest;
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.UiModeManager;
 import android.bluetooth.BluetoothAdapter;
@@ -469,10 +470,10 @@ public class Utils {
      * @param ctx
      * @param serial
      */
-    public static void cloneDevice(Context ctx, String serial) {
+    public static void cloneDevice(Activity activity, String serial) {
         //This is the fun and useful one... Generate both an install and uninstall list.
         //Get the list of apps on the remote device.
-        ArrayList<ObjectDetail> remote = DBUtils.getAppsOnDevice(ctx, serial);
+        ArrayList<ObjectDetail> remote = DBUtils.getAppsOnDevice(activity, serial);
         //Convert these object details to a simple string list. We don't want to be comparing objects, only apks
         ArrayList<String> remote_apk = new ArrayList<String>();
         for (int i=0; i < remote.size(); i++) {
@@ -482,7 +483,7 @@ public class Utils {
         remote = null;  //release the list
 
         //Get the list of apps on our device
-        ArrayList<ObjectDetail> local = DBUtils.getAppsOnDevice(ctx, Build.SERIAL);
+        ArrayList<ObjectDetail> local = DBUtils.getAppsOnDevice(activity, Build.SERIAL);
         ArrayList<String> local_apk = new ArrayList<String>();
         for (int i=0; i < local.size(); i++) {
             local_apk.add(local.get(i).pkg);
@@ -513,8 +514,8 @@ public class Utils {
         //Okay - we have the 2 lists... Call our APK routines
         //and now uninstall. Do uninstall first for space reasons... Ha, put uninstall second for it to come up last (i.e. first)
         //InstallUtil.batchInstallAPK(ctx, apk_install);
-        UIUtils.confirmBatchOperation(ctx, apk_install, true);
+        UIUtils.confirmBatchOperation(activity, apk_install, true);
         //InstallUtil.batchUninstallAPK(ctx, apk_uninstall);
-        UIUtils.confirmBatchOperation(ctx, apk_uninstall, false);
+        UIUtils.confirmBatchOperation(activity, apk_uninstall, false);
     }
 }

@@ -561,6 +561,9 @@ public class Firebase {
         });
 
         //All done
+        if (bmap != null) {
+            bmap.recycle();
+        }
     }
 
     /**
