@@ -556,7 +556,7 @@ public class MainPhoneActivity extends AppCompatActivity
         if (id == R.id.action_settings) {
             // Display the settings fragment
             Intent intent = new Intent();
-            intent.setClass(this, SettingsActivity.class);
+            intent.setClass(this, PhoneSettingsActivity.class);
             //and start for a result so that we can take care of any UI elements that we have to do when we get back...
             startActivityForResult(intent, PREFERENCE_REQUEST_CODE);
         } else if (id == R.id.action_disablesync) {
