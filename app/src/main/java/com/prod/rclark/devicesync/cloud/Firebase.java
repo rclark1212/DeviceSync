@@ -262,6 +262,9 @@ public class Firebase {
                                 //hmm... not in our database. Looks stale - delete
                                 if (!Utils.isRunningForFirstTime(mCtx, false)) {
                                     child.getRef().removeValue();
+                                } else {
+                                    Log.d(TAG, "First time install - found app in DB for us - populating " + object.pkg);
+                                    DBUtils.saveAppToCP(mCtx, object, false);
                                 }
                             }
                         }
@@ -306,6 +309,9 @@ public class Firebase {
                                 //hmm... not in our database. Looks stale - delete
                                 if (!Utils.isRunningForFirstTime(mCtx, false)) {
                                     child.getRef().removeValue();
+                                } else {
+                                    Log.d(TAG, "First time install - found app in DB for us - populating " + object.pkg);
+                                    DBUtils.saveAppToCP(mCtx, object, false);
                                 }
                             }
                         }

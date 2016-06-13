@@ -212,12 +212,14 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
     private void processUIAfterSigninStage3() {
         //Update the local content provider if running for first time...
         Log.d(TAG, "Starting stage3 setup");
-        boolean bFirstTime = Utils.isRunningForFirstTime(getActivity(), true);
+        boolean bFirstTime = Utils.isRunningForFirstTime(getActivity(), false);
         if (bFirstTime) {
             //Lets add a feature addition here - IFF we are running for first time *but* the database
             //has a record of apps for this serial number, then ask the user whether they want to "restore"
             //the system. Useful for when wiping a device.
             ArrayList<ObjectDetail> missing = DBUtils.getMissingApps(getActivity(), Build.SERIAL);
+            //make sure not to reset flag until we get the missing apps
+            Utils.isRunningForFirstTime(getActivity(), true);
             if (missing.size() > 0) {
                 //Okay - put up a dialog here...
                 //Give 3 options - no, copyall, or disable uploads
