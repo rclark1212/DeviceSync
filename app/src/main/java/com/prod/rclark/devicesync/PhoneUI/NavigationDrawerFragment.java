@@ -65,7 +65,7 @@ public class NavigationDrawerFragment extends Fragment {
     /**
      * Helper component that ties the action bar to the navigation drawer.
      */
-    private ActionBarDrawerToggle mDrawerToggle;
+    public ActionBarDrawerToggle mDrawerToggle;
     private ActionBar mActionBar;
 
     private DrawerLayout mDrawerLayout;
@@ -267,6 +267,7 @@ public class NavigationDrawerFragment extends Fragment {
         mDrawerToggle.onConfigurationChanged(newConfig);
     }
 
+    /*
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         // If the drawer is open, show the global app actions in the action bar. See also
@@ -292,7 +293,7 @@ public class NavigationDrawerFragment extends Fragment {
         }
 
         return super.onOptionsItemSelected(item);
-    }
+    } */
 
     /**
      * Per the navigation drawer design guidelines, updates the action bar to show the global app

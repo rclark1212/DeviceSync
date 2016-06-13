@@ -318,6 +318,17 @@ public class Utils {
     }
 
     /**
+     * Gets whether syncs are disabled or not.
+     * @param ctx
+     * @return
+     */
+    public static boolean getSyncDisabled(Context ctx) {
+        SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(ctx);
+        return pref.getBoolean(SYNCS_ARE_DISABLED, false);
+    }
+
+
+    /**
      *  Routine to store off location discovered in onCreate to preferences. Used by service/other routines
      *  later...
      */

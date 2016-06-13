@@ -3,12 +3,12 @@
     android:title="@string/personal_settings">
     <PreferenceCategory
         android:title="@string/pref_app_capture_settings" >
-
+        <!--
         <CheckBoxPreference
             android:key="@string/key_pref_get_data_from_net"
             android:title="@string/pref_use_network_for_images"
             android:summary="@string/pref_use_network_for_images_summ"
-            android:defaultValue="true" />
+            android:defaultValue="true" /> -->
 
         <CheckBoxPreference
             android:key="@string/key_pref_ignore_system_apps"
@@ -18,10 +18,11 @@
 
     </PreferenceCategory>
 
+    <!--
     <Preference android:title="@string/pref_account_settings" >
         <intent android:action="android.intent.action.VIEW"
             android:data="http://www.example.com" />
-    </Preference>
+    </Preference> -->
 
     <PreferenceCategory
         android:title="@string/notifications">

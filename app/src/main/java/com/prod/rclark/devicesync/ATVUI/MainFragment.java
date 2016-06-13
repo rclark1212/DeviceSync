@@ -54,13 +54,17 @@ import android.support.v17.leanback.widget.OnItemViewClickedListener;
 import android.support.v17.leanback.widget.Presenter;
 import android.support.v17.leanback.widget.Row;
 import android.support.v17.leanback.widget.RowPresenter;
+import android.support.v17.leanback.widget.SearchOrbView;
+import android.support.v17.leanback.widget.TitleView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -187,7 +191,6 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         processUIStartUpStage2();
     }
 
-
     /**
      * We require GMS to run. So do the bulk of the initialization after GMS has connected.
      * This is done in this routine.
@@ -250,6 +253,27 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
         //finally, initialize the loaders
         initializeLoaders();
+    }
+
+    /**
+     * Hook into onCreateView simply to change search orb icon...
+     * @param inflater
+     * @param container
+     * @param savedInstanceState
+     * @return
+     */
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        View v = super.onCreateView(inflater, container, savedInstanceState);
+
+        TitleView titleView = (TitleView) v.findViewById(R.id.browse_title_group);
+
+        if (titleView instanceof TitleView) {
+            //get rid of search orb
+            SearchOrbView orb = (SearchOrbView) titleView.getSearchAffordanceView();
+            orb.setOrbIcon(getResources().getDrawable(R.drawable.app_icon_your_company_small));
+        }
+        return v;
     }
 
 
@@ -662,7 +686,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         // set fastLane (or headers) background color
         setBrandColor(getResources().getColor(R.color.fastlane_background));
         // set search icon color
-        setSearchAffordanceColor(getResources().getColor(R.color.search_opaque));
+        //setSearchAffordanceColor(getResources().getColor(R.color.search_opaque));
     }
 
     private void setupEventListeners() {
@@ -670,7 +694,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
             @Override
             public void onClick(View view) {
-                Toast.makeText(getActivity(), "Implement your own in-app search", Toast.LENGTH_LONG)
+                Toast.makeText(getActivity(), "Not implemented", Toast.LENGTH_LONG)
                         .show();
             }
         });

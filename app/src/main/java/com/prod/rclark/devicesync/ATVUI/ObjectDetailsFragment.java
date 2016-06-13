@@ -216,7 +216,7 @@ public class ObjectDetailsFragment extends DetailsFragment {
             }
 
             //and setup the actions...
-            if (mSelectedObject.type == AppContract.TYPE_ATV) {
+            if ((mSelectedObject.type == AppContract.TYPE_ATV) || (mSelectedObject.type == AppContract.TYPE_BOTH)){
                 if (DBUtils.isObjectLocal(getActivity(), mSelectedObject)) {
                     //run app and uninstall
                     actionAdapter.add(new Action(ACTION_RUNAPP, getResources().getString(R.string.run_app)));

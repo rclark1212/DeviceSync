@@ -159,7 +159,11 @@ public class ListArrayObjectAdapter extends RecyclerView.Adapter <ListArrayObjec
     // Return the total count of items
     @Override
     public int getItemCount() {
-        return mArray.size();
+        if (mArray != null) {
+            return mArray.size();
+        } else {
+            return 0;
+        }
     }
 
 }

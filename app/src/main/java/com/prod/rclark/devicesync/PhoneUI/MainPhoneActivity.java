@@ -54,16 +54,21 @@ import android.support.v7.widget.RecyclerView;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.view.ViewTreeObserver;
+import android.widget.Toast;
 
 import com.prod.rclark.devicesync.ATVUI.DetailsActivity;
 import com.prod.rclark.devicesync.ATVUI.MainFragment;
+import com.prod.rclark.devicesync.ATVUI.SettingsActivity;
 import com.prod.rclark.devicesync.DBUtils;
+import com.prod.rclark.devicesync.HelpActivity;
 import com.prod.rclark.devicesync.InitActivity;
 import com.prod.rclark.devicesync.InstallUtil;
 import com.prod.rclark.devicesync.ObjectDetail;
@@ -97,6 +102,7 @@ public class MainPhoneActivity extends AppCompatActivity
     public static UIDataSetup mUIDataSetup;
 
     //Pending intent returns...
+    private static final int PREFERENCE_REQUEST_CODE = 1967;
     private static final int REQUEST_INIT_COMPLETE = 3022;
     public static final int PHONE_DETAILS_REQUEST_CODE = 3030;
 
@@ -500,9 +506,83 @@ public class MainPhoneActivity extends AppCompatActivity
                     Utils.cloneDevice(this, serial);
                 }
             }
+        } else if (requestCode == PREFERENCE_REQUEST_CODE) {
+            //Back from preference screen
+            //So don't really care about result code - cancel or OK, user may have modified settings
+            //Instead, look at the data...
+            if (data != null) {
+                int prefResult = data.getIntExtra(MainFragment.PREF_RESULT_KEY, MainFragment.PREF_DO_NOTHING);
+
+                //And now process...
+                if ((prefResult & MainFragment.PREF_UPDATE_UI_FLAG) != 0) {
+                    Log.d(TAG, "PreferenceRet - update UI");
+                    //New strat. And a smoother UI experience.
+                    //Simply save off hidden rows and restore them as necessary to the mRowAdapter object.
+                    //Don't deallocate or anything (as browsefragment doesn't deal with deallocation well).
+                    mUIDataSetup.loadRowEnables();
+                    //updateRowVisibility();
+                    //FIXME - change adapter for navtray (mDrawerListView.setAdapter) to use a custom adapter where
+                    //we can override areAllItemsEnabled() to return false and isEnabled() to return true or false as needed.
+                }
+
+                if ((prefResult & MainFragment.PREF_UPDATE_CP_FLAG) != 0) {
+                    Log.d(TAG, "PreferenceRet - update CP");
+                    //And kick off a CP update. Turn off the processing flag for UI until done...
+                    GCESync.startActionUpdateLocal(this, null, null);
+                }
+            }
         }
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.main_phone, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        if (mNavigationDrawerFragment.mDrawerToggle.onOptionsItemSelected(item)) {
+            return true;
+        }
+
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.action_settings) {
+            // Display the settings fragment
+            Intent intent = new Intent();
+            intent.setClass(this, SettingsActivity.class);
+            //and start for a result so that we can take care of any UI elements that we have to do when we get back...
+            startActivityForResult(intent, PREFERENCE_REQUEST_CODE);
+        } else if (id == R.id.action_disablesync) {
+            if (Utils.getSyncDisabled(this)) {
+                Utils.setSyncDisabled(this, false);
+                //flip button
+                item.setTitle(getResources().getString(R.string.disable_sync_button_text));
+                GCESync.startActionUpdateLocal(this, null, null);
+
+            } else {
+                //disable sync
+                Utils.setSyncDisabled(this, true);
+                //and flip button to enable sync
+                item.setTitle(getResources().getString(R.string.enable_sync_button_text));
+            }
+        } else if (id == R.id.action_syncnow) {
+            GCESync.startActionUpdateLocal(this, null, null);
+        } else if (id == R.id.action_help) {
+            //show help
+            Intent intent = new Intent(this, HelpActivity.class);
+            intent.putExtra(HelpActivity.HELP_ORDINAL, HelpActivity.HELP);
+            startActivity(intent);
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
 
     @Override
     public void onNavigationDrawerItemSelected(int position) {
