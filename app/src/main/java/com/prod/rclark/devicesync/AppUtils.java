@@ -311,7 +311,11 @@ public class AppUtils {
         //Set up local device into object
         device.bIsDevice = true;
         device.serial = Build.SERIAL;
-        device.label = BluetoothAdapter.getDefaultAdapter().getName();
+        if (BluetoothAdapter.getDefaultAdapter() != null) {
+            device.label = BluetoothAdapter.getDefaultAdapter().getName();
+        } else {
+            device.label = Build.MODEL;
+        }
         device.name = Build.MODEL;
         device.ver = Build.FINGERPRINT + " (" + Build.VERSION.RELEASE + ")";
 
