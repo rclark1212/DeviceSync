@@ -2,18 +2,13 @@ package com.prod.rclark.devicesync;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Rect;
-import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
-import android.net.Uri;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.view.animation.Animation;
-import android.view.animation.LinearInterpolator;
-import android.view.animation.RotateAnimation;
+
 import android.widget.ImageView;
 
 import com.bumptech.glide.Glide;
@@ -93,15 +88,6 @@ public class MultiListImageView extends ImageView {
         }
     }
 
-    // Clears out mosaic so you can reset placeholder/apklist
-    public void clearMosaic() {
-        if (mBackCanvas != null) {
-            mBackCanvas = null;
-        }
-        if (mBackBM != null) {
-            mBackBM.recycle();
-        }
-    }
 
     /**
      * This is the additive function to ImageView.
@@ -219,16 +205,18 @@ public class MultiListImageView extends ImageView {
                                 @Override
                                 public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
                                     //draw it
-                                    mBackCanvas.drawBitmap(resource, srcRect, destRect, null);
-                                    resource.recycle();
-                                    activity.runOnUiThread(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            // Run this on UI thread. Update the bitmap again
-                                            setImageBitmap(mBackBM);
-                                        }
-                                    });
-
+                                    //but only if not recycled already (user may have already cancelled)
+                                    if (!mBackBM.isRecycled() && !resource.isRecycled()) {
+                                        mBackCanvas.drawBitmap(resource, srcRect, destRect, null);
+                                        resource.recycle();
+                                        activity.runOnUiThread(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                // Run this on UI thread. Update the bitmap again
+                                                setImageBitmap(mBackBM);
+                                            }
+                                        });
+                                    }
                                 }
                             });
                 } else {

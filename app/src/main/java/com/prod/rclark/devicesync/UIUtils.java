@@ -205,15 +205,12 @@ public class UIUtils {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         dialog.cancel();
-                        //Do nothing
-                        mosaic.clearMosaic();       //clean up after ourselves
                     }
                 })
                 .setPositiveButton(activity.getResources().getString(R.string.confirm), new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         dialog.cancel();
-                        mosaic.clearMosaic();
                         if (bInstall) {
                             InstallUtil.batchInstallAPK(activity, apklist);
                         } else {
