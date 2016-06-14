@@ -110,6 +110,7 @@ public class PhoneDetailActivity extends AppCompatActivity {
         mIsCard = getResources().getBoolean(R.bool.detail_is_card);
 
         //and if so, set toolbar to support action bar and add up button
+        /* FIXME
         if (mIsCard) {
             Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar_cardview);
             if (toolbar != null) {
@@ -127,7 +128,7 @@ public class PhoneDetailActivity extends AppCompatActivity {
                     });
                 }
             }
-        }
+        } */
 
         mPager.setOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener() {
             @Override
