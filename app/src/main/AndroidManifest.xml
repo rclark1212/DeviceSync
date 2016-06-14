@@ -91,10 +91,9 @@
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".PhoneUI.PhoneDetailActivity"
-            android:theme="@style/Theme.DeviceSync.Detail" />
-        
+        <activity android:name=".PhoneUI.PhoneDetailActivity" />
+            <!-- android:theme="@style/Theme.DeviceSync.Detail" -->
+
 
         <service
             android:name=".cloud.FirebaseMessengerService"
