@@ -110,13 +110,17 @@ public class CardPresenter extends Presenter {
                 } else {
                     drawable = cardView.getResources().getDrawable(Utils.getTabletResource(cardView.getContext()));
                 }
+                /*
+                        //TODO - hitting a using recycled bitmap error below if I allow image to be nulled out but on nexus player only. Weird. More investigation needed.
+
                 //Use glide for all image sets...
                 Glide.with(cardView.getContext())
                         .load("")
                         .placeholder(drawable)
                         .centerCrop()
                         .error(drawable)
-                        .into(cardView.getMainImageView());
+                        .into(cardView.getMainImageView());*/
+                cardView.setMainImage(drawable);
             } else {
                 cardView.setTitleText(element.label);
                 cardView.setContentText(element.pkg);
@@ -124,12 +128,14 @@ public class CardPresenter extends Presenter {
                 Drawable banner = AppUtils.getLocalApkImage(cardView.getContext(), element.pkg, element.type);
 
                 if (banner != null) {
+                    /*
                     Glide.with(cardView.getContext())
                             .load("")
                             .placeholder(banner)
                             .centerCrop()
                             .error(banner)
-                            .into(cardView.getMainImageView());
+                            .into(cardView.getMainImageView());*/
+                    cardView.setMainImage(banner);
                 } else {
                     //get the download URL...
                     ImageDetail image = DBUtils.getImageRecordFromCP(cardView.getContext(), element.pkg);
@@ -235,8 +241,7 @@ public class CardPresenter extends Presenter {
         ImageCardView cardView = (ImageCardView) viewHolder.view;
         // Remove references to images so that the garbage collector can free up memory
         cardView.setTitleText("debugUnbind");   //for testing
-        //cardView.setBadgeImage(null);
-        //TODO - hitting a using recycled bitmap error below if I allow image to be nulled out but on nexus player only. Weird. More investigation needed.
-        //cardView.setMainImage(null);
+        cardView.setBadgeImage(null);
+        cardView.setMainImage(null);
     }
 }
