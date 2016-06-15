@@ -396,12 +396,19 @@ public class InitActivity extends Activity implements
         GoogleApiAvailability api = GoogleApiAvailability.getInstance();
         int code = api.isGooglePlayServicesAvailable(this);
         if (code != ConnectionResult.SUCCESS) {
-            if (api.isUserResolvableError(code) &&
-                    api.showErrorDialogFragment(this, code, REQUEST_GOOGLE_PLAY_SERVICES)) {
-                //Will get this call in activity result...
+            if (api.isUserResolvableError(code)) {
+                //Grr - in emulator getting a code 9. However, from the dialog, this is an uncorrectable error.
+                //From logs from google, it is uncorrectable as well.
+                //And I never get a return intent. So punt out here if we get an error code that reports as resolvable but is not.
+                if ((code == ConnectionResult.SERVICE_MISSING) || (code == ConnectionResult.SERVICE_INVALID)){
+                    this.setResult(RESULT_CANCELED);
+                    finish();
+                }
+                api.showErrorDialogFragment(this, code, REQUEST_GOOGLE_PLAY_SERVICES);
                 bret = false;
             } else {
                 //Just exit here...
+                bret = false;
                 this.setResult(RESULT_CANCELED);
                 finish();
             }

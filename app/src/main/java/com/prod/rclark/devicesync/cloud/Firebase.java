@@ -481,6 +481,10 @@ public class Firebase {
      */
     public void deleteImage(String filename) {
 
+        if (filename == null) {
+            return;
+        }
+
         final String removefile = filename;
         Log.d(TAG, "Deleting image file " + filename);
 
@@ -516,7 +520,7 @@ public class Firebase {
      */
     public void copyToFirebase(Drawable icon, String apkname) {
 
-        if (icon == null) {
+        if ((icon == null) || (apkname == null)) {
             return;
         }
 
@@ -581,15 +585,17 @@ public class Firebase {
     public void addImageKey(String filename, String apk, Uri downloadurl) {
         DatabaseReference dataBase = mFirebaseDB.getReference();
 
-        String stripfile = Utils.stripForFirebase(filename);
-        Log.d(TAG, "Writing firebase image key " + stripfile);
+        if ((filename != null) && (apk != null) && (downloadurl != null)) {
+            String stripfile = Utils.stripForFirebase(filename);
+            Log.d(TAG, "Writing firebase image key " + stripfile);
 
-        //TODO - just using filename for description - could improve here...
-        ImageDetail image = new ImageDetail(stripfile, filename, apk, downloadurl.toString());
+            //TODO - just using filename for description - could improve here...
+            ImageDetail image = new ImageDetail(stripfile, filename, apk, downloadurl.toString());
 
-        if (stripfile != null) {
-            //and push
-            dataBase.child(mUser).child(IMAGE).child(stripfile).setValue(image);
+            if (stripfile != null) {
+                //and push
+                dataBase.child(mUser).child(IMAGE).child(stripfile).setValue(image);
+            }
         }
     }
 
@@ -598,13 +604,15 @@ public class Firebase {
     public void deleteImageKey(String filename) {
         DatabaseReference dataBase = mFirebaseDB.getReference();
 
-        String stripfile = Utils.stripForFirebase(filename);
+        if (filename != null) {
+            String stripfile = Utils.stripForFirebase(filename);
 
-        Log.d(TAG, "Deleting firebase image key " + stripfile);
+            Log.d(TAG, "Deleting firebase image key " + stripfile);
 
-        if (stripfile != null) {
-            //and push
-            dataBase.child(mUser).child(IMAGE).child(stripfile).removeValue();
+            if (stripfile != null) {
+                //and push
+                dataBase.child(mUser).child(IMAGE).child(stripfile).removeValue();
+            }
         }
     }
 
@@ -613,12 +621,13 @@ public class Firebase {
      * @return
      */
     public void deleteFirebaseRecord(String serial) {
-        Log.d(TAG, "Deleting serial " + serial);
 
         if (serial == null) {
             Log.d(TAG, "Someone passed in a null serial to deleteRecord - exit");
             return;
         }
+
+        Log.d(TAG, "Deleting serial " + serial);
 
         //delete the user's node
         DatabaseReference dataBase = mFirebaseDB.getReference();
@@ -642,9 +651,11 @@ public class Firebase {
     public void writeDeviceToFirebase(String serial) {
         DatabaseReference dataBase = mFirebaseDB.getReference();
 
-        ObjectDetail device = DBUtils.getDeviceFromCP(mCtx, serial);
-        if (device != null) {
-            dataBase.child(mUser).child(DEVICES).child(device.serial).setValue(device);
+        if (serial != null) {
+            ObjectDetail device = DBUtils.getDeviceFromCP(mCtx, serial);
+            if (device != null) {
+                dataBase.child(mUser).child(DEVICES).child(device.serial).setValue(device);
+            }
         }
     }
 
@@ -682,6 +693,10 @@ public class Firebase {
      * @param serial
      */
     public void deleteAppFromFirebase(String serial, String apkname) {
+        if ((apkname == null) || (serial == null)) {
+            return;
+        }
+
         DatabaseReference dataBase = mFirebaseDB.getReference();
 
         dataBase.child(mUser).child(APPS).child(serial).child(Utils.stripForFirebase(apkname)).removeValue();
@@ -695,7 +710,9 @@ public class Firebase {
 
             //delete photo in storage
             //this also deletes photo note in fb_db. which then ends up deleting node in CP
-            deleteImage(image.filename);
+            if (image != null) {
+                deleteImage(image.filename);
+            }
         }
     }
 
@@ -703,6 +720,10 @@ public class Firebase {
      * writeRecordToFirebase - writes the serial number record to firebase
      */
     private void writeToFirebase(String serial) {
+        if (serial == null) {
+            return;
+        }
+
         DatabaseReference dataBase = mFirebaseDB.getReference();
 
         Log.d(TAG, "Writing firebase db");
@@ -730,7 +751,9 @@ public class Firebase {
                 String appname = c.getString(c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_PKG));
 
                 //and write
-                writeAppToFirebase(serial, appname);
+                if (appname != null) {
+                    writeAppToFirebase(serial, appname);
+                }
             }
         }
 

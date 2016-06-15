@@ -340,15 +340,22 @@ public class PhoneDetailFragment extends Fragment {
 
             int cols = mButtonView.getColumnCount();
             if (cols == 0) {
+                float density = getResources().getDisplayMetrics().density;
+                if (density == 0) {
+                    density = 1.0f;
+                }
                 //have to fix up... Get the width per button...
                 float width = (getResources().getDimension(R.dimen.btn_flat_min_width) +
                         2*getResources().getDimension(R.dimen.btn_flat_margin) +
-                        2*getResources().getDimension(R.dimen.btn_flat_padding))/getResources().getDisplayMetrics().density;
+                        2*getResources().getDimension(R.dimen.btn_flat_padding))/density;
                 cols = mButtonView.getWidth() / (int)width;
                 if (cols == 0) {
                     int screenwidth = getActivity().getResources().getConfiguration().screenWidthDp;
                     cols = screenwidth / (int)width;
                 }
+            }
+            if (cols == 0) {
+                cols = 1;
             }
             int rowcount = showButtons.size() / cols;
             if ((showButtons.size() % cols) != 0) rowcount++;
