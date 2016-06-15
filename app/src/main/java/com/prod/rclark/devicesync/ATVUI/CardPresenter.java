@@ -228,13 +228,15 @@ public class CardPresenter extends Presenter {
         }
     }
 
+
     @Override
     public void onUnbindViewHolder(Presenter.ViewHolder viewHolder) {
         //Log.d(TAG, "onUnbindViewHolder");
         ImageCardView cardView = (ImageCardView) viewHolder.view;
         // Remove references to images so that the garbage collector can free up memory
         cardView.setTitleText("debugUnbind");   //for testing
-        cardView.setBadgeImage(null);
-        cardView.setMainImage(null);
+        //cardView.setBadgeImage(null);
+        //TODO - hitting a using recycled bitmap error below if I allow image to be nulled out but on nexus player only. Weird. More investigation needed.
+        //cardView.setMainImage(null);
     }
 }
