@@ -518,9 +518,15 @@ public class Firebase {
      * Copies the local file to the cloud/firebase. Note filename is a path+file.
      * @return
      */
-    public void copyToFirebase(Drawable icon, String apkname) {
+    public void copyToFirebase(String apkname, long type) {
 
-        if ((icon == null) || (apkname == null)) {
+        if (apkname == null) {
+            return;
+        }
+
+        Drawable icon = AppUtils.getLocalApkImage(mCtx, apkname, type);
+
+        if (icon == null) {
             return;
         }
 
@@ -545,35 +551,40 @@ public class Firebase {
         //Get the bitmap...
         Bitmap bmap = Utils.drawableToBitmap(icon);
 
-        //Get the source databuffer
-        ByteArrayOutputStream bitmapStream = new ByteArrayOutputStream();
-        bmap.compress(Bitmap.CompressFormat.JPEG, 50, bitmapStream);            //try to save on space - 50% quality
-        byte[] data = bitmapStream.toByteArray();
-        UploadTask uploadTask = fileRef.putBytes(data);
+        if (bmap != null) {
+            //Get the source databuffer
+            ByteArrayOutputStream bitmapStream = new ByteArrayOutputStream();
+            bmap.compress(Bitmap.CompressFormat.JPEG, 50, bitmapStream);            //try to save on space - 50% quality
+            byte[] data = bitmapStream.toByteArray();
+            UploadTask uploadTask = fileRef.putBytes(data);
 
-        // Register observers to listen for when the download is done or if it fails
-        uploadTask.addOnFailureListener(new OnFailureListener() {
-            @Override
-            public void onFailure(@NonNull Exception exception) {
-                // Handle unsuccessful uploads
-                Log.d(TAG, "Oops - upload to firebase failed!");
-                sendNetworkBusyIndicator(false);
-            }
-        }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-            @Override
-            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                // taskSnapshot.getMetadata() contains file metadata such as size, content-type, and download URL.
-                Log.d(TAG, "Upload to firebase succeeded!");
-                final Uri downloadUrl = taskSnapshot.getDownloadUrl();
-                addImageKey(filename, apk, downloadUrl);
-                sendNetworkBusyIndicator(false);
-            }
-        });
+            // Register observers to listen for when the download is done or if it fails
+            uploadTask.addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception exception) {
+                    // Handle unsuccessful uploads
+                    Log.d(TAG, "Oops - upload to firebase failed!");
+                    sendNetworkBusyIndicator(false);
+                }
+            }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                @Override
+                public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                    // taskSnapshot.getMetadata() contains file metadata such as size, content-type, and download URL.
+                    Log.d(TAG, "Upload to firebase succeeded!");
+                    final Uri downloadUrl = taskSnapshot.getDownloadUrl();
+                    addImageKey(filename, apk, downloadUrl);
+                    sendNetworkBusyIndicator(false);
+                }
+            });
+        } else {
+            Log.d(TAG, "Could not get bitmap - ERR!");
+        }
 
         //All done
-        if (bmap != null) {
-            bmap.recycle();
-        }
+        //TODO - should we recycle here? Or just let android handle it?
+        //if (bmap != null) {
+        //    bmap.recycle();
+        //}
     }
 
     /**
@@ -678,8 +689,7 @@ public class Firebase {
                     Log.d(TAG, "Could not find image in CP for " + app.pkg + " - uploading");
                     //if not, then upload it...
                     //note - calling copy to firebase ends up generating the db key which in turn causes listener to create CP record
-                    Drawable icon = AppUtils.getLocalApkImage(mCtx, app.pkg, app.type);
-                    copyToFirebase(icon, app.pkg);
+                    copyToFirebase(app.pkg, app.type);
                 } else {
                     Log.d(TAG, "Skip updating " + app.pkg + " image - already exists");
                 }

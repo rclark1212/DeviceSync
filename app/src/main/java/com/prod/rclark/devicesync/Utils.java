@@ -188,7 +188,11 @@ public class Utils {
         if (drawable instanceof BitmapDrawable) {
             BitmapDrawable bitmapDrawable = (BitmapDrawable) drawable;
             if(bitmapDrawable.getBitmap() != null) {
-                return bitmapDrawable.getBitmap();
+                if (bitmapDrawable.getBitmap().isRecycled()) {
+                    return null;
+                } else {
+                    return bitmapDrawable.getBitmap();
+                }
             }
         }
 

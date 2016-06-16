@@ -33,7 +33,7 @@ public class MultiListImageView extends ImageView {
     Context mCtx;
     Drawable mPlaceholder=null;
     Bitmap mBackBM=null;            //backing store
-    Canvas mBackCanvas;             //and the canvas for backing store
+    Canvas mBackCanvas=null;        //and the canvas for backing store
     private static final String TAG = "MultiListImageView";
 
     /**
@@ -63,13 +63,15 @@ public class MultiListImageView extends ImageView {
         if (mBackBM == null) {
             setImageDrawable(mPlaceholder);
             Bitmap tempBM = Utils.drawableToBitmap(mPlaceholder);
-            if (tempBM.isMutable()) {
-                mBackBM = tempBM;
-            } else {
-                //Have to make it mutable
-                mBackBM = tempBM.copy(Bitmap.Config.ARGB_8888, true);
+            if (tempBM != null) {
+                if (tempBM.isMutable()) {
+                    mBackBM = tempBM;
+                } else {
+                    //Have to make it mutable
+                    mBackBM = tempBM.copy(Bitmap.Config.ARGB_8888, true);
+                }
+                mBackCanvas = new Canvas(mBackBM);
             }
-            mBackCanvas = new Canvas(mBackBM);
         }
     }
 
@@ -78,13 +80,15 @@ public class MultiListImageView extends ImageView {
         if (mBackBM == null) {
             setImageDrawable(mPlaceholder);
             Bitmap tempBM = Utils.drawableToBitmap(mPlaceholder);
-            if (tempBM.isMutable()) {
-                mBackBM = tempBM;
-            } else {
-                //Have to make it mutable
-                mBackBM = tempBM.copy(Bitmap.Config.ARGB_8888, true);
+            if (tempBM != null) {
+                if (tempBM.isMutable()) {
+                    mBackBM = tempBM;
+                } else {
+                    //Have to make it mutable
+                    mBackBM = tempBM.copy(Bitmap.Config.ARGB_8888, true);
+                }
+                mBackCanvas = new Canvas(mBackBM);
             }
-            mBackCanvas = new Canvas(mBackBM);
         }
     }
 
@@ -100,7 +104,7 @@ public class MultiListImageView extends ImageView {
         mAPKs = apklist;
 
         //check for errors
-        if ((mBackBM == null) || (apklist == null) || (apklist.size() == 0)) {
+        if ((mBackBM == null) || (apklist == null) || (apklist.size() == 0) || (mBackCanvas == null)) {
             return false;
         }
 

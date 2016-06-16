@@ -499,12 +499,13 @@ public class PhoneDetailFragment extends Fragment {
 
         Bitmap bm = Utils.drawableToBitmap(image);
 
-        Palette p = Palette.from(bm).generate();
-        int mMutedColor = p.getDarkVibrantColor(getResources().getColor(R.color.theme_primary_dark));
-
-        mRootView.findViewById(R.id.meta_bar).setBackgroundColor(mMutedColor);
-
         if (bm != null) {
+            Palette p = Palette.from(bm).generate();
+            int mMutedColor = p.getDarkVibrantColor(getResources().getColor(R.color.theme_primary_dark));
+
+            mRootView.findViewById(R.id.meta_bar).setBackgroundColor(mMutedColor);
+
+            //FIXME - should we recycle here?
             bm.recycle();
         }
     }
