@@ -19,7 +19,7 @@
     <string-array name="header_names">
         <item>Devices</item>
         <item>Local Apps</item>
-        <item>Flagged Apps (all)</item>
+        <!-- <item>Flagged Apps (all)</item> NOTE - remove flagged apps from v1.0 of the app -->
         <item>Missing Apps (local)</item>
         <item>Unique Apps (local)</item>
         <item>App Superset</item>
@@ -30,7 +30,7 @@
     <integer-array name="header_function">
         <item>0</item>
         <item>1</item>
-        <item>2</item>
+        <!-- <item>2</item> -->
         <item>3</item>
         <item>4</item>
         <item>5</item>
@@ -41,7 +41,7 @@
     <string-array name="header_function_str">
         <item>0</item>
         <item>1</item>
-        <item>2</item>
+        <!-- <item>2</item> -->
         <item>3</item>
         <item>4</item>
         <item>5</item>

@@ -692,6 +692,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
     }
 
     private void setupEventListeners() {
+        /* Don't enable search orb
         setOnSearchClickedListener(new View.OnClickListener() {
 
             @Override
@@ -700,6 +701,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                         .show();
             }
         });
+        */
 
         setOnItemViewClickedListener(new ItemViewClickedListener());
         //setOnItemViewSelectedListener(new ItemViewSelectedListener());

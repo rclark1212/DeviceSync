@@ -86,7 +86,7 @@ public class UIDataSetup {
         mFunction = mCtx.getResources().getIntArray(R.array.header_function);
         mHeaders = mCtx.getResources().getStringArray(R.array.header_names);
         if (mHide == null) {
-            mHide = new boolean[mFunction.length];      //TODO - not used/loaded anywhere. Fix  this
+            mHide = new boolean[mFunction.length];
             loadRowEnables();   //populates array
         }
 

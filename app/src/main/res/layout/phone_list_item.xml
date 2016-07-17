@@ -6,26 +6,26 @@
 
     <ImageView
         android:id="@+id/grid_item_image"
-        android:layout_width="70dp"
-        android:layout_height="70dp"
-        android:layout_marginRight="5dp"/>
+        android:layout_width="@dimen/phone_listitem_width"
+        android:layout_height="@dimen/phone_listitem_height"
+        android:layout_marginEnd="@dimen/phone_listitem_margin"/>
 
     <TextView
         android:id="@+id/grid_title"
         android:layout_width="wrap_content"
-        android:layout_height="20dp"
+        android:layout_height="@dimen/phone_listitem_titleheight"
         android:ellipsize="end"
         android:maxLines="1"
-        android:textSize="14sp"
+        android:textSize="@dimen/phone_listitem_titlesize"
         android:layout_below="@id/grid_item_image"/>
 
     <TextView
         android:id="@+id/grid_subtitle"
         android:layout_width="wrap_content"
-        android:layout_height="16dp"
+        android:layout_height="@dimen/phone_listitem_subtitleheight"
         android:ellipsize="end"
         android:maxLines="1"
-        android:textSize="11sp"
+        android:textSize="@dimen/phone_listitem_subtitlesize"
         android:layout_below="@id/grid_title"/>
 
 

@@ -371,6 +371,7 @@ public class PhoneDetailFragment extends Fragment {
                 //now get the name...
                 action.setText(getButtonName(showButtons.get(i)));
                 action.setId(buttonId);
+                action.setContentDescription(getButtonName(showButtons.get(i)));
                 LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,
                         LinearLayout.LayoutParams.WRAP_CONTENT);
                 action.setLayoutParams(params);

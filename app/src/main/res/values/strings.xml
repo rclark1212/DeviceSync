@@ -107,5 +107,8 @@
 
     <!-- control content descriptions -->
     <string name="device_photo">Photo of device or application</string>
+    <string name="help_continue">Continue to next page</string>
+    <string name="navdrawer_description">List of views you can choose</string>
+    <string name="list_description">List of apps or devices you can choose</string>
 
 </resources>

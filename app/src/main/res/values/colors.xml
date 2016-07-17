@@ -21,7 +21,7 @@
     <color name="default_background">#3d3d3d</color>
 
     <!-- phone specific FIXME -->
-    <color name="metabar_title">@color/secondary_text</color>
+    <color name="metabar_title">@color/primary_text</color>
     <color name="theme_primary">@color/primary</color>
     <color name="theme_primary_dark">@color/primary_dark</color>
     <color name="theme_accent">@color/accent</color>
