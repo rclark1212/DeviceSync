@@ -207,7 +207,7 @@ public class FirebaseMessengerService extends Service {
                 if (user != null) {
                     // User is signed in
                     Log.d(TAG, "onAuthStateChanged:signed_in:" + user.getUid());
-                    if (!user.equals(Utils.getUserId(getApplicationContext()))) {
+                    if (!user.getUid().equals(Utils.getUserId(getApplicationContext()))) {
                         //reset firebase instance
                         mFirebase = null;
                         mFirebase = new Firebase(getApplicationContext(), user.getUid());

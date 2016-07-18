@@ -8,6 +8,7 @@
         android:id="@+id/grid_item_image"
         android:layout_width="@dimen/phone_listitem_width"
         android:layout_height="@dimen/phone_listitem_height"
+        android:contentDescription="@string/phone_listitem_description"
         android:layout_marginEnd="@dimen/phone_listitem_margin"/>
 
     <TextView

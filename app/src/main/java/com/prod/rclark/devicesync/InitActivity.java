@@ -608,7 +608,7 @@ public class InitActivity extends Activity implements
                 Utils.setUserId(this, user);
             } else {
                 Log.d(TAG, "Firebase failure");
-                Toast.makeText(this, "Firebase failure...", Toast.LENGTH_LONG);
+                //Toast.makeText(this, "Firebase failure...", Toast.LENGTH_LONG);
                 // user is not signed in. We are brutal in our requirements (but app makes no sense if user not signed in)
                 this.setResult(RESULT_CANCELED);
                 finish();

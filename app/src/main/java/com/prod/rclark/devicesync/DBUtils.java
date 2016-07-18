@@ -192,9 +192,9 @@ public class DBUtils {
         //First are we loading an app or a device object?
         String type = ctx.getContentResolver().getType(uri);
 
-        if (type == AppContract.AppEntry.CONTENT_ITEM_TYPE) {
+        if (type.equals(AppContract.AppEntry.CONTENT_ITEM_TYPE)) {
             bApp = true;
-        } else if (type == AppContract.DevicesEntry.CONTENT_ITEM_TYPE) {
+        } else if (type.equals(AppContract.DevicesEntry.CONTENT_ITEM_TYPE)) {
             bApp = false;
         } else {
             //urp - bad uri
@@ -347,7 +347,7 @@ public class DBUtils {
         //First are we loading an app or a device object?
         String type = ctx.getContentResolver().getType(uri);
 
-        if (type != AppContract.AppEntry.CONTENT_ITEM_TYPE) {
+        if (!type.equals(AppContract.AppEntry.CONTENT_ITEM_TYPE)) {
             //bad uri - return
             return;
         }

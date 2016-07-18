@@ -74,6 +74,7 @@ import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * A collection of utility methods, all static.
@@ -155,7 +156,7 @@ public class Utils {
     public static String unNormalizeDate(Context ctx, long normalizedDateInMillis) {
         Time time = new Time();
         time.setToNow();
-        SimpleDateFormat dbDateFormat = new SimpleDateFormat(ctx.getResources().getString(R.string.date_format));
+        SimpleDateFormat dbDateFormat = new SimpleDateFormat(ctx.getResources().getString(R.string.date_format), Locale.getDefault());
         String yearMonthDayString = dbDateFormat.format(normalizedDateInMillis);
         return yearMonthDayString;
     }
@@ -218,7 +219,7 @@ public class Utils {
         SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(ctx);
         boolean bhasrun = pref.getBoolean(PREFS_HAS_RUN_ALREADY, false);
 
-        if (bhasrun == true) {
+        if (bhasrun) {
             bret = false;
         }
 

@@ -58,7 +58,6 @@ public class ListArrayObjectAdapter extends RecyclerView.Adapter <ListArrayObjec
         @Override
         public void onClick(View v) {
             int position = getAdapterPosition();
-            ImageView clicked = (ImageView) v.findViewById(R.id.grid_item_image);
             /*
             String display = "clicky";
             Object object = clicked.getTag();
