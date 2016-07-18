@@ -286,16 +286,21 @@ public class MainPhoneActivity extends AppCompatActivity
         mTitle = getTitle();
 
         //update nav drawer with the headers we want to use...
+        int remoteRow = -1;
         headers = new String[mUIDataSetup.getNumberOfHeaders()];
         for (int i = 0; i < mUIDataSetup.getNumberOfHeaders(); i++) {
             headers[i] = mUIDataSetup.getRowHeader(i);
+            if (mUIDataSetup.isHeaderRow(i)) {
+                remoteRow = i;
+            }
         }
 
         // Set up the drawer.
         mNavigationDrawerFragment.setUp(
                 R.id.navigation_drawer,
                 (DrawerLayout) findViewById(R.id.drawer_layout),
-                headers);
+                headers,
+                remoteRow);
 
         //Set a shared element callback for the case where we may be exiting to a different element than we start from
         setExitSharedElementCallback(mShareCallback);

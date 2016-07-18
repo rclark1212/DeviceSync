@@ -233,7 +233,7 @@ public class UIDataSetup {
     /**
      * Is this a headers row? (no data population - really for the tablet UI)
      */
-    private boolean isHeaderRow(int row) {
+    public boolean isHeaderRow(int row) {
 
         //Check if this is a remotes row - return null
         if (row >= mFunction.length) {

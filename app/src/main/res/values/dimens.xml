@@ -70,5 +70,7 @@
     <dimen name="phone_listitem_subtitleheight">16dp</dimen>
     <dimen name="phone_listitem_subtitlesize">11sp</dimen>
 
+    <!-- nav tray indent amount -->
+    <dimen name="phone_navtray_indent">10dp</dimen>
 
 </resources>
