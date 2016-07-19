@@ -50,6 +50,7 @@ public class DetailsActivity extends Activity {
     public static final int DETAIL_RETCODE_INSTALLMISSING = 2;  //install missing
     public static final int DETAIL_RETCODE_REMOVEDEVICE = 3;    //change device name
     public static final int DETAIL_RETCODE_CLONEFROM = 4;       //clone from device
+    public static final int DETAIL_RETCODE_REFRESH = 5;         //used to refresh UI on return from detail
 
 
     /**

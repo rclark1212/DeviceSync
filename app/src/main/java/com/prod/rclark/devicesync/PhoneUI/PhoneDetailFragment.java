@@ -405,6 +405,7 @@ public class PhoneDetailFragment extends Fragment {
                 getActivity().onBackPressed();
                 break;
             case BUTTON_CHANGENAME:
+                PhoneDetailActivity.mReturnCode = DetailsActivity.DETAIL_RETCODE_REFRESH;
                 UIUtils.changeBTName(getActivity(), object.label);
                 break;
             case BUTTON_REMOVE:

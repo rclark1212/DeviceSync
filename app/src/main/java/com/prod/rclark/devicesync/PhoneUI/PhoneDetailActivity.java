@@ -256,6 +256,9 @@ public class PhoneDetailActivity extends AppCompatActivity {
             Log.d(TAG, "Setting up clone from return");
             data.putExtra(MainFragment.DETAILS_RESULT_KEY, mOpenSerial);
             data.putExtra(MainFragment.DETAILS_RESULT_ACTION, DetailsActivity.DETAIL_RETCODE_CLONEFROM);
+        } else if (mReturnCode == DetailsActivity.DETAIL_RETCODE_REFRESH) {
+            Log.d(TAG, "Refresh listview on return (BT name)");
+            data.putExtra(MainFragment.DETAILS_RESULT_ACTION, DetailsActivity.DETAIL_RETCODE_REFRESH);
         }
 
         mReturnCode = 0;

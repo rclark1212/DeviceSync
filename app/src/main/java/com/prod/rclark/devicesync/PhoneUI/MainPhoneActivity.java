@@ -473,7 +473,10 @@ public class MainPhoneActivity extends AppCompatActivity
             //came back from details screen
             //check to see if detail screen selection was to show apps for a device...
             if (data != null) {
-                String serial = data.getStringExtra(MainFragment.DETAILS_RESULT_KEY);
+                String serial = "";
+                if (data.hasExtra(MainFragment.DETAILS_RESULT_KEY)) {
+                    serial = data.getStringExtra(MainFragment.DETAILS_RESULT_KEY);
+                }
                 int action = data.getIntExtra(MainFragment.DETAILS_RESULT_ACTION, 0);
 
                 if (action == DetailsActivity.DETAIL_RETCODE_OPENROW) {
@@ -509,6 +512,9 @@ public class MainPhoneActivity extends AppCompatActivity
                     GCESync.startActionUpdateLocal(this, null, null);
                 } else if (action == DetailsActivity.DETAIL_RETCODE_CLONEFROM) {
                     Utils.cloneDevice(this, serial);
+                } else if (action == DetailsActivity.DETAIL_RETCODE_REFRESH) {
+                    //Force an update here for device screen
+                    mNavigationDrawerFragment.selectItem(0);
                 }
             }
         } else if (requestCode == PREFERENCE_REQUEST_CODE) {
