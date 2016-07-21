@@ -73,4 +73,7 @@
     <!-- nav tray indent amount -->
     <dimen name="phone_navtray_indent">10dp</dimen>
 
+    <!-- widget text size -->
+    <dimen name="widget_text_size">20sp</dimen>
+
 </resources>

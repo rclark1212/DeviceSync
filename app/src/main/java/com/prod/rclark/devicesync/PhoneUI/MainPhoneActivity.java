@@ -105,6 +105,8 @@ public class MainPhoneActivity extends AppCompatActivity
     private static final int PREFERENCE_REQUEST_CODE = 1967;
     private static final int REQUEST_INIT_COMPLETE = 3022;
     public static final int PHONE_DETAILS_REQUEST_CODE = 3030;
+    public static final String INTENT_EXTRA_LAUNCH = "phone_launch_page";
+    public static final String INTENT_EXTRA_LAUNCH_MISSING = "missing";
 
     //Data keys used between list/detail views
     static final String EXTRA_STARTING_POS = "extra_starting_pos";
@@ -125,6 +127,7 @@ public class MainPhoneActivity extends AppCompatActivity
     private PlaceholderFragment mCurrentPlaceholderFrag = null;
     private int mReturnPos = 0;
     private int mScrollPos = 0;
+    private boolean bShowMissing = false;
 
     // Shared element transition
     //Set a callback for shared element transition
@@ -236,6 +239,16 @@ public class MainPhoneActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main_phone);
 
+        //is there a bundle?
+        Intent launchIntent = getIntent();
+        if (launchIntent.hasExtra(INTENT_EXTRA_LAUNCH)) {
+            Log.d(TAG, "onCreate intent has launch extra");
+            if (INTENT_EXTRA_LAUNCH_MISSING.equals(launchIntent.getStringExtra(INTENT_EXTRA_LAUNCH))) {
+                //launched with intent to show missing page...
+                bShowMissing = true;
+            }
+        }
+
         //Do our initialization
         Intent intent = new Intent(getApplication(), InitActivity.class);
         startActivityForResult(intent, REQUEST_INIT_COMPLETE);
@@ -301,6 +314,12 @@ public class MainPhoneActivity extends AppCompatActivity
                 (DrawerLayout) findViewById(R.id.drawer_layout),
                 headers,
                 remoteRow);
+
+        //And now, set the initial row if bundle is passed in to do that...
+        if (bShowMissing) {
+            mNavigationDrawerFragment.selectItem(mUIDataSetup.getMissingRow());
+            bShowMissing = false;
+        }
 
         //Set a shared element callback for the case where we may be exiting to a different element than we start from
         setExitSharedElementCallback(mShareCallback);
@@ -372,6 +391,7 @@ public class MainPhoneActivity extends AppCompatActivity
     @Override
     public void onActivityReenter(int requestCode, Intent data) {
         super.onActivityReenter(requestCode, data);
+
         //Get bundle from detail activity (pass back parameters on what the currently selected item might be)
         mReenterStateBundle = new Bundle(data.getExtras());
         int startingPos = mReenterStateBundle.getInt(EXTRA_STARTING_POS);
@@ -386,7 +406,7 @@ public class MainPhoneActivity extends AppCompatActivity
             }
         }
 
-        if ((mCurrentPlaceholderFrag != null) && (mReenterStateBundle != null)){
+        if ((mCurrentPlaceholderFrag != null) && (mReenterStateBundle != null)) {
             postponeEnterTransition();
 
 

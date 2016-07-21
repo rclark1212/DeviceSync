@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<appwidget-provider
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:initialLayout="@layout/phone_widget"
+    android:minHeight="56dp"
+    android:minWidth="56dp"
+    android:previewImage="@drawable/app_icon_widget"
+    android:updatePeriodMillis="300000" >
+    <!-- 5 minute update period -->
+
+</appwidget-provider>

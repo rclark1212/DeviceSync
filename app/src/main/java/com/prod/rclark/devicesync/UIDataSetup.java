@@ -349,6 +349,7 @@ public class UIDataSetup {
     /**
      *  Return back an array of missing apps for the device
      *  Note - we have to query/differentiate for the OS here... (tablet vs ATV)
+     *  Note2 - we have a very similar routine in DBUtils to get the count of missing apps - keep them in sync
      */
     private ArrayList<ObjectDetail> getMissing() {
         mMissing.clear();

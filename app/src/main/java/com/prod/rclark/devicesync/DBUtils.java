@@ -570,6 +570,60 @@ public class DBUtils {
         return missing;
     }
 
+    /**
+     *  Return back a count of "missing" apps for deviuce
+     *  Note - we have to query/differentiate for the OS here... (tablet vs ATV)
+     *  And note this is virtually a copy of the getMissing routine in UIDataSetup. So if you change there, change here
+     */
+    public static int getMissingCount(Context ctx) {
+        int missingCount = 0;
+        //Set up the query
+        Uri appDB = AppContract.AppEntry.CONTENT_URI;
+        //Use a groupby for outer loop to prevent dup apps
+        Uri groupByApp = AppContract.AppEntry.GROUPBY_URI;
+        groupByApp = groupByApp.buildUpon().appendPath(AppContract.AppEntry.COLUMN_APP_PKG).build();
+
+        //set up a query for apps that don't exist locally and of the right type
+        //do a negative search on type so we can add a TYPE_FLAG later of BOTH. (i.e. this app).
+        boolean bIsATV = Utils.bIsThisATV(ctx);
+        String selection = AppContract.AppEntry.COLUMN_APP_DEVSSN + " != ? AND " + AppContract.AppEntry.COLUMN_APP_TYPE + " != ? ";
+        String type = bIsATV ? String.valueOf(AppContract.TYPE_TABLET) : String.valueOf(AppContract.TYPE_ATV);
+        String selectionArgs[] = {Build.SERIAL, type};
+
+        //grab the cursor
+        Cursor c = ctx.getContentResolver().query(groupByApp, null, selection, selectionArgs, AppContract.AppEntry.COLUMN_APP_LABEL + " ASC");
+
+        if (c.getCount() > 0) {
+            //Okay - we have a cursor with all the remote apps.
+
+            //Loop through the app names
+            for (int i = 0; i < c.getCount(); i++) {
+                //move to position
+                c.moveToPosition(i);
+
+                //get the app name
+                String appname = c.getString(c.getColumnIndex(AppContract.AppEntry.COLUMN_APP_PKG));
+
+                //Now query local device database
+                Uri localApp = appDB.buildUpon().appendPath(Build.SERIAL).appendPath(appname).build();
+
+                //grab the local cursor (and sort by app label)
+                Cursor c_local = ctx.getContentResolver().query(localApp, null, null, null, null);
+
+                //and is there only one?
+                if (c_local.getCount() < 1) {
+                    //Okay - we just found a missing app. Yay!
+                    missingCount++;
+                }
+                c_local.close();
+            }
+        }
+
+        c.close();
+
+        return missingCount;
+    }
+
 
     /**
      * Routine for testing CP and queries only...
