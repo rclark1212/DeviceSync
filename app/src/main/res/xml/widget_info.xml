@@ -6,6 +6,6 @@
     android:minWidth="56dp"
     android:previewImage="@drawable/app_icon_widget"
     android:updatePeriodMillis="300000" >
-    <!-- 5 minute update period -->
+    <!-- 5 minute update period 300000 -->
 
 </appwidget-provider>

@@ -53,6 +53,7 @@ public class FirebaseMessengerService extends Service {
     public static final int MSG_WRITE_DEVICE_TO_FIREBASE = 5;
     public static final int MSG_DELETE_APP_FROM_FIREBASE = 6;
     public static final int MSG_DELETE_DEVICE_FROM_FIREBASE = 7;
+    public static final int MSG_UNREGISTER_FIREBASE_LISTENER = 8;
 
     /** Params used in bundles */
     public static final String SERIAL_PARAM = "serial";
@@ -154,6 +155,11 @@ public class FirebaseMessengerService extends Service {
                         Log.d(TAG, "Deleting app from firebase - " + serial + " " + apk);
                         mFirebase.deleteAppFromFirebase(serial, apk);
                     }
+                    break;
+                }
+                case MSG_UNREGISTER_FIREBASE_LISTENER: {
+                    Log.d(TAG, "Unregistering firebase listeners");
+                    mFirebase.unregisterFirebaseDataListeners();
                     break;
                 }
                 default:

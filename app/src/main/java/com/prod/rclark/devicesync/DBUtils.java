@@ -610,7 +610,7 @@ public class DBUtils {
                 //grab the local cursor (and sort by app label)
                 Cursor c_local = ctx.getContentResolver().query(localApp, null, null, null, null);
 
-                //and is there only one?
+                //and does it not exist locally?
                 if (c_local.getCount() < 1) {
                     //Okay - we just found a missing app. Yay!
                     missingCount++;

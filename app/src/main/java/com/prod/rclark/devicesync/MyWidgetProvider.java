@@ -10,6 +10,7 @@ import android.util.Log;
 import android.widget.RemoteViews;
 
 import com.prod.rclark.devicesync.PhoneUI.MainPhoneActivity;
+import com.prod.rclark.devicesync.sync.GCESync;
 
 /**
  * Created by rclar on 7/19/2016.
