@@ -33,6 +33,7 @@ import android.os.Bundle;
 import android.util.Log;
 
 import com.prod.rclark.devicesync.R;
+import com.prod.rclark.devicesync.Utils;
 
 /*
  * Details activity class that loads LeanbackDetailsFragment class
@@ -68,19 +69,19 @@ public class DetailsActivity extends Activity {
         Intent data = new Intent();
 
         if (mReturnCode == DETAIL_RETCODE_OPENROW) {
-            Log.d(TAG, "Setting up open serial return");
+            Utils.LogD(TAG, "Setting up open serial return");
             data.putExtra(MainFragment.DETAILS_RESULT_KEY, mOpenSerial);
             data.putExtra(MainFragment.DETAILS_RESULT_ACTION, DETAIL_RETCODE_OPENROW);
         } else if (mReturnCode == DETAIL_RETCODE_INSTALLMISSING) {
-            Log.d(TAG, "Setting up install missing return");
+            Utils.LogD(TAG, "Setting up install missing return");
             data.putExtra(MainFragment.DETAILS_RESULT_KEY, mOpenSerial);
             data.putExtra(MainFragment.DETAILS_RESULT_ACTION, DETAIL_RETCODE_INSTALLMISSING);
         } else if (mReturnCode == DETAIL_RETCODE_REMOVEDEVICE) {
-            Log.d(TAG, "Setting up remove device return");
+            Utils.LogD(TAG, "Setting up remove device return");
             data.putExtra(MainFragment.DETAILS_RESULT_KEY, mOpenSerial);
             data.putExtra(MainFragment.DETAILS_RESULT_ACTION, DETAIL_RETCODE_REMOVEDEVICE);
         } else if (mReturnCode == DETAIL_RETCODE_CLONEFROM) {
-            Log.d(TAG, "Setting up clone from return");
+            Utils.LogD(TAG, "Setting up clone from return");
             data.putExtra(MainFragment.DETAILS_RESULT_KEY, mOpenSerial);
             data.putExtra(MainFragment.DETAILS_RESULT_ACTION, DETAIL_RETCODE_CLONEFROM);
         }

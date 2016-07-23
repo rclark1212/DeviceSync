@@ -290,7 +290,7 @@ public class DBUtils {
         //Now, search for the device (is it in DB yet?) - search by serial
         Uri deviceSearchUri = deviceDB.buildUpon().appendPath(device.serial).build();
 
-        //Log.d(TAG, "device query - uri:" + deviceSearchUri.toString());
+        //Utils.LogD(TAG, "device query - uri:" + deviceSearchUri.toString());
         Cursor c = ctx.getContentResolver().query(deviceSearchUri, null, null, null, null);
 
         if (c.getCount() > 0) {
@@ -318,7 +318,7 @@ public class DBUtils {
             ctx.getContentResolver().insert(AppContract.DevicesEntry.CONTENT_URI, contentValues);
         }
 
-        Log.d(TAG, "Attempting to write device to firebase " + device.serial);
+        Utils.LogD(TAG, "Attempting to write device to firebase " + device.serial);
         //TAGCPSAFE
         //MainFragment.mFirebase.writeDeviceToFirebase(device.serial);
 
@@ -382,7 +382,7 @@ public class DBUtils {
 
         //TAGCPSAFE
         //MainFragment.mFirebase.writeAppToFirebase(app.serial, app.pkg);
-        Log.d(TAG, "Attempting to write app to firebase " + app.serial + " " + app.pkg);
+        Utils.LogD(TAG, "Attempting to write app to firebase " + app.serial + " " + app.pkg);
 
         c.close();
     }
@@ -638,7 +638,7 @@ public class DBUtils {
         //Okay - first update the device database - serial number, nickname, date, model name, os_ver
         //Get an object with local device info...
         //Get the device DB reference...
-        Log.d(TAG, "Starting fake update population");
+        Utils.LogD(TAG, "Starting fake update population");
 
         ArrayList<String> fakedevice = new ArrayList<String>();
 
@@ -664,7 +664,7 @@ public class DBUtils {
             //Now, search for the device (is it in DB yet?) - search by serial
             Uri deviceSearchUri = deviceDB.buildUpon().appendPath(serialfake).build();
 
-            //Log.d(TAG, "device query - uri:" + deviceSearchUri.toString());
+            //Utils.LogD(TAG, "device query - uri:" + deviceSearchUri.toString());
             Cursor c = ctx.getContentResolver().query(deviceSearchUri, null, null, null, null);
 
             if (c.getCount() > 0) {
@@ -796,7 +796,7 @@ public class DBUtils {
             }
             c.close();
         }
-        Log.d(TAG, "Complete fake update population");
+        Utils.LogD(TAG, "Complete fake update population");
 
     }
 

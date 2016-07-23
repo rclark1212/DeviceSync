@@ -184,7 +184,7 @@ public class MainPhoneActivity extends AppCompatActivity
             // service using a Messenger, so here we get a client-side
             // representation of that from the raw IBinder object.
             mService = new Messenger(service);
-            Log.d(TAG, "got bound to service callback");
+            Utils.LogD(TAG, "got bound to service callback");
             mBoundToService = true;
             //create fragment after we bind...
             //if there is a pending message, execute it (this can happen on activity attach in fragment before onstart
@@ -198,7 +198,7 @@ public class MainPhoneActivity extends AppCompatActivity
             // This is called when the connection with the service has been
             // unexpectedly disconnected -- that is, its process crashed.
             mService = null;
-            Log.d(TAG, "got unbound to service callback");
+            Utils.LogD(TAG, "got unbound to service callback");
             mBoundToService = false;
         }
     };
@@ -218,7 +218,7 @@ public class MainPhoneActivity extends AppCompatActivity
                 //Okay - done with loading local data!
                 //if you must update CP, do it here...
             } else if (status == GCESync.FIREBASE_SERVICE_LOGGEDIN) {
-                Log.d(TAG, "Service has been logged into firebase!");
+                Utils.LogD(TAG, "Service has been logged into firebase!");
                 mbServiceLoggedIn = true;
                 //and if we have any remaining setup work to do, do it here...
                 if (mbPendingCompleteSetup) {
@@ -226,10 +226,10 @@ public class MainPhoneActivity extends AppCompatActivity
                     finishSetup();
                 }
             } else if (status == GCESync.FIREBASE_SERVICE_NOTLOGGEDIN) {
-                Log.d(TAG, "Service not logged into firebase - trying to log in");
+                Utils.LogD(TAG, "Service not logged into firebase - trying to log in");
             }
 
-            Log.d("DS_mainfrag_receiver", "Got status: " + status);
+            Utils.LogD("DS_mainfrag_receiver", "Got status: " + status);
         }
     };
 
@@ -242,7 +242,7 @@ public class MainPhoneActivity extends AppCompatActivity
         //is there a bundle?
         Intent launchIntent = getIntent();
         if (launchIntent.hasExtra(INTENT_EXTRA_LAUNCH)) {
-            Log.d(TAG, "onCreate intent has launch extra");
+            Utils.LogD(TAG, "onCreate intent has launch extra");
             if (INTENT_EXTRA_LAUNCH_MISSING.equals(launchIntent.getStringExtra(INTENT_EXTRA_LAUNCH))) {
                 //launched with intent to show missing page...
                 bShowMissing = true;
@@ -262,7 +262,7 @@ public class MainPhoneActivity extends AppCompatActivity
 
         //deal with scanning system/setting up CP first...
         //Update the local content provider if running for first time...
-        Log.d(TAG, "Starting phone finish setup");
+        Utils.LogD(TAG, "Starting phone finish setup");
         boolean bFirstTime = Utils.isRunningForFirstTime(this, true);
         if (bFirstTime) {
             //Lets add a feature addition here - IFF we are running for first time *but* the database
@@ -331,7 +331,7 @@ public class MainPhoneActivity extends AppCompatActivity
         super.onStart();
         // Bind to the service
         if (!mBoundToService) {
-            Log.d(TAG, "onStart - binding to service");
+            Utils.LogD(TAG, "onStart - binding to service");
             bindService(new Intent(this, FirebaseMessengerService.class), mConnection,
                     Context.BIND_AUTO_CREATE);
         }
@@ -340,12 +340,12 @@ public class MainPhoneActivity extends AppCompatActivity
     @Override
     public void onStop() {
         // Unbind from the service
-        Log.d(TAG, "onStop - unbinding from service");
+        Utils.LogD(TAG, "onStop - unbinding from service");
         if (mBoundToService) {
             mBoundToService = false;
             unbindService(mConnection);
         }
-        Log.d(TAG, "onStop - unbound from service");
+        Utils.LogD(TAG, "onStop - unbound from service");
         super.onStop();
     }
 
@@ -447,7 +447,7 @@ public class MainPhoneActivity extends AppCompatActivity
      */
     private boolean sendMessageToService(int messageId, Bundle bundle) {
         if (!mBoundToService) {
-            Log.d(TAG, "Service not bound but someone tried to send message");
+            Utils.LogD(TAG, "Service not bound but someone tried to send message");
             return false;
         }
 
@@ -459,7 +459,7 @@ public class MainPhoneActivity extends AppCompatActivity
         try {
             mService.send(msg);
         } catch (RemoteException e) {
-            Log.d(TAG, "Error accessing service!");
+            Utils.LogD(TAG, "Error accessing service!");
             e.printStackTrace();
         }
 
@@ -474,7 +474,7 @@ public class MainPhoneActivity extends AppCompatActivity
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_INIT_COMPLETE) {
             //init is done!
-            Log.d(TAG, "InitService complete");
+            Utils.LogD(TAG, "InitService complete");
             //was it successful?
             if (resultCode == RESULT_OK) {
                 //set up flag to complete setup
@@ -503,7 +503,7 @@ public class MainPhoneActivity extends AppCompatActivity
                     //find the row with this serial number...
                     //and select it...
                     if (serial != null) {
-                        Log.d(TAG, "DetailRet - select pos");
+                        Utils.LogD(TAG, "DetailRet - select pos");
 
                         //get the id...
                         int id = mUIDataSetup.getSerialRow(serial);
@@ -546,7 +546,7 @@ public class MainPhoneActivity extends AppCompatActivity
 
                 //And now process...
                 if ((prefResult & MainFragment.PREF_UPDATE_UI_FLAG) != 0) {
-                    Log.d(TAG, "PreferenceRet - update UI");
+                    Utils.LogD(TAG, "PreferenceRet - update UI");
                     //New strat. And a smoother UI experience.
                     //Simply save off hidden rows and restore them as necessary to the mRowAdapter object.
                     //Don't deallocate or anything (as browsefragment doesn't deal with deallocation well).
@@ -558,7 +558,7 @@ public class MainPhoneActivity extends AppCompatActivity
                 }
 
                 if ((prefResult & MainFragment.PREF_UPDATE_CP_FLAG) != 0) {
-                    Log.d(TAG, "PreferenceRet - update CP");
+                    Utils.LogD(TAG, "PreferenceRet - update CP");
                     //And kick off a CP update. Turn off the processing flag for UI until done...
                     GCESync.startActionUpdateLocal(this, null, null);
                 }
@@ -690,7 +690,7 @@ public class MainPhoneActivity extends AppCompatActivity
 
             //Only initialize this once...
             if (mRecyclerView == null) {
-                Log.d(TAG, "Init recycler view");
+                Utils.LogD(TAG, "Init recycler view");
                 mRecyclerView = (RecyclerView) rootView.findViewById(R.id.recycler_view);
 
                 // not changing the size of recyclerview
@@ -711,7 +711,7 @@ public class MainPhoneActivity extends AppCompatActivity
                 } else if (mAAdapter != null) {
                     mRecyclerView.setAdapter(mAAdapter);
                 } else {
-                    Log.d(TAG, "error creating adapter");
+                    Utils.LogD(TAG, "error creating adapter");
                 }
             }
 
@@ -737,7 +737,7 @@ public class MainPhoneActivity extends AppCompatActivity
                     //okay - use an array object...
                     if (mAAdapter == null) {
                         //create the array...
-                        Log.d(TAG, "Create adapter/array");
+                        Utils.LogD(TAG, "Create adapter/array");
                         if (mArray == null) {
                             mArray = mUIDataSetup.getArrayAdapter(mPosition);
                         }
@@ -752,7 +752,7 @@ public class MainPhoneActivity extends AppCompatActivity
                         String selection = MainPhoneActivity.mUIDataSetup.getRowSelection(mPosition);
                         String[] selection_args = MainPhoneActivity.mUIDataSetup.getRowSelectionArgs(mPosition);
 
-                        Log.d(TAG, "Create adapter/grab cursor - uri:" + uri.toString());
+                        Utils.LogD(TAG, "Create adapter/grab cursor - uri:" + uri.toString());
 
                         Cursor c = getActivity().getContentResolver().query(uri, null, selection, selection_args, null);
 
@@ -762,7 +762,7 @@ public class MainPhoneActivity extends AppCompatActivity
                     }
                 }
             } else {
-                Log.d(TAG, "yikes! mUIDataSetup not initialized in onAttach!");
+                Utils.LogD(TAG, "yikes! mUIDataSetup not initialized in onAttach!");
             }
         }
 

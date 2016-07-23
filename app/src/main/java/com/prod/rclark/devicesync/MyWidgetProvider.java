@@ -35,7 +35,7 @@ public class MyWidgetProvider extends AppWidgetProvider {
             //get the removeview
             RemoteViews remoteViews = new RemoteViews(ctx.getPackageName(), R.layout.phone_widget);
 
-            Log.d(TAG, "Setting widget text to " + uniqueApps);
+            Utils.LogD(TAG, "Setting widget text to " + uniqueApps);
 
             // Set the text
             remoteViews.setTextViewText(R.id.widget_count, String.valueOf(uniqueApps));
@@ -48,7 +48,7 @@ public class MyWidgetProvider extends AppWidgetProvider {
                 remoteViews.setTextColor(R.id.widget_count, ctx.getResources().getColor(R.color.accent));
                 intent.setAction("android.intent.action.MAIN");
                 intent.putExtra(MainPhoneActivity.INTENT_EXTRA_LAUNCH, MainPhoneActivity.INTENT_EXTRA_LAUNCH_MISSING);
-                Log.d(TAG, "Widget setup to launch missing");
+                Utils.LogD(TAG, "Widget setup to launch missing");
             }
 
             PendingIntent pendingIntent = PendingIntent.getActivity(ctx, 0, intent, 0);

@@ -92,7 +92,7 @@ public class ObjectDetailsFragment extends DetailsFragment {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        Log.d(TAG, "onCreate DetailsFragment");
+        Utils.LogD(TAG, "onCreate DetailsFragment");
         super.onCreate(savedInstanceState);
 
         prepareBackgroundManager();
@@ -154,7 +154,7 @@ public class ObjectDetailsFragment extends DetailsFragment {
     }
 
     private void setupDetailsOverviewRow() {
-        Log.d(TAG, "doInBackground: " + mSelectedObject.toString());
+        Utils.LogD(TAG, "doInBackground: " + mSelectedObject.toString());
         final DetailsOverviewRow row = new DetailsOverviewRow(mSelectedObject);
         ArrayObjectAdapter actionAdapter = new ArrayObjectAdapter();
         row.setImageDrawable(getResources().getDrawable(R.drawable.default_background));
@@ -207,7 +207,7 @@ public class ObjectDetailsFragment extends DetailsFragment {
                                 public void onResourceReady(GlideDrawable resource,
                                                             GlideAnimation<? super GlideDrawable>
                                                                     glideAnimation) {
-                                    Log.d(TAG, "details overview card image url ready: " + resource);
+                                    Utils.LogD(TAG, "details overview card image url ready: " + resource);
                                     row.setImageDrawable(resource);
                                     mAdapter.notifyArrayItemRangeChanged(0, mAdapter.size());
                                 }
@@ -311,7 +311,7 @@ public class ObjectDetailsFragment extends DetailsFragment {
 
             if (item instanceof Movie) {
                 Movie movie = (Movie) item;
-                Log.d(TAG, "Item: " + item.toString());
+                Utils.LogD(TAG, "Item: " + item.toString());
                 Intent intent = new Intent(getActivity(), DetailsActivity.class);
                 intent.putExtra(getResources().getString(R.string.movie), mSelectedObject);
                 intent.putExtra(getResources().getString(R.string.should_start), true);

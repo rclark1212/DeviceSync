@@ -31,6 +31,7 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.util.Log;
 
+import com.prod.rclark.devicesync.Utils;
 import com.prod.rclark.devicesync.cloud.FirebaseMessengerService;
 
 import java.util.ArrayList;
@@ -68,7 +69,7 @@ public class AppProvider extends ContentProvider {
             // interact with the service.  We are communicating with the
             // service using a Messenger, so here we get a client-side
             // representation of that from the raw IBinder object.
-            Log.d(TAG, "Bound to service in CP");
+            Utils.LogD(TAG, "Bound to service in CP");
             mService = new Messenger(service);
             mBoundToService = true;
         }
@@ -76,7 +77,7 @@ public class AppProvider extends ContentProvider {
         public void onServiceDisconnected(ComponentName className) {
             // This is called when the connection with the service has been
             // unexpectedly disconnected -- that is, its process crashed.
-            Log.d(TAG, "Unbind service in CP");
+            Utils.LogD(TAG, "Unbind service in CP");
             mService = null;
             mBoundToService = false;
         }
@@ -382,7 +383,7 @@ public class AppProvider extends ContentProvider {
                 throw new UnsupportedOperationException("Unknown uri: " + uri);
         }
         retCursor.setNotificationUri(getContext().getContentResolver(), uri);
-        //Log.d(TAG, "query - uri:" + uri.toString());
+        //Utils.LogD(TAG, "query - uri:" + uri.toString());
         return retCursor;
     }
 
@@ -431,7 +432,7 @@ public class AppProvider extends ContentProvider {
                 throw new UnsupportedOperationException("Unknown uri: " + uri);
         }
         getContext().getContentResolver().notifyChange(uri, null);
-        //Log.d(TAG, "insert - uri:" + uri.toString());
+        //Utils.LogD(TAG, "insert - uri:" + uri.toString());
         return returnUri;
     }
 
@@ -522,7 +523,7 @@ public class AppProvider extends ContentProvider {
         // Because a null deletes all rows
         if (rowsDeleted != 0) {
             getContext().getContentResolver().notifyChange(uri, null);
-            //Log.d(TAG, "delete - uri:" + uri.toString());
+            //Utils.LogD(TAG, "delete - uri:" + uri.toString());
         }
         return rowsDeleted;
     }
@@ -626,7 +627,7 @@ public class AppProvider extends ContentProvider {
         }
         if (rowsUpdated != 0) {
             getContext().getContentResolver().notifyChange(uri, null);
-            //Log.d(TAG, "update - uri:" + uri.toString());
+            //Utils.LogD(TAG, "update - uri:" + uri.toString());
         }
         return rowsUpdated;
     }
@@ -736,7 +737,7 @@ public class AppProvider extends ContentProvider {
      * Routine to trigger firebase service to update app from CP
      */
     private void updateFirebaseApp(String serial, String apk) {
-        Log.d(TAG, "CP: sendMessageToService - write app " + serial + " " + apk);
+        Utils.LogD(TAG, "CP: sendMessageToService - write app " + serial + " " + apk);
         Bundle params = new Bundle();
         params.putString(FirebaseMessengerService.SERIAL_PARAM, serial);
         params.putString(FirebaseMessengerService.APK_PARAM, apk);
@@ -747,7 +748,7 @@ public class AppProvider extends ContentProvider {
      * Routine to trigger firebase service to delete app from CP
      */
     private void deleteFirebaseApp(String serial, String apk) {
-        Log.d(TAG, "CP: sendMessageToService - delete app " + serial + " " + apk);
+        Utils.LogD(TAG, "CP: sendMessageToService - delete app " + serial + " " + apk);
         Bundle params = new Bundle();
         params.putString(FirebaseMessengerService.SERIAL_PARAM, serial);
         params.putString(FirebaseMessengerService.APK_PARAM, apk);
@@ -758,7 +759,7 @@ public class AppProvider extends ContentProvider {
      * Routine to trigger firebase service to update device from CP
      */
     private void updateFirebaseDevice(String serial) {
-        Log.d(TAG, "CP: sendMessageToService - write device " + serial);
+        Utils.LogD(TAG, "CP: sendMessageToService - write device " + serial);
         Bundle params = new Bundle();
         params.putString(FirebaseMessengerService.SERIAL_PARAM, serial);
         sendMessageToService(FirebaseMessengerService.MSG_WRITE_DEVICE_TO_FIREBASE, params);
@@ -768,7 +769,7 @@ public class AppProvider extends ContentProvider {
      * Routine to trigger firebase service to delete device from CP
      */
     private void deleteFirebaseDevice(String serial) {
-        Log.d(TAG, "CP: sendMessageToService - delete device " + serial);
+        Utils.LogD(TAG, "CP: sendMessageToService - delete device " + serial);
         Bundle params = new Bundle();
         params.putString(FirebaseMessengerService.SERIAL_PARAM, serial);
         sendMessageToService(FirebaseMessengerService.MSG_DELETE_DEVICE_FROM_FIREBASE, params);
@@ -779,7 +780,7 @@ public class AppProvider extends ContentProvider {
      */
     private void sendMessageToService(int messageId, Bundle bundle) {
         if (!mBoundToService) {
-            Log.d(TAG, "CP - Service not bound but someone tried to send message");
+            Utils.LogD(TAG, "CP - Service not bound but someone tried to send message");
             return;
         }
 
@@ -791,7 +792,7 @@ public class AppProvider extends ContentProvider {
         try {
             mService.send(msg);
         } catch (RemoteException e) {
-            Log.d(TAG, "Error accessing service!");
+            Utils.LogD(TAG, "Error accessing service!");
             e.printStackTrace();
         }
     }

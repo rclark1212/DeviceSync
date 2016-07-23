@@ -43,7 +43,7 @@ public class InstallUtil {
      */
     public static void installAPK(Context ctx, String apk) {
         //Utils.showToast(ctx, "Installing " + apk);
-        Log.d(TAG, "Installing " + apk);
+        Utils.LogD(TAG, "Installing " + apk);
 
         //For single install, make sure our batch install list is nulled out...
         if (DeviceSyncReceiver.mInstallIntents != null) {
@@ -63,7 +63,7 @@ public class InstallUtil {
      */
     public static void uninstallAPK(Context ctx, String apk) {
         //Utils.showToast(ctx, "UNinstalling " + apk);
-        Log.d(TAG, "UnInstalling " + apk);
+        Utils.LogD(TAG, "UnInstalling " + apk);
 
         //For single uninstall, make sure our batch install list is nulled out...
         if (DeviceSyncReceiver.mInstallIntents != null) {

@@ -110,7 +110,7 @@ public class InitActivity extends Activity implements
             // service using a Messenger, so here we get a client-side
             // representation of that from the raw IBinder object.
             mService = new Messenger(service);
-            Log.d(TAG, "got bound to service callback");
+            Utils.LogD(TAG, "got bound to service callback");
             mBoundToService = true;
             //create fragment after we bind...
             appInitStateMachine(STATE_EVENT_SRVC_BIND);
@@ -120,7 +120,7 @@ public class InitActivity extends Activity implements
             // This is called when the connection with the service has been
             // unexpectedly disconnected -- that is, its process crashed.
             mService = null;
-            Log.d(TAG, "got unbound to service callback");
+            Utils.LogD(TAG, "got unbound to service callback");
             mBoundToService = false;
         }
     };
@@ -129,10 +129,10 @@ public class InitActivity extends Activity implements
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        Log.d(TAG, "onInitCreate");
+        Utils.LogD(TAG, "onInitCreate");
         appInitStateMachine(STATE_EVENT_ONCREATE);
 
-        Log.d(TAG, "Checking internet");
+        Utils.LogD(TAG, "Checking internet");
         //First check internet connectivity
         if (!Utils.isOnline(this)) {
             this.setResult(RESULT_CANCELED);
@@ -147,7 +147,7 @@ public class InitActivity extends Activity implements
         super.onStart();
         // Bind to the service
         if (!mBoundToService) {
-            Log.d(TAG, "onStart - binding to service");
+            Utils.LogD(TAG, "onStart - binding to service");
             bindService(new Intent(this, FirebaseMessengerService.class), mConnection,
                     Context.BIND_AUTO_CREATE);
         }
@@ -156,12 +156,12 @@ public class InitActivity extends Activity implements
     @Override
     public void onStop() {
         // Unbind from the service
-        Log.d(TAG, "onStop - unbinding from service");
+        Utils.LogD(TAG, "onStop - unbinding from service");
         if (mBoundToService) {
             mBoundToService = false;
             unbindService(mConnection);
         }
-        Log.d(TAG, "onStop - unbound from service");
+        Utils.LogD(TAG, "onStop - unbound from service");
         super.onStop();
     }
 
@@ -170,7 +170,7 @@ public class InitActivity extends Activity implements
      */
     private boolean sendMessageToService(int messageId, Bundle bundle) {
         if (!mBoundToService) {
-            Log.d(TAG, "Service not bound but someone tried to send message");
+            Utils.LogD(TAG, "Service not bound but someone tried to send message");
             return false;
         }
 
@@ -182,7 +182,7 @@ public class InitActivity extends Activity implements
         try {
             mService.send(msg);
         } catch (RemoteException e) {
-            Log.d(TAG, "Error accessing service!");
+            Utils.LogD(TAG, "Error accessing service!");
             e.printStackTrace();
         }
 
@@ -250,7 +250,7 @@ public class InitActivity extends Activity implements
         // Note this is in general order of operation
         //
         if (mInitCurrentState == STATE_LAUNCH) {
-            Log.d(TAG, "Init routine - STATE_LAUNCH");
+            Utils.LogD(TAG, "Init routine - STATE_LAUNCH");
             if (mbCreate && mbServiceBind && mbInetOkay) {
                 //service, oncreate and inet all okay...
                 //Okay to have a single state waiting for all 3 since all 3 failing will punt us out of app
@@ -260,7 +260,7 @@ public class InitActivity extends Activity implements
         }
 
         if (mInitCurrentState == STATE_CHECK_GMS) {
-            Log.d(TAG, "Init routine - STATE_CHECK_GMS");
+            Utils.LogD(TAG, "Init routine - STATE_CHECK_GMS");
             if (mbGMSAvailable) {
                 mInitCurrentState = STATE_SHOWING_WELCOME;
                 //kick off GMS connect
@@ -271,7 +271,7 @@ public class InitActivity extends Activity implements
         }
 
         if (mInitCurrentState == STATE_SHOWING_WELCOME) {
-            Log.d(TAG, "Init routine - STATE_SHOW_WELCOME");
+            Utils.LogD(TAG, "Init routine - STATE_SHOW_WELCOME");
             //Okay, welcome taken care of - now off to logon once GMS and welcome complete...
             if (mbWelcomeDone && mbGMSLoggedOn) {
                 //move to logon to firebase
@@ -296,7 +296,7 @@ public class InitActivity extends Activity implements
         }*/
 
         if (mInitCurrentState == STATE_LOGGING_ON) {
-            Log.d(TAG, "Init routine - STATE_LOGGING_ON");
+            Utils.LogD(TAG, "Init routine - STATE_LOGGING_ON");
             if (mbFirebaseLoggedOn) {
                 //Okay - logged on... Check permissions
                 mInitCurrentState = STATE_CHECKING_PERMISSIONS;
@@ -308,7 +308,7 @@ public class InitActivity extends Activity implements
         }
 
         if (mInitCurrentState == STATE_CHECKING_PERMISSIONS) {
-            Log.d(TAG, "Init routine - STATE_CHECK_PERMISSIONS");
+            Utils.LogD(TAG, "Init routine - STATE_CHECK_PERMISSIONS");
             if (mbHaveLocationPermission) {
                 //Okay - got permission result (positive or negative) for location
                 mInitCurrentState = STATE_CHECKING_BTPERMISSIONS;
@@ -317,7 +317,7 @@ public class InitActivity extends Activity implements
         }
 
         if (mInitCurrentState == STATE_CHECKING_BTPERMISSIONS) {
-            Log.d(TAG, "Init routine - STATE_CHECK_BTPERMISSIONS");
+            Utils.LogD(TAG, "Init routine - STATE_CHECK_BTPERMISSIONS");
             if (mbHaveBTPermission) {
                 //Okay - got permission result (positive or negative) for location
                 mInitCurrentState = STATE_SHOWING_TUTORIAL;
@@ -327,9 +327,9 @@ public class InitActivity extends Activity implements
 
 
         if (mInitCurrentState == STATE_SHOWING_TUTORIAL) {
-            Log.d(TAG, "Init routine - STATE_SHOW_TUTORIAL");
+            Utils.LogD(TAG, "Init routine - STATE_SHOW_TUTORIAL");
             if (mbTutorialShown) {
-                Log.d(TAG, "Init routine - all done");
+                Utils.LogD(TAG, "Init routine - all done");
                 mInitCurrentState = STATE_APPINIT_COMPLETE;
                 this.setResult(RESULT_OK);
                 finish();
@@ -343,7 +343,7 @@ public class InitActivity extends Activity implements
         if (mInitCurrentState == STATE_APPINIT_COMPLETE) {
             if (newEvent == STATE_EVENT_SRVC_BIND) {
                 if (mbStateWaitingForBindingQuery) {
-                    Log.d(TAG, "Got a delayed binding response in appInit - Query");
+                    Utils.LogD(TAG, "Got a delayed binding response in appInit - Query");
                     mbStateWaitingForBindingQuery = false;
                     if (!sendMessageToService(FirebaseMessengerService.MSG_QUERY_LOGON_STATUS, null)) {
                         //Uh oh - we have a real problem
@@ -352,7 +352,7 @@ public class InitActivity extends Activity implements
                 }
 
                 if (mbStateWaitingForBindingLogin) {
-                    Log.d(TAG, "Got a delayed binding response in appInit - Login");
+                    Utils.LogD(TAG, "Got a delayed binding response in appInit - Login");
                     mbStateWaitingForBindingLogin = false;
                     if (!sendMessageToService(FirebaseMessengerService.MSG_ATTEMPT_LOGON, null)) {
                         //Uh oh - we have a real problem
@@ -422,7 +422,7 @@ public class InitActivity extends Activity implements
      */
     private void connectGMS() {
         //Next, connect...
-        Log.d(TAG, "Setting up GMS");
+        Utils.LogD(TAG, "Setting up GMS");
         //next attach to GMS if not yet attached...
         //try to get location services here
         if (mActivityGoogleApiClient == null) {
@@ -449,14 +449,14 @@ public class InitActivity extends Activity implements
         if (auth.getCurrentUser() != null) {
             // already signed in
             //store in prefs
-            Log.d(TAG, "Firebase signed in with " + auth.getCurrentUser().getEmail());
+            Utils.LogD(TAG, "Firebase signed in with " + auth.getCurrentUser().getEmail());
             String user = auth.getCurrentUser().getUid();
             //does the user match what has been stored?
             Utils.setUserId(this, user);
             bret = true;
         } else {
             //not signed in
-            Log.d(TAG, "Firebase starting sign in activity");
+            Utils.LogD(TAG, "Firebase starting sign in activity");
             //Set firebase
             startActivityForResult(
                     AuthUI.getInstance(FirebaseApp.getInstance())
@@ -537,13 +537,13 @@ public class InitActivity extends Activity implements
             if ((grantResults.length > 0)
                     && (grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
                 // Yay! We get location. Go ahead an update the device record...
-                Log.d(TAG, "location priviledge granted. Updating CP");
+                Utils.LogD(TAG, "location priviledge granted. Updating CP");
                 //Now get the location
                 String location = Utils.getLocation(this, mActivityGoogleApiClient);
                 //set this cached value...
                 Utils.setCachedLocation(this, location);
             } else {
-                Log.d(TAG, "location priviledge DENIED. Grr...");
+                Utils.LogD(TAG, "location priviledge DENIED. Grr...");
                 Utils.setCachedLocation(this, null);
             }
             appInitStateMachine(STATE_EVENT_PERMISSION_CHECKED);
@@ -552,9 +552,9 @@ public class InitActivity extends Activity implements
             if ((grantResults.length > 0)
                     && (grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
                 // Yay! We get admin! Note we don't use except for name changes - so this is for later
-                Log.d(TAG, "btadmin priviledge granted");
+                Utils.LogD(TAG, "btadmin priviledge granted");
             } else {
-                Log.d(TAG, "btadmin priviledge DENIED. Grr...");
+                Utils.LogD(TAG, "btadmin priviledge DENIED. Grr...");
             }
             appInitStateMachine(STATE_EVENT_BTPERMISSION_CHECKED);
         }
@@ -566,7 +566,7 @@ public class InitActivity extends Activity implements
     @Override
     public void onConnected(Bundle bundle) {
         // Display the connection status
-        Log.d(TAG, "Success - MainFragment google GMS services connect");
+        Utils.LogD(TAG, "Success - MainFragment google GMS services connect");
 
         // Note that we defer most of our initialization until after google GMS connects. Do that here...
         appInitStateMachine(STATE_EVENT_GMS_CONNECTED);
@@ -582,7 +582,7 @@ public class InitActivity extends Activity implements
 
     @Override
     public void onConnectionSuspended(int i) {
-        Log.d(TAG, "MainFragment Suspended google GMS services connect - cause:" + i);
+        Utils.LogD(TAG, "MainFragment Suspended google GMS services connect - cause:" + i);
         //We are not connected
         //Try to connect again
         mActivityGoogleApiClient.connect();
@@ -591,7 +591,7 @@ public class InitActivity extends Activity implements
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        Log.d(TAG, "onActivityResult - code " + requestCode);
+        Utils.LogD(TAG, "onActivityResult - code " + requestCode);
         if (requestCode == REQUEST_GOOGLE_PLAY_SERVICES) {
             appInitStateMachine(STATE_EVENT_GMS_AVAILABLE);
         } else if (requestCode == REQUEST_SHOW_TUTORIAL) {
@@ -599,15 +599,15 @@ public class InitActivity extends Activity implements
         } else if (requestCode == REQUEST_SHOW_WELCOME) {
             appInitStateMachine(STATE_EVENT_WELCOME_DONE);
         } else if (requestCode == REQUEST_FIREBASE_SIGN_IN) {
-            Log.d(TAG, "In firebase logon...");
+            Utils.LogD(TAG, "In firebase logon...");
             if (resultCode == Activity.RESULT_OK) {
                 // user is signed in!
-                Log.d(TAG, "Firebase signed in");
+                Utils.LogD(TAG, "Firebase signed in");
                 FirebaseAuth auth = FirebaseAuth.getInstance();
                 String user = auth.getCurrentUser().getUid();
                 Utils.setUserId(this, user);
             } else {
-                Log.d(TAG, "Firebase failure");
+                Utils.LogD(TAG, "Firebase failure");
                 //Toast.makeText(this, "Firebase failure...", Toast.LENGTH_LONG);
                 // user is not signed in. We are brutal in our requirements (but app makes no sense if user not signed in)
                 this.setResult(RESULT_CANCELED);

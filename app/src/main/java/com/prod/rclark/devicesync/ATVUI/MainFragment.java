@@ -148,7 +148,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                 //And force an update
                 updateFromCP(null);
             } else if (status == GCESync.FIREBASE_SERVICE_LOGGEDIN) {
-                Log.d(TAG, "Service has been logged into firebase!");
+                Utils.LogD(TAG, "Service has been logged into firebase!");
                 mbServiceLoggedIn = true;
                 //and if we have any remaining setup work to do, do it here...
                 if (mbPendingStage3Setup) {
@@ -156,10 +156,10 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                     processUIAfterSigninStage3();
                 }
             } else if (status == GCESync.FIREBASE_SERVICE_NOTLOGGEDIN) {
-                Log.d(TAG, "Service not logged into firebase - trying to log in");
+                Utils.LogD(TAG, "Service not logged into firebase - trying to log in");
             }
 
-            Log.d("DS_mainfrag_receiver", "Got status: " + status);
+            Utils.LogD("DS_mainfrag_receiver", "Got status: " + status);
         }
     };
 
@@ -181,7 +181,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
-        Log.d(TAG, "onCreate");
+        Utils.LogD(TAG, "onCreate");
         super.onActivityCreated(savedInstanceState);
 
         //Okay - by time we create activity, we should be 100% done due to main activity work...
@@ -196,7 +196,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
      * This is done in this routine.
      */
     private void processUIStartUpStage2() {
-        Log.d(TAG, "Starting stage2 setup");
+        Utils.LogD(TAG, "Starting stage2 setup");
 
         //Check to see if services is logged in for final update stage
         if (mbServiceLoggedIn) {
@@ -211,7 +211,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
     //Completion of setup routine...
     private void processUIAfterSigninStage3() {
         //Update the local content provider if running for first time...
-        Log.d(TAG, "Starting stage3 setup");
+        Utils.LogD(TAG, "Starting stage3 setup");
         boolean bFirstTime = Utils.isRunningForFirstTime(getActivity(), false);
         if (bFirstTime) {
             //Lets add a feature addition here - IFF we are running for first time *but* the database
@@ -326,7 +326,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
                 //And now process...
                 if ((prefResult & PREF_UPDATE_UI_FLAG) != 0) {
-                    Log.d(TAG, "PreferenceRet - update UI");
+                    Utils.LogD(TAG, "PreferenceRet - update UI");
                     //New strat. And a smoother UI experience.
                     //Simply save off hidden rows and restore them as necessary to the mRowAdapter object.
                     //Don't deallocate or anything (as browsefragment doesn't deal with deallocation well).
@@ -335,7 +335,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                 }
 
                 if ((prefResult & PREF_UPDATE_CP_FLAG) != 0) {
-                    Log.d(TAG, "PreferenceRet - update CP");
+                    Utils.LogD(TAG, "PreferenceRet - update CP");
                     //And kick off a CP update. Turn off the processing flag for UI until done...
                     mbAllowUpdates = false;
                     GCESync.startActionUpdateLocal(getActivity(), null, null);
@@ -352,7 +352,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                     //find the row with this serial number...
                     //and select it...
                     if (serial != null) {
-                        Log.d(TAG, "DetailRet - select pos");
+                        Utils.LogD(TAG, "DetailRet - select pos");
 
                         //get the id...
                         int id = mUIDataSetup.getSerialRow(serial);
@@ -410,9 +410,9 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         if (mbAllowUpdates) {
             if (mUIDataSetup != null) {
                 if (uri != null) {
-                    Log.d("DS_mainfrag_updateFrmCP", "Starting update for " + uri.toString());
+                    Utils.LogD("DS_mainfrag_updateFrmCP", "Starting update for " + uri.toString());
                 } else {
-                    Log.d("DS_mainfrag_updateFrmCP", "Starting update for (no uri)");
+                    Utils.LogD("DS_mainfrag_updateFrmCP", "Starting update for (no uri)");
                 }
             }
             getActivity().runOnUiThread(new Runnable() {
@@ -463,7 +463,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
                         //All done!
                     } else {
-                        Log.d("DS_mainfrag_updateFrmCP", "Skip update");
+                        Utils.LogD("DS_mainfrag_updateFrmCP", "Skip update");
                     }
                 }
             });
@@ -718,7 +718,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
 
             if (item instanceof ObjectDetail) {
                 ObjectDetail element = (ObjectDetail) item;
-                Log.d(TAG, "Item: " + item.toString());
+                Utils.LogD(TAG, "Item: " + item.toString());
                 Uri elementUri;
 
                 if (element.bIsDevice) {

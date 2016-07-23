@@ -93,7 +93,7 @@ public class FirebaseMessengerService extends Service {
                         if (auth.getCurrentUser() != null) {
                             // already signed in - w00t w00t
                             //store in prefs
-                            Log.d(TAG, "Firebase signed in with " + auth.getCurrentUser().getEmail());
+                            Utils.LogD(TAG, "Firebase signed in with " + auth.getCurrentUser().getEmail());
                             String user = auth.getCurrentUser().getUid();
                             //does the user match what has been stored?
                             if (!user.equals(Utils.getUserId(getApplicationContext()))) {
@@ -122,7 +122,7 @@ public class FirebaseMessengerService extends Service {
                     if ((params != null) && (mFirebase != null)) {
                         String serial = params.getString(SERIAL_PARAM);
                         String apk = params.getString(APK_PARAM);
-                        Log.d(TAG, "Writing app to firebase - " + serial + " " + apk);
+                        Utils.LogD(TAG, "Writing app to firebase - " + serial + " " + apk);
                         mFirebase.writeAppToFirebase(serial, apk);
                     }
                     break;
@@ -131,7 +131,7 @@ public class FirebaseMessengerService extends Service {
                     Bundle params = msg.getData();
                     if ((params != null) && (mFirebase != null)) {
                         String serial = params.getString(SERIAL_PARAM);
-                        Log.d(TAG, "Writing device to firebase - " + serial);
+                        Utils.LogD(TAG, "Writing device to firebase - " + serial);
                         mFirebase.writeDeviceToFirebase(serial);
                     }
                     break;
@@ -140,7 +140,7 @@ public class FirebaseMessengerService extends Service {
                     Bundle params = msg.getData();
                     if ((params != null) && (mFirebase != null)) {
                         String serial = params.getString(SERIAL_PARAM);
-                        Log.d(TAG, "Deleting device from firebase - " + serial);
+                        Utils.LogD(TAG, "Deleting device from firebase - " + serial);
                         //Note that the below will delete all records for the serial number. So when called...
                         //Will delete devices/apps remotely. That triggers listeners to delete locally.
                         mFirebase.deleteFirebaseRecord(serial);
@@ -152,13 +152,13 @@ public class FirebaseMessengerService extends Service {
                     if ((params != null) && (mFirebase != null)) {
                         String serial = params.getString(SERIAL_PARAM);
                         String apk = params.getString(APK_PARAM);
-                        Log.d(TAG, "Deleting app from firebase - " + serial + " " + apk);
+                        Utils.LogD(TAG, "Deleting app from firebase - " + serial + " " + apk);
                         mFirebase.deleteAppFromFirebase(serial, apk);
                     }
                     break;
                 }
                 case MSG_UNREGISTER_FIREBASE_LISTENER: {
-                    Log.d(TAG, "Unregistering firebase listeners");
+                    Utils.LogD(TAG, "Unregistering firebase listeners");
                     mFirebase.unregisterFirebaseDataListeners();
                     break;
                 }
@@ -190,7 +190,7 @@ public class FirebaseMessengerService extends Service {
         if (auth.getCurrentUser() != null) {
             // already signed in - w00t w00t
             //store in prefs
-            Log.d(TAG, "Firebase signed in with " + auth.getCurrentUser().getEmail());
+            Utils.LogD(TAG, "Firebase signed in with " + auth.getCurrentUser().getEmail());
             String user = auth.getCurrentUser().getUid();
             //does the user match what has been stored?
             if (!user.equals(Utils.getUserId(getApplicationContext()))) {
@@ -212,7 +212,7 @@ public class FirebaseMessengerService extends Service {
                 FirebaseUser user = firebaseAuth.getCurrentUser();
                 if (user != null) {
                     // User is signed in
-                    Log.d(TAG, "onAuthStateChanged:signed_in:" + user.getUid());
+                    Utils.LogD(TAG, "onAuthStateChanged:signed_in:" + user.getUid());
                     if (!user.getUid().equals(Utils.getUserId(getApplicationContext()))) {
                         //reset firebase instance
                         mFirebase = null;
@@ -223,7 +223,7 @@ public class FirebaseMessengerService extends Service {
                     mbLoggedOn = true;
                 } else {
                     // User is signed out
-                    Log.d(TAG, "onAuthStateChanged:signed_out");
+                    Utils.LogD(TAG, "onAuthStateChanged:signed_out");
                     mbLoggedOn = false;
                 }
             }

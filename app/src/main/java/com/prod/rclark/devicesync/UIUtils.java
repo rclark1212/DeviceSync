@@ -199,9 +199,9 @@ public class UIUtils {
             msg = msg + apklist.get(i) + ", ";
         }
         if (bInstall) {
-            Log.d(TAG, "confirm batch install - " + msg);
+            Utils.LogD(TAG, "confirm batch install - " + msg);
         } else {
-            Log.d(TAG, "confirm batch uninstall - " + msg);
+            Utils.LogD(TAG, "confirm batch uninstall - " + msg);
         }
 
         alertDialogBuilder

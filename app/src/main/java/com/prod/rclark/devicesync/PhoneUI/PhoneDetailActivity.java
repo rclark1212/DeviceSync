@@ -24,6 +24,7 @@ import com.prod.rclark.devicesync.ATVUI.MainFragment;
 import com.prod.rclark.devicesync.DBUtils;
 import com.prod.rclark.devicesync.ObjectDetail;
 import com.prod.rclark.devicesync.R;
+import com.prod.rclark.devicesync.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -192,7 +193,7 @@ public class PhoneDetailActivity extends AppCompatActivity {
                     mObjectCursor = null;
                 }
                 //create the array...
-                Log.d(TAG, "Create adapter/array");
+                Utils.LogD(TAG, "Create adapter/array");
                 mObjectArray = MainPhoneActivity.mUIDataSetup.getArrayAdapter(rowposition);
             } else {
                 //use a cursor object
@@ -205,7 +206,7 @@ public class PhoneDetailActivity extends AppCompatActivity {
                 String selection = MainPhoneActivity.mUIDataSetup.getRowSelection(rowposition);
                 String[] selection_args = MainPhoneActivity.mUIDataSetup.getRowSelectionArgs(rowposition);
 
-                Log.d(TAG, "Create adapter/grab cursor - uri:" + uri.toString());
+                Utils.LogD(TAG, "Create adapter/grab cursor - uri:" + uri.toString());
 
                 mObjectCursor = this.getContentResolver().query(uri, null, selection, selection_args, null);
             }
@@ -213,7 +214,7 @@ public class PhoneDetailActivity extends AppCompatActivity {
                 mPagerAdapter.notifyDataSetChanged();
             }
         } else {
-            Log.d(TAG, "yikes! mUIDataSetup not initialized in onCreate for phone detail!");
+            Utils.LogD(TAG, "yikes! mUIDataSetup not initialized in onCreate for phone detail!");
         }
     }
 
@@ -241,23 +242,23 @@ public class PhoneDetailActivity extends AppCompatActivity {
         //Note that we re-use the ordinals spec'd in ATVUI (no reason not to save typing)
         Intent data = new Intent();
         if (mReturnCode == DetailsActivity.DETAIL_RETCODE_OPENROW) {
-            Log.d(TAG, "Setting up open serial return");
+            Utils.LogD(TAG, "Setting up open serial return");
             data.putExtra(MainFragment.DETAILS_RESULT_KEY, mOpenSerial);
             data.putExtra(MainFragment.DETAILS_RESULT_ACTION, DetailsActivity.DETAIL_RETCODE_OPENROW);
         } else if (mReturnCode == DetailsActivity.DETAIL_RETCODE_INSTALLMISSING) {
-            Log.d(TAG, "Setting up install missing return");
+            Utils.LogD(TAG, "Setting up install missing return");
             data.putExtra(MainFragment.DETAILS_RESULT_KEY, mOpenSerial);
             data.putExtra(MainFragment.DETAILS_RESULT_ACTION, DetailsActivity.DETAIL_RETCODE_INSTALLMISSING);
         } else if (mReturnCode == DetailsActivity.DETAIL_RETCODE_REMOVEDEVICE) {
-            Log.d(TAG, "Setting up remove device return");
+            Utils.LogD(TAG, "Setting up remove device return");
             data.putExtra(MainFragment.DETAILS_RESULT_KEY, mOpenSerial);
             data.putExtra(MainFragment.DETAILS_RESULT_ACTION, DetailsActivity.DETAIL_RETCODE_REMOVEDEVICE);
         } else if (mReturnCode == DetailsActivity.DETAIL_RETCODE_CLONEFROM) {
-            Log.d(TAG, "Setting up clone from return");
+            Utils.LogD(TAG, "Setting up clone from return");
             data.putExtra(MainFragment.DETAILS_RESULT_KEY, mOpenSerial);
             data.putExtra(MainFragment.DETAILS_RESULT_ACTION, DetailsActivity.DETAIL_RETCODE_CLONEFROM);
         } else if (mReturnCode == DetailsActivity.DETAIL_RETCODE_REFRESH) {
-            Log.d(TAG, "Refresh listview on return (BT name)");
+            Utils.LogD(TAG, "Refresh listview on return (BT name)");
             data.putExtra(MainFragment.DETAILS_RESULT_ACTION, DetailsActivity.DETAIL_RETCODE_REFRESH);
         }
 

@@ -69,7 +69,7 @@ public class CardPresenter extends Presenter {
 
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent) {
-        //Log.d(TAG, "onCreateViewHolder");
+        //Utils.LogD(TAG, "onCreateViewHolder");
 
         sDefaultBackgroundColor = parent.getResources().getColor(R.color.default_background);
         sSelectedBackgroundColor = parent.getResources().getColor(R.color.selected_background);
@@ -94,7 +94,7 @@ public class CardPresenter extends Presenter {
         ObjectDetail element = (ObjectDetail) item;
         ImageCardView cardView = (ImageCardView) viewHolder.view;
 
-        //Log.d(TAG, "onBindViewHolder");
+        //Utils.LogD(TAG, "onBindViewHolder");
         if (element.label.length() > 0) {
             cardView.setMainImageDimensions(CARD_WIDTH, CARD_HEIGHT);
 
@@ -237,7 +237,7 @@ public class CardPresenter extends Presenter {
 
     @Override
     public void onUnbindViewHolder(Presenter.ViewHolder viewHolder) {
-        //Log.d(TAG, "onUnbindViewHolder");
+        //Utils.LogD(TAG, "onUnbindViewHolder");
         ImageCardView cardView = (ImageCardView) viewHolder.view;
         // Remove references to images so that the garbage collector can free up memory
         cardView.setTitleText("debugUnbind");   //for testing

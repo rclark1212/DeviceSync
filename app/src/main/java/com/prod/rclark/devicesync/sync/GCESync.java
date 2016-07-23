@@ -200,7 +200,7 @@ public class GCESync extends IntentService {
                 if (msDelay > 0) {
                     //run the action on a timer thread
                     Timer timer = new Timer();
-                    Log.d(TAG, "Scheduling app (" + pkgname + ") CP update in " + msDelay + "ms");
+                    Utils.LogD(TAG, "Scheduling app (" + pkgname + ") CP update in " + msDelay + "ms");
                     timer.schedule(new TimerTask() {
                         @Override
                         public void run() {
@@ -276,7 +276,7 @@ public class GCESync extends IntentService {
             //clear contentValues...
             contentValues.clear();
 
-            //Log.d(TAG, "app query - uri:" + appSearchUri.toString());
+            //Utils.LogD(TAG, "app query - uri:" + appSearchUri.toString());
             Cursor c = mCtx.getContentResolver().query(appSearchUri, null, null, null, null);
 
             if (c.getCount() > 0) {
@@ -333,10 +333,10 @@ public class GCESync extends IntentService {
 
         //Step 4 - apply the content operation batch
         try {
-            //Log.d(TAG, "Starting batch CP application");
+            //Utils.LogD(TAG, "Starting batch CP application");
             mCtx.getContentResolver().applyBatch(AppContract.CONTENT_AUTHORITY, ops);
-            //Log.d(TAG, "Complete batch CP application");
-            Log.d(TAG, "Pushing records to firebase for serial " + Build.SERIAL);
+            //Utils.LogD(TAG, "Complete batch CP application");
+            Utils.LogD(TAG, "Pushing records to firebase for serial " + Build.SERIAL);
             //TAGCPSAFE - NO - SHOULD NOT NEED THIS ROUTINE - individual apps will get written to DB entries
             //MainFragment.mFirebase.pushRecordsToFirebase(Build.SERIAL);
         } catch (RemoteException e) {
@@ -376,7 +376,7 @@ public class GCESync extends IntentService {
      * @param packageName
      */
     private void handleActionLocalAppUpdate(String packageName) {
-        Log.d(TAG, "Starting local app update for " + packageName);
+        Utils.LogD(TAG, "Starting local app update for " + packageName);
         //Construct the Uri...
         Uri appDB = AppContract.AppEntry.CONTENT_URI;
         //build up the local device query
@@ -425,13 +425,13 @@ public class GCESync extends IntentService {
             if (inputStream == null) {
                 // Nothing to do. Seems this is also a sign of an app not on store...
                 bExists = false;
-                Log.d(TAG, "Check play store, got null input");
+                Utils.LogD(TAG, "Check play store, got null input");
             }
             reader = new BufferedReader(new InputStreamReader(inputStream));
             line = reader.readLine();
 
         } catch (IOException e) {
-            Log.d(TAG, "URL Error - couldn't find " + pkg);
+            Utils.LogD(TAG, "URL Error - couldn't find " + pkg);
             // mark this as not existing on play store...
             bExists = false;
         } finally {
@@ -442,7 +442,7 @@ public class GCESync extends IntentService {
 
         if (bExists) {
             //Step 2 - go ahead with install
-            Log.d(TAG, "Launching install intent for " + pkg);
+            Utils.LogD(TAG, "Launching install intent for " + pkg);
             Intent goToMarket = new Intent(Intent.ACTION_VIEW).setData(Uri.parse(intentPrefix + pkg));
             //make sure activity not on history stack...
             goToMarket.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);

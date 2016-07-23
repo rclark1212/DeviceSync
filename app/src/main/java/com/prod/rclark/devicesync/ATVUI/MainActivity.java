@@ -119,7 +119,7 @@ public class MainActivity extends Activity implements
             // service using a Messenger, so here we get a client-side
             // representation of that from the raw IBinder object.
             mService = new Messenger(service);
-            Log.d(TAG, "got bound to service callback");
+            Utils.LogD(TAG, "got bound to service callback");
             mBoundToService = true;
             //create fragment after we bind...
             //if there is a pending message, execute it (this can happen on activity attach in fragment before onstart
@@ -133,7 +133,7 @@ public class MainActivity extends Activity implements
             // This is called when the connection with the service has been
             // unexpectedly disconnected -- that is, its process crashed.
             mService = null;
-            Log.d(TAG, "got unbound to service callback");
+            Utils.LogD(TAG, "got unbound to service callback");
             mBoundToService = false;
         }
     };
@@ -142,12 +142,12 @@ public class MainActivity extends Activity implements
     public void onMainActivityCallback(int callbackcode, String data, String extra) {
         switch (callbackcode) {
             case CALLBACK_SERVICE_HELLO: {
-                Log.d(TAG, "Callback: sendMessageToService - hello");
+                Utils.LogD(TAG, "Callback: sendMessageToService - hello");
                 sendMessageToService(FirebaseMessengerService.MSG_SAY_HELLO, null);
                 break;
             }
             case CALLBACK_SERVICE_QUERY_LOGIN: {
-                Log.d(TAG, "Callback: sendMessageToService - query login");
+                Utils.LogD(TAG, "Callback: sendMessageToService - query login");
                 if (!sendMessageToService(FirebaseMessengerService.MSG_QUERY_LOGON_STATUS, null)) {
                     //We have a problem...
                     //Toast.makeText(getApplicationContext(), "Service not bound", Toast.LENGTH_SHORT).show();
@@ -156,7 +156,7 @@ public class MainActivity extends Activity implements
                 break;
             }
             case CALLBACK_SERVICE_REQUEST_LOGIN: {
-                Log.d(TAG, "Callback: sendMessageToService - request login");
+                Utils.LogD(TAG, "Callback: sendMessageToService - request login");
                 if (!sendMessageToService(FirebaseMessengerService.MSG_ATTEMPT_LOGON, null)) {
                     //We have a problem
                     //Toast.makeText(getApplicationContext(), "Service not bound", Toast.LENGTH_SHORT).show();
@@ -174,7 +174,7 @@ public class MainActivity extends Activity implements
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Log.d(TAG, "onCreate");
+        Utils.LogD(TAG, "onCreate");
 
         //Do our initialization
         Intent intent = new Intent(getApplication(), InitActivity.class);
@@ -185,7 +185,7 @@ public class MainActivity extends Activity implements
     //Finish setup by creating browse fragment
     private void finishSetup() {
         if (mMainFragment == null) {
-            Log.d(TAG, "finishing setup and creating browsefragment");
+            Utils.LogD(TAG, "finishing setup and creating browsefragment");
             mMainFragment = new MainFragment();
             //otherwise and put it in the container
             FragmentTransaction transaction = getFragmentManager().beginTransaction();
@@ -200,7 +200,7 @@ public class MainActivity extends Activity implements
         super.onStart();
         // Bind to the service
         if (!mBoundToService) {
-            Log.d(TAG, "onStart - binding to service");
+            Utils.LogD(TAG, "onStart - binding to service");
             bindService(new Intent(this, FirebaseMessengerService.class), mConnection,
                     Context.BIND_AUTO_CREATE);
         }
@@ -209,12 +209,12 @@ public class MainActivity extends Activity implements
     @Override
     public void onStop() {
         // Unbind from the service
-        Log.d(TAG, "onStop - unbinding from service");
+        Utils.LogD(TAG, "onStop - unbinding from service");
         if (mBoundToService) {
             mBoundToService = false;
             unbindService(mConnection);
         }
-        Log.d(TAG, "onStop - unbound from service");
+        Utils.LogD(TAG, "onStop - unbound from service");
         super.onStop();
     }
 
@@ -223,7 +223,7 @@ public class MainActivity extends Activity implements
      */
     private boolean sendMessageToService(int messageId, Bundle bundle) {
         if (!mBoundToService) {
-            Log.d(TAG, "Service not bound but someone tried to send message");
+            Utils.LogD(TAG, "Service not bound but someone tried to send message");
             return false;
         }
 
@@ -235,7 +235,7 @@ public class MainActivity extends Activity implements
         try {
             mService.send(msg);
         } catch (RemoteException e) {
-            Log.d(TAG, "Error accessing service!");
+            Utils.LogD(TAG, "Error accessing service!");
             e.printStackTrace();
         }
 
@@ -251,7 +251,7 @@ public class MainActivity extends Activity implements
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_INIT_COMPLETE) {
             //init done!
-            Log.d(TAG, "InitService complete");
+            Utils.LogD(TAG, "InitService complete");
             //was it successful?
             if (resultCode == RESULT_OK) {
                 finishSetup();

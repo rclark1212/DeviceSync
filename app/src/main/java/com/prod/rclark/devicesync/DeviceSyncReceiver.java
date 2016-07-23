@@ -61,7 +61,7 @@ public class DeviceSyncReceiver extends BroadcastReceiver {
             Intent serviceIntent = new Intent(ctx, FirebaseMessengerService.class);
             ctx.startService(serviceIntent);
         } else {
-            Log.d(TAG, "Entering install/uninstall receiver");
+            Utils.LogD(TAG, "Entering install/uninstall receiver");
 
             //make sure we have a valid pointer
             if (intent.getData() == null) {
@@ -81,11 +81,11 @@ public class DeviceSyncReceiver extends BroadcastReceiver {
             if (mCurrentlyInstalling != null) {
                 if (!mCurrentlyInstalling.equals(packageName)) {
                     //urp - something else going on - let this go through but don't process it as one of our intents...
-                    Log.d(TAG, "Not our install - " + mCurrentlyInstalling + " " + packageName);
+                    Utils.LogD(TAG, "Not our install - " + mCurrentlyInstalling + " " + packageName);
                     bNotOurInstall = true;
                 }
             } else {
-                Log.d(TAG, "Not our install - null");
+                Utils.LogD(TAG, "Not our install - null");
                 bNotOurInstall = true;
             }
 
@@ -94,12 +94,12 @@ public class DeviceSyncReceiver extends BroadcastReceiver {
                     (intent.getAction().equalsIgnoreCase(Intent.ACTION_PACKAGE_CHANGED)) ||
                     (intent.getAction().equalsIgnoreCase(Intent.ACTION_PACKAGE_REPLACED))) {
                 //install
-                Log.d(TAG, "Got install/update intent for " + packageName);
+                Utils.LogD(TAG, "Got install/update intent for " + packageName);
                 bInstall = true;
             } else if ((intent.getAction().equalsIgnoreCase(Intent.ACTION_PACKAGE_REMOVED)) ||
                     (intent.getAction().equalsIgnoreCase(Intent.ACTION_PACKAGE_FULLY_REMOVED))) {
                 //removed
-                Log.d(TAG, "Got remove intent for " + packageName);
+                Utils.LogD(TAG, "Got remove intent for " + packageName);
                 bInstall = false;
             } else if (intent.getAction().equalsIgnoreCase(ACTION_SKIP)) {
                 //skip this one...
@@ -114,13 +114,13 @@ public class DeviceSyncReceiver extends BroadcastReceiver {
                     //Update - really should use service to update (and get out of broadcast receiver asap). Doing this below. Latency of service probably
                     //will fix this issue. If not, can add a slight delay to the service on starting processing...
                     //Have intent sync service do this work...
-                    Log.d(TAG, "Adding app to CP " + packageName);
+                    Utils.LogD(TAG, "Adding app to CP " + packageName);
                     GCESync.startActionLocalAppUpdate(ctx, packageName, "1000");    //add a 1 second delay...
                 } else {
                     //okay - easy one.
                     //delete the app from CP
                     //Construct the Uri...
-                    Log.d(TAG, "Deleting app from CP " + packageName);
+                    Utils.LogD(TAG, "Deleting app from CP " + packageName);
                     DBUtils.deleteAppFromCP(ctx, Build.SERIAL, packageName);
                 }
             }
@@ -132,7 +132,7 @@ public class DeviceSyncReceiver extends BroadcastReceiver {
                     //Last package just got installed. Go ahead and kick off next package intent...
                     if (mInstallIntents.size() > 0) {
                         String install = mInstallIntents.get(0);
-                        Log.d(TAG, "Installing/Uninstalling " + install);
+                        Utils.LogD(TAG, "Installing/Uninstalling " + install);
                         mInstallIntents.remove(0);
                         mCurrentlyInstalling = install;
                         if (bInstall) {
@@ -152,7 +152,7 @@ public class DeviceSyncReceiver extends BroadcastReceiver {
                 }
 
                 if (bRelaunchApp) {
-                    Log.d(TAG, "Relaunching app");
+                    Utils.LogD(TAG, "Relaunching app");
                     Intent i = new Intent();
                     i.setAction(Intent.ACTION_MAIN);
                     i.addCategory(Intent.CATEGORY_LAUNCHER);

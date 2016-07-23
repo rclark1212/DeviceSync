@@ -84,7 +84,7 @@ public class Firebase {
      * @param serial
      */
     public void pushRecordsToFirebase(String serial) {
-        Log.d(TAG, "Start Push");
+        Utils.LogD(TAG, "Start Push");
 
         sendNetworkBusyIndicator(true);
 
@@ -100,7 +100,7 @@ public class Firebase {
 
         sendNetworkBusyIndicator(false);
 
-        Log.d(TAG, "All done with record push");
+        Utils.LogD(TAG, "All done with record push");
 
     }
 
@@ -141,7 +141,7 @@ public class Firebase {
         //get the database
         final DatabaseReference dataBase = mFirebaseDB.getReference();
 
-        Log.d(TAG, "Setting up firebase db listeners");
+        Utils.LogD(TAG, "Setting up firebase db listeners");
         sendNetworkBusyIndicator(true);
 
         //set up the serial number device listener
@@ -150,7 +150,7 @@ public class Firebase {
             public void onChildAdded(DataSnapshot dataSnapshot, String s) {
                 String key = dataSnapshot.getKey();
 
-                Log.d(TAG, "Device child added - " + key);
+                Utils.LogD(TAG, "Device child added - " + key);
                 //was this under devices child?
                 //add to CP
                 ObjectDetail object = dataSnapshot.getValue(ObjectDetail.class);
@@ -159,7 +159,7 @@ public class Firebase {
                 if (object.serial != null) {
                     //as long as it is not our serial number...
                     if (!Build.SERIAL.equals(object.serial)) {
-                        Log.d(TAG, "Adding new serial to CP " + object.serial);
+                        Utils.LogD(TAG, "Adding new serial to CP " + object.serial);
                         DBUtils.saveDeviceToCP(mCtx, object);
                     }
                 }
@@ -169,7 +169,7 @@ public class Firebase {
             public void onChildChanged(DataSnapshot dataSnapshot, String s) {
                 String key = dataSnapshot.getKey();
 
-                Log.d(TAG, "Device child changed - " + key);
+                Utils.LogD(TAG, "Device child changed - " + key);
                 //update CP
                 ObjectDetail object = dataSnapshot.getValue(ObjectDetail.class);
 
@@ -183,14 +183,14 @@ public class Firebase {
                             bUpdate = false;
                         }
                         if (bUpdate) {
-                            Log.d(TAG, "Updating device serial in CP " + object.serial);
+                            Utils.LogD(TAG, "Updating device serial in CP " + object.serial);
                             DBUtils.saveDeviceToCP(mCtx, object);
                         } else {
-                            Log.d(TAG, "Got an event for a device record with stale timestamp - must be due to our trigger. Punt on updating " + object.serial);
+                            Utils.LogD(TAG, "Got an event for a device record with stale timestamp - must be due to our trigger. Punt on updating " + object.serial);
                         }
                     } else {
                         //new device to us
-                        Log.d(TAG, "Updating device serial in CP " + object.serial);
+                        Utils.LogD(TAG, "Updating device serial in CP " + object.serial);
                         DBUtils.saveDeviceToCP(mCtx, object);
                     }
                 }
@@ -200,15 +200,15 @@ public class Firebase {
             public void onChildRemoved(DataSnapshot dataSnapshot) {
                 String key = dataSnapshot.getKey();
 
-                Log.d(TAG, "Device child removed - " + key);
+                Utils.LogD(TAG, "Device child removed - " + key);
                 //remove record from CP
                 ObjectDetail object = dataSnapshot.getValue(ObjectDetail.class);
                 if (object.serial != null) {
                     String serial = object.serial;
                     if (Build.SERIAL.equals(serial)) {
-                        Log.d(TAG, "WARNING - deleting our own serial from CP");
+                        Utils.LogD(TAG, "WARNING - deleting our own serial from CP");
                     }
-                    Log.d(TAG, "Removing serial from CP " + serial);
+                    Utils.LogD(TAG, "Removing serial from CP " + serial);
                     DBUtils.deleteDeviceFromCP(mCtx, serial);
                 }
             }
@@ -231,9 +231,9 @@ public class Firebase {
             public void onChildAdded(DataSnapshot dataSnapshot, String s) {
                 String key = dataSnapshot.getKey();
 
-                Log.d(TAG, "App child added - " + key);
+                Utils.LogD(TAG, "App child added - " + key);
                 for (DataSnapshot child : dataSnapshot.getChildren()) {
-                    Log.d(TAG, "App child adding - " + child.getKey());
+                    Utils.LogD(TAG, "App child adding - " + child.getKey());
                     //add to CP
                     ObjectDetail object = child.getValue(ObjectDetail.class);
                     if (object.serial != null) {
@@ -246,15 +246,15 @@ public class Firebase {
                                 bUpdate = false;
                             }
                             if (bUpdate) {
-                                Log.d(TAG, "Updating app serial/app in CP " + object.serial + " " + object.pkg);
+                                Utils.LogD(TAG, "Updating app serial/app in CP " + object.serial + " " + object.pkg);
                                 DBUtils.saveAppToCP(mCtx, object, false);
                             } else {
-                                Log.d(TAG, "Got an event for a device record with stale timestamp - must be due to our trigger or due to us starting. Punt on updating " + object.serial);
+                                Utils.LogD(TAG, "Got an event for a device record with stale timestamp - must be due to our trigger or due to us starting. Punt on updating " + object.serial);
                             }
                         } else {
                             if (!Build.SERIAL.equals(object.serial)) {
                                 //new device to us...
-                                Log.d(TAG, "Updating app serial/app in CP " + object.serial + " " + object.pkg);
+                                Utils.LogD(TAG, "Updating app serial/app in CP " + object.serial + " " + object.pkg);
                                 DBUtils.saveAppToCP(mCtx, object, false);
                             } else {
                                 //wait - this is our serial number and we have no record of it...
@@ -263,7 +263,7 @@ public class Firebase {
                                 if (!Utils.isRunningForFirstTime(mCtx, false)) {
                                     child.getRef().removeValue();
                                 } else {
-                                    Log.d(TAG, "First time install - found app in DB for us - populating " + object.pkg);
+                                    Utils.LogD(TAG, "First time install - found app in DB for us - populating " + object.pkg);
                                     DBUtils.saveAppToCP(mCtx, object, false);
                                 }
                             }
@@ -276,11 +276,11 @@ public class Firebase {
             public void onChildChanged(DataSnapshot dataSnapshot, String s) {
                 String key = dataSnapshot.getKey();
 
-                Log.d(TAG, "App child changed - " + key);
+                Utils.LogD(TAG, "App child changed - " + key);
                 //update CP
 
                 for (DataSnapshot child : dataSnapshot.getChildren()) {
-                    Log.d(TAG, "App child updating - " + child.getKey());
+                    Utils.LogD(TAG, "App child updating - " + child.getKey());
                     ObjectDetail object = child.getValue(ObjectDetail.class);
 
                     if (object.serial != null) {
@@ -293,15 +293,15 @@ public class Firebase {
                                 bUpdate = false;
                             }
                             if (bUpdate) {
-                                Log.d(TAG, "Updating app serial/app in CP " + object.serial + " " + object.pkg);
+                                Utils.LogD(TAG, "Updating app serial/app in CP " + object.serial + " " + object.pkg);
                                 DBUtils.saveAppToCP(mCtx, object, false);
                             } else {
-                                Log.d(TAG, "Got an event for an app record with stale timestamp - must be due to our trigger. Punt on updating " + object.serial);
+                                Utils.LogD(TAG, "Got an event for an app record with stale timestamp - must be due to our trigger. Punt on updating " + object.serial);
                             }
                         } else {
                             if (!Build.SERIAL.equals(object.serial)) {
                                 //new device to us...
-                                Log.d(TAG, "Updating app serial/app in CP " + object.serial + " " + object.pkg);
+                                Utils.LogD(TAG, "Updating app serial/app in CP " + object.serial + " " + object.pkg);
                                 DBUtils.saveAppToCP(mCtx, object, false);
                             } else {
                                 //wait - this is our serial number and we have no record of it...
@@ -310,7 +310,7 @@ public class Firebase {
                                 if (!Utils.isRunningForFirstTime(mCtx, false)) {
                                     child.getRef().removeValue();
                                 } else {
-                                    Log.d(TAG, "First time install - found app in DB for us - populating " + object.pkg);
+                                    Utils.LogD(TAG, "First time install - found app in DB for us - populating " + object.pkg);
                                     DBUtils.saveAppToCP(mCtx, object, false);
                                 }
                             }
@@ -323,16 +323,16 @@ public class Firebase {
             public void onChildRemoved(DataSnapshot dataSnapshot) {
                 String key = dataSnapshot.getKey();
 
-                Log.d(TAG, "App child removed - " + key);
+                Utils.LogD(TAG, "App child removed - " + key);
                 for (DataSnapshot child : dataSnapshot.getChildren()) {
-                    Log.d(TAG, "App child deleting - " + child.getKey());
+                    Utils.LogD(TAG, "App child deleting - " + child.getKey());
 
                     //remove record from CP
                     //Note - this should likely never trigger an actual CP removal (since will be removed from CP before we get here)
                     ObjectDetail object = child.getValue(ObjectDetail.class);
                     if (object.serial != null) {
                         String serial = object.serial;
-                        Log.d(TAG, "Removing serial/App from CP " + serial + " " + object.pkg);
+                        Utils.LogD(TAG, "Removing serial/App from CP " + serial + " " + object.pkg);
                         DBUtils.deleteAppFromCP(mCtx, serial, object.pkg);
                     }
                 }
@@ -356,7 +356,7 @@ public class Firebase {
             public void onChildAdded(DataSnapshot dataSnapshot, String s) {
                 String key = dataSnapshot.getKey();
 
-                Log.d(TAG, "Image child added - " + key);
+                Utils.LogD(TAG, "Image child added - " + key);
                 //new photo!
                 ImageDetail object = dataSnapshot.getValue(ImageDetail.class);
 
@@ -364,7 +364,7 @@ public class Firebase {
                     //Is this object already in our CP?
                     ImageDetail cp_object = DBUtils.getImageRecordFromCP(mCtx, object.apkname);
                     if (!object.isEqual(cp_object) || (cp_object == null)) {
-                        Log.d(TAG, "Adding new image to CP " + object.filename);
+                        Utils.LogD(TAG, "Adding new image to CP " + object.filename);
                         DBUtils.setImageRecordToCP(mCtx, object);
                         //and send a message in case there needs to be an update (in case of not using cursor loader for images)
                         Intent localIntent = new Intent(GCESync.BROADCAST_ACTION).putExtra(GCESync.EXTENDED_DATA_STATUS,
@@ -378,16 +378,16 @@ public class Firebase {
             public void onChildChanged(DataSnapshot dataSnapshot, String s) {
                 String key = dataSnapshot.getKey();
 
-                Log.d(TAG, "Image child changed - " + key);
+                Utils.LogD(TAG, "Image child changed - " + key);
                 //image changed!
                 ImageDetail object = dataSnapshot.getValue(ImageDetail.class);
-                Log.d(TAG, "Image filename " + object.filename);
-                Log.d(TAG, "Image URL " + object.download_url);
+                Utils.LogD(TAG, "Image filename " + object.filename);
+                Utils.LogD(TAG, "Image URL " + object.download_url);
 
                 if (object.filename != null) {
                     ImageDetail cp_object = DBUtils.getImageRecordFromCP(mCtx, object.apkname);
                     if (!object.isEqual(cp_object) || (cp_object == null)) {
-                        Log.d(TAG, "Updating image in CP " + object.filename);
+                        Utils.LogD(TAG, "Updating image in CP " + object.filename);
                         DBUtils.setImageRecordToCP(mCtx, object);
                         //and send a message in case there needs to be an update (in case of not using cursor loader for images)
                         Intent localIntent = new Intent(GCESync.BROADCAST_ACTION).putExtra(GCESync.EXTENDED_DATA_STATUS,
@@ -401,12 +401,12 @@ public class Firebase {
             public void onChildRemoved(DataSnapshot dataSnapshot) {
                 String key = dataSnapshot.getKey();
 
-                Log.d(TAG, "Image child removed - " + key);
+                Utils.LogD(TAG, "Image child removed - " + key);
                 //photo removed
                 ImageDetail object = dataSnapshot.getValue(ImageDetail.class);
                 if (object.apkname != null) {
                     String removed = object.apkname;
-                    Log.d(TAG, "Removing image from CP " + removed);
+                    Utils.LogD(TAG, "Removing image from CP " + removed);
                     DBUtils.deleteImageRecordFromCP(mCtx, removed);
                     //and send a message in case there needs to be an update (in case of not using cursor loader for images)
                     Intent localIntent = new Intent(GCESync.BROADCAST_ACTION).putExtra(GCESync.EXTENDED_DATA_STATUS,
@@ -448,11 +448,11 @@ public class Firebase {
         //delete the user's node
         DatabaseReference dataBase = mFirebaseDB.getReference();
 
-        Log.d(TAG, "Erasing firebase db for user " + mUser);
+        Utils.LogD(TAG, "Erasing firebase db for user " + mUser);
 
         dataBase.child(mUser).removeValue();
 
-        Log.d(TAG, "Deleting cloud files for user " + mUser);
+        Utils.LogD(TAG, "Deleting cloud files for user " + mUser);
 
         //Get bucket
         StorageReference storageRef = mFirebaseStorage.getReferenceFromUrl(FIREBASE_STORAGE_BUCKET);
@@ -463,13 +463,13 @@ public class Firebase {
             @Override
             public void onSuccess(Void aVoid) {
                 // File deleted successfully
-                Log.d(TAG, "Successful deletion");
+                Utils.LogD(TAG, "Successful deletion");
             }
         }).addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception exception) {
                 // Uh-oh, an error occurred!
-                Log.d(TAG, "Delete failed - " + exception.getMessage());
+                Utils.LogD(TAG, "Delete failed - " + exception.getMessage());
             }
         });
     }
@@ -486,7 +486,7 @@ public class Firebase {
         }
 
         final String removefile = filename;
-        Log.d(TAG, "Deleting image file " + filename);
+        Utils.LogD(TAG, "Deleting image file " + filename);
 
         //Get bucket
         StorageReference storageRef = mFirebaseStorage.getReferenceFromUrl(FIREBASE_STORAGE_BUCKET);
@@ -502,14 +502,14 @@ public class Firebase {
             @Override
             public void onSuccess(Void aVoid) {
                 // File deleted successfully
-                Log.d(TAG, "Successful image deletion");
+                Utils.LogD(TAG, "Successful image deletion");
                 deleteImageKey(removefile);
             }
         }).addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception exception) {
                 // Uh-oh, an error occurred!
-                Log.d(TAG, "Delete failed - " + exception.getMessage());
+                Utils.LogD(TAG, "Delete failed - " + exception.getMessage());
             }
         });
     }
@@ -532,7 +532,7 @@ public class Firebase {
 
         final String filename = apkname + ".jpg";
 
-        Log.d(TAG, "Copying icon - " + filename);
+        Utils.LogD(TAG, "Copying icon - " + filename);
         sendNetworkBusyIndicator(true);
 
         //Get bucket
@@ -563,21 +563,21 @@ public class Firebase {
                 @Override
                 public void onFailure(@NonNull Exception exception) {
                     // Handle unsuccessful uploads
-                    Log.d(TAG, "Oops - upload to firebase failed!");
+                    Utils.LogD(TAG, "Oops - upload to firebase failed!");
                     sendNetworkBusyIndicator(false);
                 }
             }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                 @Override
                 public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
                     // taskSnapshot.getMetadata() contains file metadata such as size, content-type, and download URL.
-                    Log.d(TAG, "Upload to firebase succeeded!");
+                    Utils.LogD(TAG, "Upload to firebase succeeded!");
                     final Uri downloadUrl = taskSnapshot.getDownloadUrl();
                     addImageKey(filename, apk, downloadUrl);
                     sendNetworkBusyIndicator(false);
                 }
             });
         } else {
-            Log.d(TAG, "Could not get bitmap - ERR!");
+            Utils.LogD(TAG, "Could not get bitmap - ERR!");
         }
 
         //All done
@@ -594,7 +594,7 @@ public class Firebase {
 
         if ((filename != null) && (apk != null) && (downloadurl != null)) {
             String stripfile = Utils.stripForFirebase(filename);
-            Log.d(TAG, "Writing firebase image key " + stripfile);
+            Utils.LogD(TAG, "Writing firebase image key " + stripfile);
 
             //TODO - just using filename for description - could improve here...
             ImageDetail image = new ImageDetail(stripfile, filename, apk, downloadurl.toString());
@@ -614,7 +614,7 @@ public class Firebase {
         if (filename != null) {
             String stripfile = Utils.stripForFirebase(filename);
 
-            Log.d(TAG, "Deleting firebase image key " + stripfile);
+            Utils.LogD(TAG, "Deleting firebase image key " + stripfile);
 
             if (stripfile != null) {
                 //and push
@@ -630,11 +630,11 @@ public class Firebase {
     public void deleteFirebaseRecord(String serial) {
 
         if (serial == null) {
-            Log.d(TAG, "Someone passed in a null serial to deleteRecord - exit");
+            Utils.LogD(TAG, "Someone passed in a null serial to deleteRecord - exit");
             return;
         }
 
-        Log.d(TAG, "Deleting serial " + serial);
+        Utils.LogD(TAG, "Deleting serial " + serial);
 
         //delete the user's node
         DatabaseReference dataBase = mFirebaseDB.getReference();
@@ -681,12 +681,12 @@ public class Firebase {
             if (DBUtils.isAppLocal(mCtx, apkname)) {
                 //then check if this app's image exists already in photo cp...
                 if (DBUtils.getImageRecordFromCP(mCtx, apkname) == null) {
-                    Log.d(TAG, "Could not find image in CP for " + app.pkg + " - uploading");
+                    Utils.LogD(TAG, "Could not find image in CP for " + app.pkg + " - uploading");
                     //if not, then upload it...
                     //note - calling copy to firebase ends up generating the db key which in turn causes listener to create CP record
                     copyToFirebase(app.pkg, app.type);
                 } else {
-                    Log.d(TAG, "Skip updating " + app.pkg + " image - already exists");
+                    Utils.LogD(TAG, "Skip updating " + app.pkg + " image - already exists");
                 }
             }
         }
@@ -730,7 +730,7 @@ public class Firebase {
 
         DatabaseReference dataBase = mFirebaseDB.getReference();
 
-        Log.d(TAG, "Writing firebase db");
+        Utils.LogD(TAG, "Writing firebase db");
 
         //write the device first...
         writeDeviceToFirebase(serial);

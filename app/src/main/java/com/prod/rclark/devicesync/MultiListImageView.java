@@ -199,7 +199,7 @@ public class MultiListImageView extends ImageView {
                 ImageDetail image = DBUtils.getImageRecordFromCP(mCtx, mAPKs.get(i));
                 //glide it in
                 if (image != null) {
-                    Log.d(TAG, "Gliding in " + image.download_url);
+                    Utils.LogD(TAG, "Gliding in " + image.download_url);
                     Glide.with(mCtx)
                             .load(image.download_url)
                             .asBitmap()

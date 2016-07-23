@@ -189,7 +189,7 @@ public class AppUtils {
                 }
             }
         } catch (PackageManager.NameNotFoundException e) {
-            Log.d(TAG, "Can't find package err while trying to get image!!!");
+            Utils.LogD(TAG, "Can't find package err while trying to get image!!!");
             return null;
         }
 
@@ -220,7 +220,7 @@ public class AppUtils {
      * @return
      */
     public static int getAppType(Context ctx, String pkg) {
-        Log.d(TAG, "Checking package type - " + pkg);
+        Utils.LogD(TAG, "Checking package type - " + pkg);
         //Do the simple test
         int returntype = Utils.bIsThisATV(ctx) ? AppContract.TYPE_ATV : AppContract.TYPE_TABLET;
 
@@ -241,18 +241,18 @@ public class AppUtils {
                         if (pi.configPreferences != null) {
                             for (int i = 0; i < pi.configPreferences.length; i++) {
                                 if ((pi.configPreferences[i].reqTouchScreen & Configuration.TOUCHSCREEN_FINGER) != 0) {
-                                    Log.d(TAG, "Rare unicorn app with both leanback and normal launch intents found - " + pkg);
+                                    Utils.LogD(TAG, "Rare unicorn app with both leanback and normal launch intents found - " + pkg);
                                     returntype = AppContract.TYPE_BOTH;
                                     return returntype;
                                 }
                             }
                         }
                     } catch (PackageManager.NameNotFoundException e) {
-                        Log.d(TAG, "When trying to check for TYPE_BOTH, couldn't find package");
+                        Utils.LogD(TAG, "When trying to check for TYPE_BOTH, couldn't find package");
                     }
                 }
             } else {
-                Log.d(TAG, "Rare unicorn app with both leanback and normal launch intents found - " + pkg);
+                Utils.LogD(TAG, "Rare unicorn app with both leanback and normal launch intents found - " + pkg);
                 returntype = AppContract.TYPE_BOTH;
             }
         }

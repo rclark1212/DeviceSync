@@ -363,7 +363,7 @@ public class Utils {
         if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
             //its okay to get last location here - don't need accuracy of realtime ping for location
             location = LocationServices.FusedLocationApi.getLastLocation(mClient);
-            Log.d(TAG, "Grabbing location...");
+            Utils.LogD(TAG, "Grabbing location...");
         }
 
         //above may fail (no cached location or user may deny privileges)
@@ -523,5 +523,16 @@ public class Utils {
         UIUtils.confirmBatchOperation(activity, apk_install, true);
         //InstallUtil.batchUninstallAPK(ctx, apk_uninstall);
         UIUtils.confirmBatchOperation(activity, apk_uninstall, false);
+    }
+
+    /**
+     * Stub in a Utils.LogD function. Want to keep all the debugging logs for future. But want to stub out for
+     * a release. Where is the java #define? sigh...
+     *
+     * @param tag
+     * @param msg
+     */
+    public static void LogD(String tag, String msg) {
+       Log.d(tag, msg);
     }
 }
