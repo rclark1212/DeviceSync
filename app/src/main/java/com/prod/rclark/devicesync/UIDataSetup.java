@@ -48,11 +48,11 @@ public class UIDataSetup {
     // If you want to add a function, add an ordinal define below and make sure array.xml matches
     private final static int DEVICES_ROW = 0;
     private final static int LOCALAPPS_ROW = 1;
-    private final static int FLAGGEDAPPS_ROW = 2;
-    private final static int MISSINGAPPS_ROW = 3;
-    private final static int UNIQUEAPPS_ROW = 4;
-    private final static int SUPERSET_ROW = 5;
-    private final static int REMOTESTART_ROW = 6;
+    private final static int FLAGGEDAPPS_ROW = 12;  //implement in v2.0, for 1.0 disable (uncomment arrays and shift this ordinal to 2)
+    private final static int MISSINGAPPS_ROW = 2;
+    private final static int UNIQUEAPPS_ROW = 3;
+    private final static int SUPERSET_ROW = 4;
+    private final static int REMOTESTART_ROW = 5;
 
     public UIDataSetup(Context ctx) {
         mCtx = ctx;
@@ -181,7 +181,6 @@ public class UIDataSetup {
      * @return
      */
     public int getNumberOfHeaders() {
-        //TODO - fix up for REMOTES (hide ATV issue here?)
         return mHeaders.length + mRemotes.size();
     }
 
