@@ -17,12 +17,12 @@
 
     <!-- do change oder below to change menu ordering in the app -->
     <string-array name="header_names">
-        <item>Devices</item>
-        <item>Local Apps</item>
-        <item>Missing Apps (local)</item>
-        <item>Unique Apps (local)</item>
-        <item>App Superset</item>
-        <item>Remotes</item>
+        <item>@string/array_devices</item>
+        <item>@string/array_localapps</item>
+        <item>@string/array_missingapps</item>
+        <item>@string/array_uniqueapps</item>
+        <item>@string/array_superset</item>
+        <item>@string/array_remotes</item>
     </string-array>
     <!-- <item>Flagged Apps (all)</item> NOTE - remove flagged apps from v1.0 of the app -->
 
@@ -50,12 +50,12 @@
 
     <!-- other arrays for use with preference file -->
     <string-array name="notification_option_names">
-        <item>Missing Apps</item>
-        <item>Flagged Apps</item>
+        <item>@string/array_missing</item>
+        <item>@string/array_flagged</item>
     </string-array>
 
     <string-array name="notification_option_values">
-        <item>Missing Apps</item>
-        <item>Flagged Apps</item>
+        <item>@string/array_missing</item>
+        <item>@string/array_flagged</item>
     </string-array>
 </resources>

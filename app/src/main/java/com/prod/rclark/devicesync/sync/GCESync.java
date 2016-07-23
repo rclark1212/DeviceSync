@@ -51,8 +51,6 @@ import java.util.TimerTask;
  * An {@link IntentService} subclass for handling asynchronous task requests in
  * a service on a separate handler thread.
  * <p/>
- * TODO: Customize class - update intent actions, extra parameters and static
- * helper methods.
  *
  * Do a couple things with this service class...
  * (1) Update(merge) local database with current apps/devices
@@ -65,14 +63,11 @@ public class GCESync extends IntentService {
 
     private static final String TAG = "GCESync";
 
-    // TODO: Rename actions, choose action names that describe tasks that this
-    // IntentService can perform, e.g. ACTION_FETCH_NEW_ITEMS
     private static final String ACTION_UPDATE_LOCAL_DB = "com.prod.rclark.devicesync.sync.action.Update";
     private static final String ACTION_UPDATE_LOCAL_DEVICE = "com.prod.rclark.devicesync.sync.action.DeviceUpdate";
     private static final String ACTION_UPDATE_LOCAL_APP = "com.prod.rclark.devicesync.sync.action.AppUpdate";
     private static final String ACTION_INSTALL_APK = "com.prod.rclark.devicesync.sync.action.APKInstall";
 
-    // TODO: Rename parameters
     private static final String EXTRA_PARAM1 = "com.prod.rclark.devicesync.sync.extra.PARAM1";
     private static final String EXTRA_PARAM2 = "com.prod.rclark.devicesync.sync.extra.PARAM2";
 
@@ -341,7 +336,6 @@ public class GCESync extends IntentService {
             //Log.d(TAG, "Starting batch CP application");
             mCtx.getContentResolver().applyBatch(AppContract.CONTENT_AUTHORITY, ops);
             //Log.d(TAG, "Complete batch CP application");
-            //FIXME - verify done? - apply app changes to firebase. Note, have to loop through apps list
             Log.d(TAG, "Pushing records to firebase for serial " + Build.SERIAL);
             //TAGCPSAFE - NO - SHOULD NOT NEED THIS ROUTINE - individual apps will get written to DB entries
             //MainFragment.mFirebase.pushRecordsToFirebase(Build.SERIAL);
@@ -425,7 +419,7 @@ public class GCESync extends IntentService {
             urlConnection = (HttpURLConnection) url.openConnection();
             urlConnection.setRequestMethod("GET");
             urlConnection.connect();
-            //FIXME - read a line or 2 and see what comes back... failures all will be same
+            //FIXME - this could be area of failure... - read a line or 2 and see what comes back... failures all will be same
             // Read the input stream into a String
             InputStream inputStream = urlConnection.getInputStream();
             if (inputStream == null) {

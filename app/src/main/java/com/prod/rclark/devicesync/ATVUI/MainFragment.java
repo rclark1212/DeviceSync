@@ -138,7 +138,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
             if (status == GCESync.EXTENDED_DATA_STATUS_LOCALUPDATECOMPLETE) {
                 //Okay - done with loading local data!
 
-                //set up some fake data - hack - FIXME remove later
+                //set up some fake data - hack - TODO remove later (removed)
                 //NOTE - causes a delay at start
                 //DBUtils.loadFakeData(getActivity());
 
@@ -655,7 +655,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
         }
 
         //TODO - note that background app changes are no problem. However, if we change the devices in background...
-        //have to regenerate all the rows. At the moment, we ignore this case. But we should fix it. The simple way
+        //have to regenerate all the rows. At the moment, we ignore this case. But we should eventually fix it. The simple way
         //is to not update devices while app is open (don't use a cursor here). The more complicated way would be to
         //allow updates.
     }

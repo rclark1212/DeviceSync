@@ -207,7 +207,7 @@ public class UIDataSetup {
         if (row < mHeaders.length) {
             return mHeaders[row];
         } else {    //remotes!
-            //TODO - replace below (and other occurances) with a string that can be localized)
+            //very simple - device name (serial)
             return mRemotesName.get(row - mHeaders.length) + " (" + mRemotes.get(row - mHeaders.length) + ")";
         }
     }
@@ -550,7 +550,6 @@ public class UIDataSetup {
             //Really needs to be a device\app search that only has one entry...
             //Can be done with the having command - look for all apps, group them and then do a having just for this device...
             //Also can use COUNT function (COUNT of 1 w/local device)
-            //And FIXME - fix the ordering. Put in a standard ordering for ordering by label
         } else if (mFunction[row] == SUPERSET_ROW) {
             //Selection should be for all unique apps
             //I think this should be written as:

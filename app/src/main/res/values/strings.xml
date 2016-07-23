@@ -112,4 +112,23 @@
     <string name="list_description">List of apps or devices you can choose</string>
     <string name="phone_listitem_description">Application or Device</string>
 
+    <!-- object detail descriptions -->
+    <string name="od_serial">Serial:</string>
+    <string name="od_location">Location:</string>
+    <string name="od_osver">OSVer:</string>
+    <string name="od_updated">Updated:</string>
+    <string name="od_version">Version:</string>
+    <string name="od_installdate">Install Date:</string>
+    <string name="od_count">Count:</string>
+
+    <!-- array items -->
+    <string name="array_devices">Devices</string>
+    <string name="array_localapps">Local Apps</string>
+    <string name="array_missingapps">Missing Apps (local)</string>
+    <string name="array_uniqueapps">Unique Apps (local)</string>
+    <string name="array_superset">App Superset</string>
+    <string name="array_remotes">Remotes</string>
+    <string name="array_missing">Missing Apps</string>
+    <string name="array_flagged">Flagged Apps</string>
+
 </resources>

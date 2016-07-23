@@ -552,8 +552,9 @@ public class MainPhoneActivity extends AppCompatActivity
                     //Don't deallocate or anything (as browsefragment doesn't deal with deallocation well).
                     mUIDataSetup.loadRowEnables();
                     //updateRowVisibility();
-                    //FIXME - change adapter for navtray (mDrawerListView.setAdapter) to use a custom adapter where
+                    //FIXME for v2.0 - change adapter for navtray (mDrawerListView.setAdapter) to use a custom adapter where
                     //we can override areAllItemsEnabled() to return false and isEnabled() to return true or false as needed.
+                    //(i.e. configurable rows)
                 }
 
                 if ((prefResult & MainFragment.PREF_UPDATE_CP_FLAG) != 0) {

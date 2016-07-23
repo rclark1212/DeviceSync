@@ -581,10 +581,6 @@ public class Firebase {
         }
 
         //All done
-        //TODO - should we recycle here? Or just let android handle it?
-        //if (bmap != null) {
-        //    bmap.recycle();
-        //}
     }
 
     /**
@@ -681,7 +677,6 @@ public class Firebase {
         if (app != null) {
             dataBase.child(mUser).child(APPS).child(app.serial).child(Utils.stripForFirebase(app.pkg)).setValue(app);
 
-            //FIXME - done and verify - firebase - now make this auto-magic for image pushing
             //check if this app is local
             if (DBUtils.isAppLocal(mCtx, apkname)) {
                 //then check if this app's image exists already in photo cp...
@@ -711,7 +706,6 @@ public class Firebase {
 
         dataBase.child(mUser).child(APPS).child(serial).child(Utils.stripForFirebase(apkname)).removeValue();
 
-        //FIXME - done and verify - firebase - now make this auto-magic for image pushing
         //check if this app exists in the CP database at all for any serial number
         if (DBUtils.countApp(mCtx, apkname) == 0) {
             //if not, then delete photo...

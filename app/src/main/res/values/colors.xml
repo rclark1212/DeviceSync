@@ -20,7 +20,7 @@
     <color name="selected_background">@color/primary</color>
     <color name="default_background">#3d3d3d</color>
 
-    <!-- phone specific FIXME -->
+    <!-- phone specific  -->
     <color name="metabar_title">@color/primary_text</color>
     <color name="theme_primary">@color/primary</color>
     <color name="theme_primary_dark">@color/primary_dark</color>

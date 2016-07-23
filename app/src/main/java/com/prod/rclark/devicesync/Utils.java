@@ -268,16 +268,6 @@ public class Utils {
     }
 
     /**
-     *  Routine to check to see if an image for a package is available on network (don't save it to CP if available on net)
-     *  Return null if not available.
-     *  Return a uri if available.
-     */
-    public static Uri getAppImageUriOnNetwork(String pkgname, Context ctx) {
-        return null;
-        //FIXME - fix this stub
-    }
-
-    /**
      * Launches an app
      * @param ctx
      * @param pkgName

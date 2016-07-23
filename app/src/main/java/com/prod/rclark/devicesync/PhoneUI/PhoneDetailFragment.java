@@ -507,7 +507,7 @@ public class PhoneDetailFragment extends Fragment {
 
             mRootView.findViewById(R.id.meta_bar).setBackgroundColor(mMutedColor);
 
-            //FIXME - should we recycle here?
+            //FIXME - should we recycle here? Check it.
             bm.recycle();
         }
     }

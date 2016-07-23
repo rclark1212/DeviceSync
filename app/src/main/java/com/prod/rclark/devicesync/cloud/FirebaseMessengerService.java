@@ -67,13 +67,13 @@ public class FirebaseMessengerService extends Service {
     class IncomingHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
-            //FIXME - for debugging purposes...
             if (mFirebaseApp == null) {
                 mFirebaseApp = FirebaseApp.getInstance();
             }
 
             switch (msg.what) {
                 case MSG_SAY_HELLO: {
+                    //for debugging purposes...
                     Toast.makeText(getApplicationContext(), "hello!", Toast.LENGTH_SHORT).show();
                     break;
                 }

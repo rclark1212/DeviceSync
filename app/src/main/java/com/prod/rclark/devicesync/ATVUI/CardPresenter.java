@@ -162,7 +162,7 @@ public class CardPresenter extends Presenter {
     /**
      * Updates the view item per the element
      * For example, gray out remote. And add a badge
-     * FIXME - not done yet.
+     * FIXME - can be improved
      * Suggest badge = number of installs total
      * Can also be a flag (to show flagged)
      * Can also be local/remote

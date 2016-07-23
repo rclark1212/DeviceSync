@@ -27,7 +27,7 @@ public class UIUtils {
 
     /**
      * Routine to provide back the common description text used in detail for the object
-     * AND FIXME - we could do a much better job here...
+     * AND TODO - we could do a much better job here...
      * @param object
      * @return
      */
@@ -35,10 +35,14 @@ public class UIUtils {
         String body = "";
 
         if (element.bIsDevice) {
-            body = "Serial: " + element.serial + "\nLocation: " + element.location +
-                    "\nOSVer: " + element.ver + "\nUpdated: " + Utils.unNormalizeDate(ctx, element.installDate);
+            body = ctx.getString(R.string.od_serial) + " " + element.serial
+                    + "\n" + ctx.getString(R.string.od_location) + " " + element.location
+                    + "\n" + ctx.getString(R.string.od_osver) + " " + element.ver
+                    + "\n" + ctx.getString(R.string.od_updated) + " " + Utils.unNormalizeDate(ctx, element.installDate);
         } else {
-            body = "Version: " + element.ver + "\nInstallDate: " + Utils.unNormalizeDate(ctx, element.installDate) + "\nCount: " + DBUtils.countApp(ctx, element.pkg);
+            body = ctx.getString(R.string.od_version) + " " + element.ver
+                    + "\n" + ctx.getString(R.string.od_installdate) + " " + Utils.unNormalizeDate(ctx, element.installDate)
+                    + "\n" + ctx.getString(R.string.od_count) + " " + DBUtils.countApp(ctx, element.pkg);
         }
         return body;
     }
@@ -63,7 +67,7 @@ public class UIUtils {
                         dialog.cancel();
                         //disable syncs
                         Utils.setSyncDisabled(activity, true);
-                        //FIXME - note this leaves apps in a weird state. Will show apps as local to device but no option
+                        //TODO - note this leaves apps in a weird state. Will show apps as local to device but no option
                         //to install, etc...
                     }
                 })

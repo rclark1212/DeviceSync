@@ -60,7 +60,7 @@ public class PhoneDetailActivity extends AppCompatActivity {
             @Override
             public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
                 if (mIsReturning) {
-                    ImageView sharedElementSrc = mCurrentDetailFragment.getDetailImage();  //FIXME (see xyz reader)
+                    ImageView sharedElementSrc = mCurrentDetailFragment.getDetailImage();
                     if (sharedElementSrc == null) {
                         // (1) If shared element is null, then it has been scrolled off screen and
                         // no longer visible. In this case we cancel the shared element transition by
@@ -110,7 +110,7 @@ public class PhoneDetailActivity extends AppCompatActivity {
         mIsCard = getResources().getBoolean(R.bool.detail_is_card);
 
         //and if so, set toolbar to support action bar and add up button
-        /* FIXME
+        /* TODO
         if (mIsCard) {
             Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar_cardview);
             if (toolbar != null) {

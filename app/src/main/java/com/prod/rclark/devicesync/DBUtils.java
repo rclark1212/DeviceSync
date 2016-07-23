@@ -318,7 +318,6 @@ public class DBUtils {
             ctx.getContentResolver().insert(AppContract.DevicesEntry.CONTENT_URI, contentValues);
         }
 
-        //FIXME - verify done? - update firebase database here
         Log.d(TAG, "Attempting to write device to firebase " + device.serial);
         //TAGCPSAFE
         //MainFragment.mFirebase.writeDeviceToFirebase(device.serial);
@@ -381,7 +380,6 @@ public class DBUtils {
             ctx.getContentResolver().insert(insertUri, contentValues);
         }
 
-        //FIXME - verify done? - update firebase here with app.apk.
         //TAGCPSAFE
         //MainFragment.mFirebase.writeAppToFirebase(app.serial, app.pkg);
         Log.d(TAG, "Attempting to write app to firebase " + app.serial + " " + app.pkg);
