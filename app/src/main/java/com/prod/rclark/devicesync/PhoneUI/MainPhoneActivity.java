@@ -129,7 +129,6 @@ public class MainPhoneActivity extends AppCompatActivity
     private int mReturnPos = 0;
     private int mScrollPos = 0;
     private boolean bShowMissing = false;
-    private ProgressBar mProgress = null;
 
     // Shared element transition
     //Set a callback for shared element transition
@@ -241,8 +240,6 @@ public class MainPhoneActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main_phone);
 
-        mProgress = (ProgressBar) findViewById(R.id.wait_spinner);
-
         //is there a bundle?
         Intent launchIntent = getIntent();
         if (launchIntent.hasExtra(INTENT_EXTRA_LAUNCH)) {
@@ -264,11 +261,7 @@ public class MainPhoneActivity extends AppCompatActivity
     private void finishSetup() {
         String[] headers;
 
-        //Done with the lengthy first time install routine...
-        //Toast.makeText(getApplicationContext(), "SpinnerOff", Toast.LENGTH_SHORT).show();
-        if (mProgress != null) {
-            mProgress.setVisibility(View.GONE);
-        }
+        //Done with the initialization state machine...
 
         //deal with scanning system/setting up CP first...
         //Update the local content provider if running for first time...
