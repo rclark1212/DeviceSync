@@ -461,6 +461,7 @@ public class InitActivity extends Activity implements
             startActivityForResult(
                     AuthUI.getInstance(FirebaseApp.getInstance())
                             .createSignInIntentBuilder()
+                            .setTheme(R.style.AppTheme)
                             .setProviders(AuthUI.GOOGLE_PROVIDER)
                             .build(),
                     REQUEST_FIREBASE_SIGN_IN);
