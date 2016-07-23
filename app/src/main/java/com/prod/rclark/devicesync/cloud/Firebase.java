@@ -56,6 +56,8 @@ public class Firebase {
     private static final String APPS = "apps";
     private static final String IMAGE = "image";
 
+    private static final boolean mbShowDebugSpewDB = false;      //set to true to enable app/image debug spew
+
     /**
      * DATA STRUCTURE IN FIREBASE...
      * user(root)   \device \serial(s)  \deviceinfo
@@ -231,9 +233,15 @@ public class Firebase {
             public void onChildAdded(DataSnapshot dataSnapshot, String s) {
                 String key = dataSnapshot.getKey();
 
-                Utils.LogD(TAG, "App child added - " + key);
+                //If you have a lot of apps, these debug logs can get very noisy - comment out unless needed.
+                if (mbShowDebugSpewDB) {
+                    Utils.LogD(TAG, "App child added - " + key);
+                }
                 for (DataSnapshot child : dataSnapshot.getChildren()) {
-                    Utils.LogD(TAG, "App child adding - " + child.getKey());
+                    //If you have a lot of apps, these debug logs can get very noisy - comment out unless needed.
+                    if (mbShowDebugSpewDB) {
+                        Utils.LogD(TAG, "App child adding - " + child.getKey());
+                    }
                     //add to CP
                     ObjectDetail object = child.getValue(ObjectDetail.class);
                     if (object.serial != null) {
@@ -246,15 +254,24 @@ public class Firebase {
                                 bUpdate = false;
                             }
                             if (bUpdate) {
-                                Utils.LogD(TAG, "Updating app serial/app in CP " + object.serial + " " + object.pkg);
+                                //If you have a lot of apps, these debug logs can get very noisy - comment out unless needed.
+                                if (mbShowDebugSpewDB) {
+                                    Utils.LogD(TAG, "Updating app serial/app in CP " + object.serial + " " + object.pkg);
+                                }
                                 DBUtils.saveAppToCP(mCtx, object, false);
                             } else {
-                                Utils.LogD(TAG, "Got an event for a device record with stale timestamp - must be due to our trigger or due to us starting. Punt on updating " + object.serial);
+                                //If you have a lot of apps, these debug logs can get very noisy - comment out unless needed.
+                                if (mbShowDebugSpewDB) {
+                                    Utils.LogD(TAG, "Got an event for a device record with stale timestamp - must be due to our trigger or due to us starting. Punt on updating " + object.serial);
+                                }
                             }
                         } else {
                             if (!Build.SERIAL.equals(object.serial)) {
                                 //new device to us...
-                                Utils.LogD(TAG, "Updating app serial/app in CP " + object.serial + " " + object.pkg);
+                                //If you have a lot of apps, these debug logs can get very noisy - comment out unless needed.
+                                if (mbShowDebugSpewDB) {
+                                    Utils.LogD(TAG, "Updating app serial/app in CP " + object.serial + " " + object.pkg);
+                                }
                                 DBUtils.saveAppToCP(mCtx, object, false);
                             } else {
                                 //wait - this is our serial number and we have no record of it...
@@ -263,7 +280,10 @@ public class Firebase {
                                 if (!Utils.isRunningForFirstTime(mCtx, false)) {
                                     child.getRef().removeValue();
                                 } else {
-                                    Utils.LogD(TAG, "First time install - found app in DB for us - populating " + object.pkg);
+                                    //If you have a lot of apps, these debug logs can get very noisy - comment out unless needed.
+                                    if (mbShowDebugSpewDB) {
+                                        Utils.LogD(TAG, "First time install - found app in DB for us - populating " + object.pkg);
+                                    }
                                     DBUtils.saveAppToCP(mCtx, object, false);
                                 }
                             }
@@ -276,11 +296,17 @@ public class Firebase {
             public void onChildChanged(DataSnapshot dataSnapshot, String s) {
                 String key = dataSnapshot.getKey();
 
-                Utils.LogD(TAG, "App child changed - " + key);
+                //If you have a lot of apps, these debug logs can get very noisy - comment out unless needed.
+                if (mbShowDebugSpewDB) {
+                    Utils.LogD(TAG, "App child changed - " + key);
+                }
                 //update CP
 
                 for (DataSnapshot child : dataSnapshot.getChildren()) {
-                    Utils.LogD(TAG, "App child updating - " + child.getKey());
+                    //If you have a lot of apps, these debug logs can get very noisy - comment out unless needed.
+                    if (mbShowDebugSpewDB) {
+                        Utils.LogD(TAG, "App child updating - " + child.getKey());
+                    }
                     ObjectDetail object = child.getValue(ObjectDetail.class);
 
                     if (object.serial != null) {
@@ -293,24 +319,36 @@ public class Firebase {
                                 bUpdate = false;
                             }
                             if (bUpdate) {
-                                Utils.LogD(TAG, "Updating app serial/app in CP " + object.serial + " " + object.pkg);
+                                //If you have a lot of apps, these debug logs can get very noisy - comment out unless needed.
+                                if (mbShowDebugSpewDB) {
+                                    Utils.LogD(TAG, "Updating app serial/app in CP " + object.serial + " " + object.pkg);
+                                }
                                 DBUtils.saveAppToCP(mCtx, object, false);
                             } else {
-                                Utils.LogD(TAG, "Got an event for an app record with stale timestamp - must be due to our trigger. Punt on updating " + object.serial);
+                                //If you have a lot of apps, these debug logs can get very noisy - comment out unless needed.
+                                if (mbShowDebugSpewDB) {
+                                    Utils.LogD(TAG, "Got an event for an app record with stale timestamp - must be due to our trigger. Punt on updating " + object.serial);
+                                }
                             }
                         } else {
                             if (!Build.SERIAL.equals(object.serial)) {
                                 //new device to us...
-                                Utils.LogD(TAG, "Updating app serial/app in CP " + object.serial + " " + object.pkg);
+                                //If you have a lot of apps, these debug logs can get very noisy - comment out unless needed.
+                                if (mbShowDebugSpewDB) {
+                                    Utils.LogD(TAG, "Updating app serial/app in CP " + object.serial + " " + object.pkg);
+                                }
                                 DBUtils.saveAppToCP(mCtx, object, false);
                             } else {
                                 //wait - this is our serial number and we have no record of it...
-                                //FIXME (possibly) depending on how we do flags
+                                //FIXME (possibly) depending on how we do flags (TODO v2.0)
                                 //hmm... not in our database. Looks stale - delete
                                 if (!Utils.isRunningForFirstTime(mCtx, false)) {
                                     child.getRef().removeValue();
                                 } else {
-                                    Utils.LogD(TAG, "First time install - found app in DB for us - populating " + object.pkg);
+                                    //If you have a lot of apps, these debug logs can get very noisy - comment out unless needed.
+                                    if (mbShowDebugSpewDB) {
+                                        Utils.LogD(TAG, "First time install - found app in DB for us - populating " + object.pkg);
+                                    }
                                     DBUtils.saveAppToCP(mCtx, object, false);
                                 }
                             }
@@ -323,16 +361,25 @@ public class Firebase {
             public void onChildRemoved(DataSnapshot dataSnapshot) {
                 String key = dataSnapshot.getKey();
 
-                Utils.LogD(TAG, "App child removed - " + key);
+                //If you have a lot of apps, these debug logs can get very noisy - comment out unless needed.
+                if (mbShowDebugSpewDB) {
+                    Utils.LogD(TAG, "App child removed - " + key);
+                }
                 for (DataSnapshot child : dataSnapshot.getChildren()) {
-                    Utils.LogD(TAG, "App child deleting - " + child.getKey());
+                    //If you have a lot of apps, these debug logs can get very noisy - comment out unless needed.
+                    if (mbShowDebugSpewDB) {
+                        Utils.LogD(TAG, "App child deleting - " + child.getKey());
+                    }
 
                     //remove record from CP
                     //Note - this should likely never trigger an actual CP removal (since will be removed from CP before we get here)
                     ObjectDetail object = child.getValue(ObjectDetail.class);
                     if (object.serial != null) {
                         String serial = object.serial;
-                        Utils.LogD(TAG, "Removing serial/App from CP " + serial + " " + object.pkg);
+                        //If you have a lot of apps, these debug logs can get very noisy - comment out unless needed.
+                        if (mbShowDebugSpewDB) {
+                            Utils.LogD(TAG, "Removing serial/App from CP " + serial + " " + object.pkg);
+                        }
                         DBUtils.deleteAppFromCP(mCtx, serial, object.pkg);
                     }
                 }
@@ -356,7 +403,10 @@ public class Firebase {
             public void onChildAdded(DataSnapshot dataSnapshot, String s) {
                 String key = dataSnapshot.getKey();
 
-                Utils.LogD(TAG, "Image child added - " + key);
+                //If you have a lot of apps, these debug logs can get very noisy - comment out unless needed.
+                if (mbShowDebugSpewDB) {
+                    Utils.LogD(TAG, "Image child added - " + key);
+                }
                 //new photo!
                 ImageDetail object = dataSnapshot.getValue(ImageDetail.class);
 
@@ -364,7 +414,10 @@ public class Firebase {
                     //Is this object already in our CP?
                     ImageDetail cp_object = DBUtils.getImageRecordFromCP(mCtx, object.apkname);
                     if (!object.isEqual(cp_object) || (cp_object == null)) {
-                        Utils.LogD(TAG, "Adding new image to CP " + object.filename);
+                        //If you have a lot of apps, these debug logs can get very noisy - comment out unless needed.
+                        if (mbShowDebugSpewDB) {
+                            Utils.LogD(TAG, "Adding new image to CP " + object.filename);
+                        }
                         DBUtils.setImageRecordToCP(mCtx, object);
                         //and send a message in case there needs to be an update (in case of not using cursor loader for images)
                         Intent localIntent = new Intent(GCESync.BROADCAST_ACTION).putExtra(GCESync.EXTENDED_DATA_STATUS,
@@ -378,16 +431,25 @@ public class Firebase {
             public void onChildChanged(DataSnapshot dataSnapshot, String s) {
                 String key = dataSnapshot.getKey();
 
-                Utils.LogD(TAG, "Image child changed - " + key);
+                //If you have a lot of apps, these debug logs can get very noisy - comment out unless needed.
+                if (mbShowDebugSpewDB) {
+                    Utils.LogD(TAG, "Image child changed - " + key);
+                }
                 //image changed!
                 ImageDetail object = dataSnapshot.getValue(ImageDetail.class);
-                Utils.LogD(TAG, "Image filename " + object.filename);
-                Utils.LogD(TAG, "Image URL " + object.download_url);
+                //If you have a lot of apps, these debug logs can get very noisy - comment out unless needed.
+                if (mbShowDebugSpewDB) {
+                    Utils.LogD(TAG, "Image filename " + object.filename);
+                    Utils.LogD(TAG, "Image URL " + object.download_url);
+                }
 
                 if (object.filename != null) {
                     ImageDetail cp_object = DBUtils.getImageRecordFromCP(mCtx, object.apkname);
                     if (!object.isEqual(cp_object) || (cp_object == null)) {
-                        Utils.LogD(TAG, "Updating image in CP " + object.filename);
+                        //If you have a lot of apps, these debug logs can get very noisy - comment out unless needed.
+                        if (mbShowDebugSpewDB) {
+                            Utils.LogD(TAG, "Updating image in CP " + object.filename);
+                        }
                         DBUtils.setImageRecordToCP(mCtx, object);
                         //and send a message in case there needs to be an update (in case of not using cursor loader for images)
                         Intent localIntent = new Intent(GCESync.BROADCAST_ACTION).putExtra(GCESync.EXTENDED_DATA_STATUS,
@@ -401,12 +463,18 @@ public class Firebase {
             public void onChildRemoved(DataSnapshot dataSnapshot) {
                 String key = dataSnapshot.getKey();
 
-                Utils.LogD(TAG, "Image child removed - " + key);
+                //If you have a lot of apps, these debug logs can get very noisy - comment out unless needed.
+                if (mbShowDebugSpewDB) {
+                    Utils.LogD(TAG, "Image child removed - " + key);
+                }
                 //photo removed
                 ImageDetail object = dataSnapshot.getValue(ImageDetail.class);
                 if (object.apkname != null) {
                     String removed = object.apkname;
-                    Utils.LogD(TAG, "Removing image from CP " + removed);
+                    //If you have a lot of apps, these debug logs can get very noisy - comment out unless needed.
+                    if (mbShowDebugSpewDB) {
+                        Utils.LogD(TAG, "Removing image from CP " + removed);
+                    }
                     DBUtils.deleteImageRecordFromCP(mCtx, removed);
                     //and send a message in case there needs to be an update (in case of not using cursor loader for images)
                     Intent localIntent = new Intent(GCESync.BROADCAST_ACTION).putExtra(GCESync.EXTENDED_DATA_STATUS,

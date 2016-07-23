@@ -76,4 +76,8 @@
     <!-- widget text size -->
     <dimen name="widget_text_size">20sp</dimen>
 
+    <!-- progress bar size -->
+    <dimen name="progress_height">40dp</dimen>
+    <dimen name="progress_width">40dp</dimen>
+
 </resources>

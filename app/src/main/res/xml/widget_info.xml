@@ -7,5 +7,8 @@
     android:previewImage="@drawable/app_icon_widget"
     android:updatePeriodMillis="300000" >
     <!-- 5 minute update period 300000 -->
+    <!-- note on above - finding the latency for widget updates (android controls) can actually be quite
+    long even if you spec 5 minute periods. I've seen it as long as 1.5 hours. Should be fine though as
+    this is not a widget that needs to be real time -->
 
 </appwidget-provider>

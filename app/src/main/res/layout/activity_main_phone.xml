@@ -23,4 +23,12 @@
         android:layout_gravity="start"
         tools:layout="@layout/drawer_main_phone" />
 
+    <ProgressBar
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:maxHeight="@dimen/progress_height"
+        android:maxWidth="@dimen/progress_width"
+        android:visibility="visible"
+        android:id="@+id/wait_spinner" />
+
 </android.support.v4.widget.DrawerLayout>
