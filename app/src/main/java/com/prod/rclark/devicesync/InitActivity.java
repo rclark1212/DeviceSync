@@ -71,6 +71,7 @@ public class InitActivity extends Activity implements
     private final static int STATE_APPINIT_COMPLETE = 8;
 
     private int mInitCurrentState = STATE_LAUNCH;
+    private int mLastNewStateEvent = STATE_EVENT_ONCREATE;
 
     //state variables
     private boolean mbCreate = false;
@@ -97,6 +98,10 @@ public class InitActivity extends Activity implements
 
     //GMS client
     private static GoogleApiClient mActivityGoogleApiClient = null;
+
+    //instance state tag for orientation changes during setup
+    private static final String INIT_STATE_INSTANCE_TAG = "init_state_tag";
+    private static final String INIT_STATE_LASTEVENT_TAG = "last_stateevent_tag";
 
     //  Service
     boolean mBoundToService;
@@ -130,7 +135,17 @@ public class InitActivity extends Activity implements
         super.onCreate(savedInstanceState);
 
         Utils.LogD(TAG, "onInitCreate");
-        appInitStateMachine(STATE_EVENT_ONCREATE);
+        if (savedInstanceState != null) {
+            if (savedInstanceState.containsKey(INIT_STATE_INSTANCE_TAG)) {
+                mInitCurrentState = savedInstanceState.getInt(INIT_STATE_INSTANCE_TAG);
+                mLastNewStateEvent = savedInstanceState.getInt(INIT_STATE_LASTEVENT_TAG);
+                appInitStateMachine(mLastNewStateEvent);
+            } else {
+                appInitStateMachine(STATE_EVENT_ONCREATE);
+            }
+        } else {
+            appInitStateMachine(STATE_EVENT_ONCREATE);
+        }
 
         Utils.LogD(TAG, "Checking internet");
         //First check internet connectivity
@@ -141,6 +156,20 @@ public class InitActivity extends Activity implements
             appInitStateMachine(STATE_EVENT_INET_OKAY);
         }
     }
+
+    /**
+     * Handle orientation changes in the init routine
+     * @param savedInstanceState
+     */
+    @Override
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+        //save the init state machine state
+        savedInstanceState.putInt(INIT_STATE_INSTANCE_TAG, mInitCurrentState);
+        savedInstanceState.putInt(INIT_STATE_LASTEVENT_TAG, mLastNewStateEvent);
+
+        super.onSaveInstanceState(savedInstanceState);
+    }
+
 
     @Override
     public void onStart() {
@@ -203,6 +232,9 @@ public class InitActivity extends Activity implements
      * @param newEvent
      */
     public synchronized void appInitStateMachine(int newEvent) {
+
+        //save off last event for orientation reconstruction
+        mLastNewStateEvent = newEvent;
 
         //Step1, as new events come in set the various flags
         //Probably a better way to do this but my mind works this way...
