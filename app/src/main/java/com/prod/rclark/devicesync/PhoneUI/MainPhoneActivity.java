@@ -250,9 +250,14 @@ public class MainPhoneActivity extends AppCompatActivity
             }
         }
 
-        //Do our initialization
-        Intent intent = new Intent(getApplication(), InitActivity.class);
-        startActivityForResult(intent, REQUEST_INIT_COMPLETE);
+        if (savedInstanceState == null) {
+            //Do our initialization
+            Intent intent = new Intent(getApplication(), InitActivity.class);
+            startActivityForResult(intent, REQUEST_INIT_COMPLETE);
+        } else {
+            //setup nav tray again (rotate event)
+            finishSetup();
+        }
     }
 
     /**
