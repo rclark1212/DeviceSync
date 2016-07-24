@@ -9,6 +9,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
+import android.provider.ContactsContract;
 import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
@@ -132,24 +133,24 @@ public class Firebase {
     }
 
     /**
-     * Sets up data listeners for firebase (for data reads/syncs)
+     * LISTENER WORK STUBS
+     * So this instance runs in the service which runs in the UI thread. So need to be mindful of
+     * processing time here. Can't turn service into an intent service as we always want svc running in background.
+     * Can't do all the processing in an intent service as the datasnapshot objects we are getting from firebase
+     * are neither serializable nor parcelable. And moving service to a separate process causes problems
+     * with firebase.
+     * So... Instead simply kick off new threads to process the work as it comes in. App was built to handle
+     * async data events - each event here simply updates the CP. And it works just fine. Only concern is
+     * being able to treat dataSnapshot as final going into an async task. Obviously the reference won't change
+     * (java will enforce). However the data underneath the reference might... Per testing (on large stressful datasets)
+     * it is working. And note that each routine has to be kept thread safe (no global writes or resource allocations/locks allowed!).
      */
-    public void registerFirebaseDataListeners() {
-        //have we already set up a listener?
-        if (mFirebaseDeviceListener != null) {
-            return;
-        }
 
-        //get the database
-        final DatabaseReference dataBase = mFirebaseDB.getReference();
-
-        Utils.LogD(TAG, "Setting up firebase db listeners");
-        sendNetworkBusyIndicator(true);
-
-        //set up the serial number device listener
-        mFirebaseDeviceListener = new ChildEventListener() {
+    //Routine does what it says (but kicks off a new thread to handle)
+    private void onDeviceChildAdded(final DataSnapshot dataSnapshot) {
+        new Thread(new Runnable() {
             @Override
-            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+            public void run() {
                 String key = dataSnapshot.getKey();
 
                 Utils.LogD(TAG, "Device child added - " + key);
@@ -166,9 +167,14 @@ public class Firebase {
                     }
                 }
             }
+        }).start();
+    }
 
+    //Routine does what it says (but kicks off a new thread to handle)
+    private void onDeviceChildChanged(final DataSnapshot dataSnapshot) {
+        new Thread(new Runnable() {
             @Override
-            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+            public void run() {
                 String key = dataSnapshot.getKey();
 
                 Utils.LogD(TAG, "Device child changed - " + key);
@@ -197,9 +203,14 @@ public class Firebase {
                     }
                 }
             }
+        }).start();
+    }
 
+    //Routine does what it says (but kicks off a new thread to handle)
+    private void onDeviceChildRemoved(final DataSnapshot dataSnapshot) {
+        new Thread(new Runnable() {
             @Override
-            public void onChildRemoved(DataSnapshot dataSnapshot) {
+            public void run() {
                 String key = dataSnapshot.getKey();
 
                 Utils.LogD(TAG, "Device child removed - " + key);
@@ -214,23 +225,15 @@ public class Firebase {
                     DBUtils.deleteDeviceFromCP(mCtx, serial);
                 }
             }
+        }).start();
+    }
 
+    //Routine does what it says (but kicks off a new thread to handle)
+    private void onAppChildAdded(final DataSnapshot dataSnapshot) {
+        new Thread(new Runnable() {
             @Override
-            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
-                //do nothing here - don't care if child moved (and should never happen)
-                Log.e(TAG, "Child moved - should never happen!!!");
-            }
+            public void run() {
 
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-                Log.e(TAG, "Firebase onCancelled called in childlistener - reason:" + databaseError.getDetails());
-            }
-        };
-
-        //set up the serial number app listener
-        mFirebaseAppListener = new ChildEventListener() {
-            @Override
-            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
                 String key = dataSnapshot.getKey();
 
                 //If you have a lot of apps, these debug logs can get very noisy - comment out unless needed.
@@ -291,9 +294,15 @@ public class Firebase {
                     }
                 }
             }
+        }).start();
+    }
 
+    //Routine does what it says (but kicks off a new thread to handle)
+    private void onAppChildChanged(final DataSnapshot dataSnapshot) {
+        new Thread(new Runnable() {
             @Override
-            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+            public void run() {
+
                 String key = dataSnapshot.getKey();
 
                 //If you have a lot of apps, these debug logs can get very noisy - comment out unless needed.
@@ -356,9 +365,15 @@ public class Firebase {
                     }
                 }
             }
+        }).start();
+    }
 
+    //Routine does what it says (but kicks off a new thread to handle)
+    private void onAppChildRemoved(final DataSnapshot dataSnapshot) {
+        new Thread(new Runnable() {
             @Override
-            public void onChildRemoved(DataSnapshot dataSnapshot) {
+            public void run() {
+
                 String key = dataSnapshot.getKey();
 
                 //If you have a lot of apps, these debug logs can get very noisy - comment out unless needed.
@@ -384,23 +399,15 @@ public class Firebase {
                     }
                 }
             }
+        }).start();
+    }
 
+    //Routine does what it says (but kicks off a new thread to handle)
+    private void onImageChildAdded(final DataSnapshot dataSnapshot) {
+        new Thread(new Runnable() {
             @Override
-            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
-                //do nothing here - don't care if child moved (and should never happen)
-                Log.e(TAG, "Child moved - should never happen!!!");
-            }
+            public void run() {
 
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-                Log.e(TAG, "Firebase onCancelled called in childlistener - reason:" + databaseError.getDetails());
-            }
-        };
-
-        //set up the photo selector device listener
-        mFirebaseImageListener = new ChildEventListener() {
-            @Override
-            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
                 String key = dataSnapshot.getKey();
 
                 //If you have a lot of apps, these debug logs can get very noisy - comment out unless needed.
@@ -426,9 +433,15 @@ public class Firebase {
                     }
                 }
             }
+        }).start();
+    }
 
+    //Routine does what it says (but kicks off a new thread to handle)
+    private void onImageChildChanged(final DataSnapshot dataSnapshot) {
+        new Thread(new Runnable() {
             @Override
-            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+            public void run() {
+
                 String key = dataSnapshot.getKey();
 
                 //If you have a lot of apps, these debug logs can get very noisy - comment out unless needed.
@@ -458,9 +471,15 @@ public class Firebase {
                     }
                 }
             }
+        }).start();
+    }
 
+    //Routine does what it says (but kicks off a new thread to handle)
+    private void onImageChildRemoved(final DataSnapshot dataSnapshot) {
+        new Thread(new Runnable() {
             @Override
-            public void onChildRemoved(DataSnapshot dataSnapshot) {
+            public void run() {
+
                 String key = dataSnapshot.getKey();
 
                 //If you have a lot of apps, these debug logs can get very noisy - comment out unless needed.
@@ -481,6 +500,98 @@ public class Firebase {
                             GCESync.EXTENDED_DATA_STATUS_PHOTO_COMPLETE);
                     LocalBroadcastManager.getInstance(mCtx).sendBroadcast(localIntent);
                 }
+            }
+        }).start();
+    }
+
+    /**
+             * Sets up data listeners for firebase (for data reads/syncs)
+             */
+    public void registerFirebaseDataListeners() {
+        //have we already set up a listener?
+        if (mFirebaseDeviceListener != null) {
+            return;
+        }
+
+        //get the database
+        final DatabaseReference dataBase = mFirebaseDB.getReference();
+
+        Utils.LogD(TAG, "Setting up firebase db listeners");
+        sendNetworkBusyIndicator(true);
+
+        //set up the serial number device listener
+        mFirebaseDeviceListener = new ChildEventListener() {
+            @Override
+            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+                onDeviceChildAdded(dataSnapshot);
+            }
+
+            @Override
+            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+                onDeviceChildChanged(dataSnapshot);
+            }
+
+            @Override
+            public void onChildRemoved(DataSnapshot dataSnapshot) {
+                onDeviceChildRemoved(dataSnapshot);
+            }
+
+            @Override
+            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+                //do nothing here - don't care if child moved (and should never happen)
+                Log.e(TAG, "Child moved - should never happen!!!");
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                Log.e(TAG, "Firebase onCancelled called in childlistener - reason:" + databaseError.getDetails());
+            }
+        };
+
+        //set up the serial number app listener
+        mFirebaseAppListener = new ChildEventListener() {
+            @Override
+            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+                onAppChildAdded(dataSnapshot);
+            }
+
+            @Override
+            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+                onAppChildChanged(dataSnapshot);
+            }
+
+            @Override
+            public void onChildRemoved(DataSnapshot dataSnapshot) {
+                onAppChildRemoved(dataSnapshot);
+            }
+
+            @Override
+            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+                //do nothing here - don't care if child moved (and should never happen)
+                Log.e(TAG, "Child moved - should never happen!!!");
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                Log.e(TAG, "Firebase onCancelled called in childlistener - reason:" + databaseError.getDetails());
+            }
+        };
+
+        //set up the photo selector device listener
+        mFirebaseImageListener = new ChildEventListener() {
+            @Override
+            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+                onImageChildAdded(dataSnapshot);
+            }
+
+            @Override
+            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+                onImageChildChanged(dataSnapshot);
+            }
+
+            @Override
+            public void onChildRemoved(DataSnapshot dataSnapshot) {
+                onImageChildRemoved(dataSnapshot);
             }
 
             @Override

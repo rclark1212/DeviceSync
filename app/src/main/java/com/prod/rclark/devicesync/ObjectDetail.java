@@ -27,7 +27,7 @@ import java.io.Serializable;
  * Image rules...
  * Banner will only be saved to CP if the package not available in play store (sync side).
  */
-public class ObjectDetail {
+public class ObjectDetail implements Serializable {
     public String label;        //nickname or app
     public String name;         //model name
     public String pkg;          //pkg name

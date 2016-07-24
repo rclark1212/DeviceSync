@@ -7,7 +7,6 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.webkit.WebView;
 import android.widget.Button;
-import android.widget.ScrollView;
 
 /**
  * Created by rclark on 6/7/2016.
@@ -20,10 +19,13 @@ public class HelpActivity extends Activity {
     private final static int PAN_SCALE_FACTOR = 40;
 
     //our assets
-    public static final String TUTORIAL_HELP_ATV = "file:///android_asset/device_sync_tutorial_atv.html";
-    public static final String TUTORIAL_HELP_TABLET = "file:///android_asset/device_sync_tutorial_tablet.html";
+    public static final String TUTORIAL_HELP_ATV = "file:///android_asset/atv/device_sync_tutorial_atv.html";
+    public static final String TUTORIAL_HELP_PHONE = "file:///android_asset/phone/device_sync_tutorial_phone.html";
     public static final String WELCOME_HELP = "file:///android_asset/device_sync_welcome.html";
     public static final String HELP = "file:///android_asset/device_sync_help.html";
+    public static final String HELP_ATV = "file:///android_asset/atv/device_sync_help_atv.html";
+    public static final String HELP_PHONE = "file:///android_asset/phone/device_sync_help_phone.html";
+
     public static final String HELP_ORDINAL = "help";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,8 +46,10 @@ public class HelpActivity extends Activity {
         if (help == null) {
             mWView.loadUrl(HELP);
         } else if (help.equals(WELCOME_HELP)
+                || help.equals(HELP_ATV)
+                || help.equals(HELP_PHONE)
                 || help.equals(TUTORIAL_HELP_ATV)
-                || help.equals(TUTORIAL_HELP_TABLET)) {
+                || help.equals(TUTORIAL_HELP_PHONE)) {
             mWView.loadUrl(help);
         } else {
             mWView.loadUrl(HELP);

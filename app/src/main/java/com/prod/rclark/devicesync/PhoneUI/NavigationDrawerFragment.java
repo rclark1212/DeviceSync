@@ -247,6 +247,7 @@ public class NavigationDrawerFragment extends Fragment {
         }
     }
 
+
     @Override
     public void onAttach(Context ctx) {
         super.onAttach(ctx);

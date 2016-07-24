@@ -24,10 +24,12 @@ import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.RemoteException;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
+import com.google.firebase.database.DataSnapshot;
 import com.prod.rclark.devicesync.ATVUI.MainFragment;
 import com.prod.rclark.devicesync.AppUtils;
 import com.prod.rclark.devicesync.DBUtils;
@@ -162,6 +164,7 @@ public class GCESync extends IntentService {
         intent.putExtra(EXTRA_PARAM2, intentPrefix);
         context.startService(intent);
     }
+
 
     @Override
     protected void onHandleIntent(Intent intent) {
@@ -454,4 +457,5 @@ public class GCESync extends IntentService {
             sendBroadcast(intent);
         }
     }
+
 }

@@ -21,8 +21,9 @@
     <uses-feature
         android:name="android.hardware.bluetooth"
         android:required="false" />
-    <uses-feature android:name="android.hardware.location.gps"
-        android:required="false"/>
+    <uses-feature
+        android:name="android.hardware.location.gps"
+        android:required="false" />
 
     <application
         android:allowBackup="true"
@@ -37,12 +38,13 @@
         <activity
             android:name=".ATVUI.MainActivity"
             android:banner="@drawable/app_banner_your_company"
+            android:configChanges="keyboard|keyboardHidden|navigation"
             android:icon="@drawable/app_icon_your_company"
             android:label="@string/app_name"
-            android:logo="@drawable/app_icon_your_company"
-            android:configChanges="keyboard|keyboardHidden|navigation">
+            android:logo="@drawable/app_icon_your_company">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity>
@@ -62,13 +64,14 @@
             android:exported="false"
             android:syncable="true" />
 
-        <receiver android:name="com.prod.rclark.devicesync.DeviceSyncReceiver">
+        <receiver android:name=".DeviceSyncReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.PACKAGE_ADDED" />
                 <action android:name="android.intent.action.PACKAGE_CHANGED" />
                 <action android:name="android.intent.action.PACKAGE_REPLACED" />
                 <action android:name="android.intent.action.PACKAGE_REMOVED" />
                 <action android:name="android.intent.action.PACKAGE_FULLY_REMOVED" />
+
                 <data android:scheme="package" />
             </intent-filter>
             <intent-filter>
@@ -76,6 +79,7 @@
             </intent-filter>
             <intent-filter>
                 <action android:name="com.prod.rclark.devicesync.action.ACTION_SKIP_PACKAGE" />
+
                 <data android:scheme="package" />
             </intent-filter>
         </receiver>
@@ -87,17 +91,18 @@
             android:logo="@drawable/app_icon_your_company">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
         <activity android:name=".PhoneUI.PhoneDetailActivity" />
-            <!-- android:theme="@style/Theme.DeviceSync.Detail" -->
+        <!-- android:theme="@style/Theme.DeviceSync.Detail" -->
 
-        <receiver android:name=".MyWidgetProvider" >
+        <receiver android:name=".MyWidgetProvider">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
+
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_info" />
@@ -106,7 +111,8 @@
         <service
             android:name=".cloud.FirebaseMessengerService"
             android:enabled="true"
-            android:exported="true"></service>
+            android:exported="true" />
+
     </application>
 
 </manifest>

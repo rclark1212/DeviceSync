@@ -131,4 +131,7 @@
     <string name="array_missing">Missing Apps</string>
     <string name="array_flagged">Flagged Apps</string>
 
+    <!-- error message -->
+    <string name="restart_app">Restart the application to view remote device details</string>
+
 </resources>

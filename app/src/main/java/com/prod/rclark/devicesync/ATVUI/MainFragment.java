@@ -357,6 +357,19 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                         //get the id...
                         int id = mUIDataSetup.getSerialRow(serial);
 
+                        if (id < 0) {
+                            //TODO - v2.0. As mentioned in notes, v1.0 does not support remote dynamic adding of devices
+                            //The navigation is set up at init time based on devices in the CP. So warn users to restart
+                            //if a new device shows up that they try to select the row from.
+                            //How does this situation occur? Well, if you install this app on another device while the app
+                            //is open on this device. The device will show up in the device list but if you try to open the
+                            //row, you will get this problem. OR, if you delete the data for your app on the local device
+                            //and then restart the app. The CP may not be fully populated by the time you create the nav structure
+                            //(we use async tasks to populate).
+                            Toast.makeText(getActivity(), getString(R.string.restart_app), Toast.LENGTH_LONG).show();
+                            id = 0;
+                        }
+
                         //and figure out which row...
                         for (int i = 0; i < mRowsAdapter.size(); i++) {
                             ListRow lr = (ListRow) mRowsAdapter.get(i);
@@ -745,7 +758,7 @@ public class MainFragment extends BrowseFragment implements LoaderManager.Loader
                 if (item.equals(getString(R.string.help))) {
                     //show help
                     Intent intent = new Intent(getActivity(), HelpActivity.class);
-                    intent.putExtra(HelpActivity.HELP_ORDINAL, HelpActivity.HELP);
+                    intent.putExtra(HelpActivity.HELP_ORDINAL, HelpActivity.HELP_ATV);
                     startActivity(intent);
                 } else if (item.equals(getResources().getString(R.string.disable_sync_button_text))) {
                     //disable sync
