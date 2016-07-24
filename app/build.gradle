@@ -19,8 +19,8 @@ android {
         release {
             //Define the 4 variables below in gradle.properties
             //println("keystore:"+KEYSTORE_PATH +"\nAlias:"+SIGNKEY_ALIAS + "\nKSPW:" + KEYSTORE_PW + "\nKPM:" + KEY_PW)
-            storeFile file("../../../rclark1212.jks")
-            keyAlias "playstore_production"
+            storeFile file("../samplekeystore.jks")
+            keyAlias "udacity"
 
             // These two lines make gradle believe that the signingConfigs
             // section is complete. Without them, tasks like installRelease
