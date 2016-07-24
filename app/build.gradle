@@ -10,8 +10,8 @@ android {
         applicationId "com.prod.rclark.devicesync"
         minSdkVersion 21
         targetSdkVersion 23
-        versionCode 4
-        versionName "1.1"
+        versionCode 5
+        versionName "1.2"
         multiDexEnabled true
     }
 
@@ -19,14 +19,14 @@ android {
         release {
             //Define the 4 variables below in gradle.properties
             //println("keystore:"+KEYSTORE_PATH +"\nAlias:"+SIGNKEY_ALIAS + "\nKSPW:" + KEYSTORE_PW + "\nKPM:" + KEY_PW)
-            //storeFile file(KEYSTORE_PATH)
-            //keyAlias SIGNKEY_ALIAS
+            storeFile file("../../../rclark1212.jks")
+            keyAlias "playstore_production"
 
             // These two lines make gradle believe that the signingConfigs
             // section is complete. Without them, tasks like installRelease
             // will not be available!
-            //storePassword KEYSTORE_PW
-            //keyPassword KEY_PW
+            storePassword "Madidi875"
+            keyPassword "Fairview1926"
         }
     }
 
